@@ -1,11 +1,12 @@
 using GymManagement.Web.Data.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
 
 namespace GymManagement.Web.Data
 {
     public static class DbInitializer
     {
-        public static async Task InitializeAsync(GymDbContext context)
+        public static async Task InitializeAsync(GymDbContext context, UserManager<TaiKhoan> userManager, RoleManager<VaiTro> roleManager)
         {
             // Ensure database is created
             await context.Database.EnsureCreatedAsync();
@@ -14,17 +15,33 @@ namespace GymManagement.Web.Data
             if (await context.VaiTros.AnyAsync())
                 return; // Database has been seeded
 
-            // Seed VaiTro
-            var vaiTros = new[]
+            // Seed VaiTro (Identity Roles)
+            var roleNames = new[] { "Admin", "Manager", "Staff", "Trainer", "Member" };
+            var roleDescriptions = new[]
             {
-                new VaiTro { TenVaiTro = "Admin", MoTa = "Quản trị viên hệ thống" },
-                new VaiTro { TenVaiTro = "Manager", MoTa = "Quản lý phòng gym" },
-                new VaiTro { TenVaiTro = "Staff", MoTa = "Nhân viên" },
-                new VaiTro { TenVaiTro = "Trainer", MoTa = "Huấn luyện viên" },
-                new VaiTro { TenVaiTro = "Member", MoTa = "Thành viên" }
+                "Quản trị viên hệ thống",
+                "Quản lý phòng gym",
+                "Nhân viên",
+                "Huấn luyện viên",
+                "Thành viên"
             };
-            await context.VaiTros.AddRangeAsync(vaiTros);
-            await context.SaveChangesAsync();
+
+            var vaiTros = new List<VaiTro>();
+            for (int i = 0; i < roleNames.Length; i++)
+            {
+                var role = new VaiTro
+                {
+                    Name = roleNames[i],
+                    TenVaiTro = roleNames[i],
+                    MoTa = roleDescriptions[i]
+                };
+
+                var result = await roleManager.CreateAsync(role);
+                if (result.Succeeded)
+                {
+                    vaiTros.Add(role);
+                }
+            }
 
             // Seed NguoiDung
             var nguoiDungs = new[]
@@ -185,44 +202,33 @@ namespace GymManagement.Web.Data
             await context.KhuyenMais.AddRangeAsync(khuyenMais);
             await context.SaveChangesAsync();
 
-            // Seed TaiKhoan
-            var taiKhoans = new[]
+            // Seed TaiKhoan (Identity Users)
+            var userAccounts = new[]
             {
-                new TaiKhoan
-                {
-                    TenDangNhap = "admin",
-                    MatKhauHash = BCrypt.Net.BCrypt.HashPassword("admin123"), // In real app, use proper password hashing
-                    VaiTroId = vaiTros[0].VaiTroId, // Admin
-                    NguoiDungId = nguoiDungs[0].NguoiDungId,
-                    KichHoat = true
-                },
-                new TaiKhoan
-                {
-                    TenDangNhap = "trainer1",
-                    MatKhauHash = BCrypt.Net.BCrypt.HashPassword("trainer123"),
-                    VaiTroId = vaiTros[3].VaiTroId, // Trainer
-                    NguoiDungId = nguoiDungs[1].NguoiDungId,
-                    KichHoat = true
-                },
-                new TaiKhoan
-                {
-                    TenDangNhap = "trainer2",
-                    MatKhauHash = BCrypt.Net.BCrypt.HashPassword("trainer123"),
-                    VaiTroId = vaiTros[3].VaiTroId, // Trainer
-                    NguoiDungId = nguoiDungs[2].NguoiDungId,
-                    KichHoat = true
-                },
-                new TaiKhoan
-                {
-                    TenDangNhap = "member1",
-                    MatKhauHash = BCrypt.Net.BCrypt.HashPassword("member123"),
-                    VaiTroId = vaiTros[4].VaiTroId, // Member
-                    NguoiDungId = nguoiDungs[3].NguoiDungId,
-                    KichHoat = true
-                }
+                new { Username = "admin", Email = "admin@gym.com", Password = "Admin@123", Role = "Admin", NguoiDungId = nguoiDungs[0].NguoiDungId },
+                new { Username = "trainer1", Email = "huong.trainer@gym.com", Password = "Trainer@123", Role = "Trainer", NguoiDungId = nguoiDungs[1].NguoiDungId },
+                new { Username = "trainer2", Email = "tuan.trainer@gym.com", Password = "Trainer@123", Role = "Trainer", NguoiDungId = nguoiDungs[2].NguoiDungId },
+                new { Username = "member1", Email = "nam.member@gmail.com", Password = "Member@123", Role = "Member", NguoiDungId = nguoiDungs[3].NguoiDungId }
             };
-            await context.TaiKhoans.AddRangeAsync(taiKhoans);
-            await context.SaveChangesAsync();
+
+            foreach (var account in userAccounts)
+            {
+                var user = new TaiKhoan
+                {
+                    UserName = account.Username,
+                    Email = account.Email,
+                    TenDangNhap = account.Username,
+                    NguoiDungId = account.NguoiDungId,
+                    KichHoat = true,
+                    EmailConfirmed = true
+                };
+
+                var result = await userManager.CreateAsync(user, account.Password);
+                if (result.Succeeded)
+                {
+                    await userManager.AddToRoleAsync(user, account.Role);
+                }
+            }
         }
     }
 }

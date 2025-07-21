@@ -1,0 +1,53 @@
+@model GymManagement.Web.Models.ViewModels.LoginViewModel
+@{
+    ViewData["Title"] = "Đăng nhập";
+    Layout = "_AuthLayout";
+}
+
+<div class="w-full max-w-md mx-auto">
+    <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg px-8 pt-6 pb-8 mb-4">
+        <div class="mb-6 text-center">
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Đăng nhập</h1>
+            <p class="text-gray-600 dark:text-gray-400 mt-2">Chào mừng trở lại!</p>
+        </div>
+
+        <form asp-action="Login" method="post" class="space-y-4">
+            <div asp-validation-summary="ModelOnly" class="text-red-600 text-sm"></div>
+            
+            <div>
+                <label asp-for="Username" class="form-label">Tên đăng nhập</label>
+                <input asp-for="Username" class="form-input" placeholder="Nhập tên đăng nhập" />
+                <span asp-validation-for="Username" class="text-red-600 text-sm"></span>
+            </div>
+
+            <div>
+                <label asp-for="Password" class="form-label">Mật khẩu</label>
+                <input asp-for="Password" class="form-input" placeholder="Nhập mật khẩu" />
+                <span asp-validation-for="Password" class="text-red-600 text-sm"></span>
+            </div>
+
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <input asp-for="RememberMe" type="checkbox" class="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                    <label asp-for="RememberMe" class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300">Ghi nhớ đăng nhập</label>
+                </div>
+                <a asp-action="ForgotPassword" class="text-sm text-primary-600 hover:underline dark:text-primary-500">Quên mật khẩu?</a>
+            </div>
+
+            <button type="submit" class="btn-primary w-full">
+                Đăng nhập
+            </button>
+        </form>
+
+        <div class="text-center mt-6">
+            <p class="text-sm text-gray-600 dark:text-gray-400">
+                Chưa có tài khoản? 
+                <a asp-action="Register" class="text-primary-600 hover:underline dark:text-primary-500">Đăng ký ngay</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,57 @@
+@model GymManagement.Web.Models.ViewModels.RegisterViewModel
+@{
+    ViewData["Title"] = "Đăng ký";
+    Layout = "_AuthLayout";
+}
+
+<div class="w-full max-w-md mx-auto">
+    <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg px-8 pt-6 pb-8 mb-4">
+        <div class="mb-6 text-center">
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Đăng ký</h1>
+            <p class="text-gray-600 dark:text-gray-400 mt-2">Tạo tài khoản mới</p>
+        </div>
+
+        <form asp-action="Register" method="post" class="space-y-4">
+            <div asp-validation-summary="ModelOnly" class="text-red-600 text-sm"></div>
+            
+            <div>
+                <label asp-for="Username" class="form-label">Tên đăng nhập</label>
+                <input asp-for="Username" class="form-input" placeholder="Nhập tên đăng nhập" />
+                <span asp-validation-for="Username" class="text-red-600 text-sm"></span>
+            </div>
+
+            <div>
+                <label asp-for="Email" class="form-label">Email</label>
+                <input asp-for="Email" class="form-input" placeholder="Nhập email" />
+                <span asp-validation-for="Email" class="text-red-600 text-sm"></span>
+            </div>
+
+            <div>
+                <label asp-for="Password" class="form-label">Mật khẩu</label>
+                <input asp-for="Password" class="form-input" placeholder="Nhập mật khẩu" />
+                <span asp-validation-for="Password" class="text-red-600 text-sm"></span>
+            </div>
+
+            <div>
+                <label asp-for="ConfirmPassword" class="form-label">Xác nhận mật khẩu</label>
+                <input asp-for="ConfirmPassword" class="form-input" placeholder="Nhập lại mật khẩu" />
+                <span asp-validation-for="ConfirmPassword" class="text-red-600 text-sm"></span>
+            </div>
+
+            <button type="submit" class="btn-primary w-full">
+                Đăng ký
+            </button>
+        </form>
+
+        <div class="text-center mt-6">
+            <p class="text-sm text-gray-600 dark:text-gray-400">
+                Đã có tài khoản? 
+                <a asp-action="Login" class="text-primary-600 hover:underline dark:text-primary-500">Đăng nhập ngay</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
