@@ -1,0 +1,243 @@
+@model IEnumerable<GymManagement.Web.Data.Models.NguoiDung>
+@{
+    ViewData["Title"] = "Quản lý người dùng";
+}
+
+<div class="p-4">
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Quản lý người dùng</h1>
+            <p class="text-gray-600 dark:text-gray-400">Danh sách tất cả người dùng trong hệ thống</p>
+        </div>
+        @if (User.IsInRole("Admin") || User.IsInRole("Manager"))
+        {
+            <a href="/NguoiDung/Create" class="btn-primary">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                </svg>
+                Thêm người dùng
+            </a>
+        }
+    </div>
+
+    <!-- Search and Filter -->
+    <div class="card mb-6">
+        <div class="card-body">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                    <label class="form-label">Tìm kiếm</label>
+                    <input type="text" id="searchInput" class="form-input" placeholder="Tên, email, số điện thoại...">
+                </div>
+                <div>
+                    <label class="form-label">Loại người dùng</label>
+                    <select id="userTypeFilter" class="form-select">
+                        <option value="">Tất cả</option>
+                        <option value="THANHVIEN">Thành viên</option>
+                        <option value="HLV">Huấn luyện viên</option>
+                        <option value="NHANVIEN">Nhân viên</option>
+                        <option value="QUANLY">Quản lý</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label">Trạng thái</label>
+                    <select id="statusFilter" class="form-select">
+                        <option value="">Tất cả</option>
+                        <option value="ACTIVE">Hoạt động</option>
+                        <option value="INACTIVE">Không hoạt động</option>
+                    </select>
+                </div>
+                <div class="flex items-end">
+                    <button id="clearFilters" class="btn-secondary">Xóa bộ lọc</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Users Table -->
+    <div class="card">
+        <div class="card-body p-0">
+            <div class="overflow-x-auto">
+                <table class="table">
+                    <thead class="table-header">
+                        <tr>
+                            <th>Ảnh</th>
+                            <th>Họ tên</th>
+                            <th>Email</th>
+                            <th>Số điện thoại</th>
+                            <th>Loại</th>
+                            <th>Trạng thái</th>
+                            <th>Ngày tạo</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody class="table-body" id="usersTableBody">
+                        @foreach (var user in Model)
+                        {
+                            <tr>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(user.AnhDaiDien))
+                                    {
+                                        <img src="@user.AnhDaiDien" alt="Avatar" class="w-10 h-10 rounded-full object-cover">
+                                    }
+                                    else
+                                    {
+                                        <div class="w-10 h-10 bg-primary-600 rounded-full flex items-center justify-center text-white font-medium">
+                                            @user.Ho?.Substring(0, 1).ToUpper()
+                                        </div>
+                                    }
+                                </td>
+                                <td>
+                                    <div>
+                                        <div class="font-medium text-gray-900 dark:text-white">@user.Ho @user.Ten</div>
+                                        <div class="text-sm text-gray-500 dark:text-gray-400">ID: @user.NguoiDungId</div>
+                                    </div>
+                                </td>
+                                <td>@user.Email</td>
+                                <td>@user.SoDienThoai</td>
+                                <td>
+                                    <span class="badge @(user.LoaiNguoiDung switch {
+                                        "THANHVIEN" => "badge-primary",
+                                        "HLV" => "badge-success",
+                                        "NHANVIEN" => "badge-warning",
+                                        "QUANLY" => "badge-danger",
+                                        _ => "badge-secondary"
+                                    })">
+                                        @(user.LoaiNguoiDung switch {
+                                            "THANHVIEN" => "Thành viên",
+                                            "HLV" => "Huấn luyện viên",
+                                            "NHANVIEN" => "Nhân viên",
+                                            "QUANLY" => "Quản lý",
+                                            _ => user.LoaiNguoiDung
+                                        })
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge @(user.TrangThai == "ACTIVE" ? "badge-success" : "badge-secondary")">
+                                        @(user.TrangThai == "ACTIVE" ? "Hoạt động" : "Không hoạt động")
+                                    </span>
+                                </td>
+                                <td>@user.NgayTao.ToString("dd/MM/yyyy")</td>
+                                <td>
+                                    <div class="flex space-x-2">
+                                        <a href="/NguoiDung/Details/@user.NguoiDungId" class="text-blue-600 hover:text-blue-800" title="Xem chi tiết">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                            </svg>
+                                        </a>
+                                        @if (User.IsInRole("Admin") || User.IsInRole("Manager"))
+                                        {
+                                            <a href="/NguoiDung/Edit/@user.NguoiDungId" class="text-green-600 hover:text-green-800" title="Chỉnh sửa">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                                </svg>
+                                            </a>
+                                            <button onclick="toggleUserStatus(@user.NguoiDungId)" class="text-yellow-600 hover:text-yellow-800" title="Thay đổi trạng thái">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4"></path>
+                                                </svg>
+                                            </button>
+                                        }
+                                        @if (User.IsInRole("Admin"))
+                                        {
+                                            <a href="/NguoiDung/Delete/@user.NguoiDungId" class="text-red-600 hover:text-red-800" title="Xóa">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                                </svg>
+                                            </a>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="text-center py-12">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">Không có người dùng</h3>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Bắt đầu bằng cách tạo người dùng mới.</p>
+            @if (User.IsInRole("Admin") || User.IsInRole("Manager"))
+            {
+                <div class="mt-6">
+                    <a href="/NguoiDung/Create" class="btn-primary">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                        </svg>
+                        Thêm người dùng
+                    </a>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        // Search and filter functionality
+        document.getElementById('searchInput').addEventListener('input', filterUsers);
+        document.getElementById('userTypeFilter').addEventListener('change', filterUsers);
+        document.getElementById('statusFilter').addEventListener('change', filterUsers);
+        document.getElementById('clearFilters').addEventListener('click', clearFilters);
+
+        function filterUsers() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const userType = document.getElementById('userTypeFilter').value;
+            const status = document.getElementById('statusFilter').value;
+            const rows = document.querySelectorAll('#usersTableBody tr');
+
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                const userTypeCell = row.cells[4].textContent;
+                const statusCell = row.cells[5].textContent;
+
+                const matchesSearch = text.includes(searchTerm);
+                const matchesUserType = !userType || userTypeCell.includes(userType);
+                const matchesStatus = !status || statusCell.includes(status);
+
+                row.style.display = matchesSearch && matchesUserType && matchesStatus ? '' : 'none';
+            });
+        }
+
+        function clearFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('userTypeFilter').value = '';
+            document.getElementById('statusFilter').value = '';
+            filterUsers();
+        }
+
+        // Toggle user status
+        async function toggleUserStatus(userId) {
+            if (!confirm('Bạn có chắc chắn muốn thay đổi trạng thái người dùng này?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/NguoiDung/ToggleStatus/${userId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value
+                    }
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    location.reload();
+                } else {
+                    alert(result.message || 'Có lỗi xảy ra');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Có lỗi xảy ra khi thay đổi trạng thái');
+            }
+        }
+    </script>
+}
