@@ -4,6 +4,9 @@ namespace GymManagement.Web.Data
 {
     public interface IUnitOfWork : IDisposable
     {
+        // DbContext access
+        GymDbContext Context { get; }
+
         // Repositories
         INguoiDungRepository NguoiDungs { get; }
         IGoiTapRepository GoiTaps { get; }

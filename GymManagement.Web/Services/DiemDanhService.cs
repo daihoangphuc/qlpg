@@ -42,9 +42,9 @@ namespace GymManagement.Web.Services
 
         public async Task<DiemDanh> UpdateAsync(DiemDanh diemDanh)
         {
-            var updated = await _diemDanhRepository.UpdateAsync(diemDanh);
+            await _diemDanhRepository.UpdateAsync(diemDanh);
             await _unitOfWork.SaveChangesAsync();
-            return updated;
+            return diemDanh;
         }
 
         public async Task<bool> DeleteAsync(int id)

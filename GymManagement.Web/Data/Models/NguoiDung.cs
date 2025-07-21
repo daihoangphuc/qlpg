@@ -29,9 +29,14 @@ namespace GymManagement.Web.Data.Models
         public string? Email { get; set; }
         
         public DateOnly NgayThamGia { get; set; }
-        
+
         [StringLength(20)]
         public string TrangThai { get; set; } = "ACTIVE";
+
+        [StringLength(255)]
+        public string? AnhDaiDien { get; set; }
+
+        public DateTime NgayTao { get; set; } = DateTime.Now;
 
         // Navigation properties
         public virtual ICollection<TaiKhoan> TaiKhoans { get; set; } = new List<TaiKhoan>();

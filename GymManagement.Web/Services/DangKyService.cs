@@ -46,9 +46,9 @@ namespace GymManagement.Web.Services
 
         public async Task<DangKy> UpdateAsync(DangKy dangKy)
         {
-            var updated = await _dangKyRepository.UpdateAsync(dangKy);
+            await _dangKyRepository.UpdateAsync(dangKy);
             await _unitOfWork.SaveChangesAsync();
-            return updated;
+            return dangKy;
         }
 
         public async Task<bool> DeleteAsync(int id)
@@ -87,8 +87,8 @@ namespace GymManagement.Web.Services
                 return false;
 
             // Calculate dates
-            var ngayBatDau = DateTime.Today;
-            var ngayKetThuc = ngayBatDau.AddMonths(thoiHanThang);
+            var ngayBatDau = DateOnly.FromDateTime(DateTime.Today);
+            var ngayKetThuc = DateOnly.FromDateTime(DateTime.Today.AddMonths(thoiHanThang));
 
             // Create registration
             var dangKy = new DangKy
@@ -130,8 +130,8 @@ namespace GymManagement.Web.Services
             {
                 NguoiDungId = nguoiDungId,
                 LopHocId = lopHocId,
-                NgayBatDau = ngayBatDau,
-                NgayKetThuc = ngayKetThuc,
+                NgayBatDau = DateOnly.FromDateTime(ngayBatDau),
+                NgayKetThuc = DateOnly.FromDateTime(ngayKetThuc),
                 TrangThai = "ACTIVE",
                 NgayTao = DateTime.Now
             };
@@ -199,10 +199,10 @@ namespace GymManagement.Web.Services
             if (khuyenMaiId.HasValue)
             {
                 var khuyenMai = await _unitOfWork.Context.KhuyenMais.FindAsync(khuyenMaiId.Value);
-                if (khuyenMai != null && khuyenMai.KichHoat && 
-                    DateTime.Today >= khuyenMai.NgayBatDau && DateTime.Today <= khuyenMai.NgayKetThuc)
+                if (khuyenMai != null && khuyenMai.KichHoat &&
+                    DateOnly.FromDateTime(DateTime.Today) >= khuyenMai.NgayBatDau && DateOnly.FromDateTime(DateTime.Today) <= khuyenMai.NgayKetThuc)
                 {
-                    decimal discount = totalFee * khuyenMai.PhanTramGiam / 100;
+                    decimal discount = totalFee * (khuyenMai.PhanTramGiam ?? 0) / 100;
                     totalFee -= discount;
                 }
             }

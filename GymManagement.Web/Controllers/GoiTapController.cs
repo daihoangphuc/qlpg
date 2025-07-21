@@ -1,4 +1,5 @@
 using GymManagement.Web.Data.Models;
+using GymManagement.Web.Models.DTOs;
 using GymManagement.Web.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -60,23 +61,23 @@ namespace GymManagement.Web.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin,Manager")]
-        public async Task<IActionResult> Create(GoiTap goiTap)
+        public async Task<IActionResult> Create(CreateGoiTapDto createDto)
         {
             try
             {
                 if (ModelState.IsValid)
                 {
-                    await _goiTapService.CreateAsync(goiTap);
+                    await _goiTapService.CreateAsync(createDto);
                     TempData["SuccessMessage"] = "Tạo gói tập thành công!";
                     return RedirectToAction(nameof(Index));
                 }
-                return View(goiTap);
+                return View(createDto);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occurred while creating package");
                 ModelState.AddModelError("", "Có lỗi xảy ra khi tạo gói tập.");
-                return View(goiTap);
+                return View(createDto);
             }
         }
 
@@ -103,9 +104,9 @@ namespace GymManagement.Web.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin,Manager")]
-        public async Task<IActionResult> Edit(int id, GoiTap goiTap)
+        public async Task<IActionResult> Edit(int id, UpdateGoiTapDto updateDto)
         {
-            if (id != goiTap.GoiTapId)
+            if (id != updateDto.GoiTapId)
             {
                 return NotFound();
             }
@@ -114,17 +115,17 @@ namespace GymManagement.Web.Controllers
             {
                 if (ModelState.IsValid)
                 {
-                    await _goiTapService.UpdateAsync(goiTap);
+                    await _goiTapService.UpdateAsync(updateDto);
                     TempData["SuccessMessage"] = "Cập nhật gói tập thành công!";
                     return RedirectToAction(nameof(Index));
                 }
-                return View(goiTap);
+                return View(updateDto);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occurred while updating package ID: {Id}", id);
                 ModelState.AddModelError("", "Có lỗi xảy ra khi cập nhật gói tập.");
-                return View(goiTap);
+                return View(updateDto);
             }
         }
 

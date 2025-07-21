@@ -46,9 +46,9 @@ namespace GymManagement.Web.Services
 
         public async Task<BangLuong> UpdateAsync(BangLuong bangLuong)
         {
-            var updated = await _bangLuongRepository.UpdateAsync(bangLuong);
+            await _bangLuongRepository.UpdateAsync(bangLuong);
             await _unitOfWork.SaveChangesAsync();
-            return updated;
+            return bangLuong;
         }
 
         public async Task<bool> DeleteAsync(int id)

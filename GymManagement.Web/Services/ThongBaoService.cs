@@ -40,9 +40,9 @@ namespace GymManagement.Web.Services
 
         public async Task<ThongBao> UpdateAsync(ThongBao thongBao)
         {
-            var updated = await _thongBaoRepository.UpdateAsync(thongBao);
+            await _thongBaoRepository.UpdateAsync(thongBao);
             await _unitOfWork.SaveChangesAsync();
-            return updated;
+            return thongBao;
         }
 
         public async Task<bool> DeleteAsync(int id)

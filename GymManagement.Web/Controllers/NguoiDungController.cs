@@ -1,4 +1,5 @@
 using GymManagement.Web.Data.Models;
+using GymManagement.Web.Models.DTOs;
 using GymManagement.Web.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -60,23 +61,23 @@ namespace GymManagement.Web.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin,Manager")]
-        public async Task<IActionResult> Create(NguoiDung nguoiDung)
+        public async Task<IActionResult> Create(CreateNguoiDungDto createDto)
         {
             try
             {
                 if (ModelState.IsValid)
                 {
-                    await _nguoiDungService.CreateAsync(nguoiDung);
+                    await _nguoiDungService.CreateAsync(createDto);
                     TempData["SuccessMessage"] = "Tạo người dùng thành công!";
                     return RedirectToAction(nameof(Index));
                 }
-                return View(nguoiDung);
+                return View(createDto);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occurred while creating user");
                 ModelState.AddModelError("", "Có lỗi xảy ra khi tạo người dùng.");
-                return View(nguoiDung);
+                return View(createDto);
             }
         }
 
@@ -103,9 +104,9 @@ namespace GymManagement.Web.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin,Manager")]
-        public async Task<IActionResult> Edit(int id, NguoiDung nguoiDung)
+        public async Task<IActionResult> Edit(int id, UpdateNguoiDungDto updateDto)
         {
-            if (id != nguoiDung.NguoiDungId)
+            if (id != updateDto.NguoiDungId)
             {
                 return NotFound();
             }
@@ -114,17 +115,17 @@ namespace GymManagement.Web.Controllers
             {
                 if (ModelState.IsValid)
                 {
-                    await _nguoiDungService.UpdateAsync(nguoiDung);
+                    await _nguoiDungService.UpdateAsync(updateDto);
                     TempData["SuccessMessage"] = "Cập nhật người dùng thành công!";
                     return RedirectToAction(nameof(Index));
                 }
-                return View(nguoiDung);
+                return View(updateDto);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occurred while updating user ID: {Id}", id);
                 ModelState.AddModelError("", "Có lỗi xảy ra khi cập nhật người dùng.");
-                return View(nguoiDung);
+                return View(updateDto);
             }
         }
 
@@ -222,13 +223,24 @@ namespace GymManagement.Web.Controllers
                     return Json(new { success = false, message = "Không tìm thấy người dùng." });
                 }
 
-                nguoiDung.TrangThai = nguoiDung.TrangThai == "ACTIVE" ? "INACTIVE" : "ACTIVE";
-                await _nguoiDungService.UpdateAsync(nguoiDung);
+                var updateDto = new UpdateNguoiDungDto
+                {
+                    NguoiDungId = nguoiDung.NguoiDungId,
+                    LoaiNguoiDung = nguoiDung.LoaiNguoiDung,
+                    Ho = nguoiDung.Ho,
+                    Ten = nguoiDung.Ten,
+                    GioiTinh = nguoiDung.GioiTinh,
+                    NgaySinh = nguoiDung.NgaySinh,
+                    SoDienThoai = nguoiDung.SoDienThoai,
+                    Email = nguoiDung.Email,
+                    TrangThai = nguoiDung.TrangThai == "ACTIVE" ? "INACTIVE" : "ACTIVE"
+                };
+                await _nguoiDungService.UpdateAsync(updateDto);
 
-                return Json(new { 
-                    success = true, 
-                    message = $"Đã {(nguoiDung.TrangThai == "ACTIVE" ? "kích hoạt" : "vô hiệu hóa")} người dùng.",
-                    newStatus = nguoiDung.TrangThai
+                return Json(new {
+                    success = true,
+                    message = $"Đã {(updateDto.TrangThai == "ACTIVE" ? "kích hoạt" : "vô hiệu hóa")} người dùng.",
+                    newStatus = updateDto.TrangThai
                 });
             }
             catch (Exception ex)

@@ -44,11 +44,12 @@ namespace GymManagement.Web.Data.Repositories
 
         public async Task<IEnumerable<Booking>> GetBookingsByDateAsync(DateTime date)
         {
+            var dateOnly = DateOnly.FromDateTime(date);
             return await _context.Bookings
                 .Include(b => b.ThanhVien)
                 .Include(b => b.LopHoc)
                 .Include(b => b.LichLop)
-                .Where(b => b.Ngay.Date == date.Date)
+                .Where(b => b.Ngay == dateOnly)
                 .OrderBy(b => b.LichLop.GioBatDau)
                 .ToListAsync();
         }
@@ -59,7 +60,7 @@ namespace GymManagement.Web.Data.Repositories
                 .Include(b => b.ThanhVien)
                 .Include(b => b.LopHoc)
                 .Include(b => b.LichLop)
-                .Where(b => b.TrangThai == "BOOKED" && b.Ngay >= DateTime.Today)
+                .Where(b => b.TrangThai == "BOOKED" && b.Ngay >= DateOnly.FromDateTime(DateTime.Today))
                 .OrderBy(b => b.Ngay)
                 .ThenBy(b => b.LichLop.GioBatDau)
                 .ToListAsync();
@@ -67,9 +68,10 @@ namespace GymManagement.Web.Data.Repositories
 
         public async Task<int> CountBookingsForClassAsync(int lopHocId, DateTime date)
         {
+            var dateOnly = DateOnly.FromDateTime(date);
             return await _context.Bookings
-                .CountAsync(b => b.LopHocId == lopHocId && 
-                                b.Ngay.Date == date.Date && 
+                .CountAsync(b => b.LopHocId == lopHocId &&
+                                b.Ngay == dateOnly &&
                                 b.TrangThai == "BOOKED");
         }
 
@@ -81,16 +83,18 @@ namespace GymManagement.Web.Data.Repositories
 
         public async Task<bool> HasBookingAsync(int thanhVienId, int? lopHocId, int? lichLopId, DateTime date)
         {
+            var dateOnly = DateOnly.FromDateTime(date);
             return await _context.Bookings
                 .AnyAsync(b => b.ThanhVienId == thanhVienId &&
                               b.LopHocId == lopHocId &&
                               b.LichLopId == lichLopId &&
-                              b.Ngay.Date == date.Date &&
+                              b.Ngay == dateOnly &&
                               b.TrangThai == "BOOKED");
         }
 
         public async Task<Booking?> GetActiveBookingAsync(int thanhVienId, int? lopHocId, int? lichLopId, DateTime date)
         {
+            var dateOnly = DateOnly.FromDateTime(date);
             return await _context.Bookings
                 .Include(b => b.ThanhVien)
                 .Include(b => b.LopHoc)
@@ -98,7 +102,7 @@ namespace GymManagement.Web.Data.Repositories
                 .FirstOrDefaultAsync(b => b.ThanhVienId == thanhVienId &&
                                          b.LopHocId == lopHocId &&
                                          b.LichLopId == lichLopId &&
-                                         b.Ngay.Date == date.Date &&
+                                         b.Ngay == dateOnly &&
                                          b.TrangThai == "BOOKED");
         }
     }

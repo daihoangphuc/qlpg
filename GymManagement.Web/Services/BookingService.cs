@@ -43,9 +43,9 @@ namespace GymManagement.Web.Services
 
         public async Task<Booking> UpdateAsync(Booking booking)
         {
-            var updated = await _bookingRepository.UpdateAsync(booking);
+            await _bookingRepository.UpdateAsync(booking);
             await _unitOfWork.SaveChangesAsync();
-            return updated;
+            return booking;
         }
 
         public async Task<bool> DeleteAsync(int id)
@@ -94,7 +94,7 @@ namespace GymManagement.Web.Services
             {
                 ThanhVienId = thanhVienId,
                 LopHocId = lopHocId,
-                Ngay = date,
+                Ngay = DateOnly.FromDateTime(date),
                 TrangThai = "BOOKED"
             };
 
@@ -127,7 +127,7 @@ namespace GymManagement.Web.Services
                 return false;
 
             // Check if member already has a booking for this schedule
-            if (await _bookingRepository.HasBookingAsync(thanhVienId, lichLop.LopHocId, lichLopId, lichLop.Ngay))
+            if (await _bookingRepository.HasBookingAsync(thanhVienId, lichLop.LopHocId, lichLopId, lichLop.Ngay.ToDateTime(TimeOnly.MinValue)))
                 return false;
 
             // Check if class has available slots
@@ -216,7 +216,7 @@ namespace GymManagement.Web.Services
         public async Task<IEnumerable<Booking>> GetUpcomingBookingsAsync(int thanhVienId)
         {
             var bookings = await _bookingRepository.GetByThanhVienIdAsync(thanhVienId);
-            return bookings.Where(b => b.TrangThai == "BOOKED" && b.Ngay >= DateTime.Today);
+            return bookings.Where(b => b.TrangThai == "BOOKED" && b.Ngay >= DateOnly.FromDateTime(DateTime.Today));
         }
     }
 }

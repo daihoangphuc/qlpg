@@ -20,6 +20,8 @@ namespace GymManagement.Web.Services
         Task<IEnumerable<NguoiDungDto>> GetActiveUsersAsync();
         Task<IEnumerable<NguoiDungDto>> GetHuanLuyenViensAsync();
         Task<IEnumerable<NguoiDungDto>> GetThanhViensAsync();
+        Task<IEnumerable<NguoiDungDto>> GetMembersAsync();
+        Task<IEnumerable<NguoiDungDto>> GetTrainersAsync();
         Task<bool> IsEmailExistsAsync(string email, int? excludeId = null);
         Task<bool> IsSoDienThoaiExistsAsync(string soDienThoai, int? excludeId = null);
         Task<bool> DeactivateUserAsync(int id);

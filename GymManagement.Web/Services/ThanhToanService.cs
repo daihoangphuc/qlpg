@@ -52,9 +52,9 @@ namespace GymManagement.Web.Services
 
         public async Task<ThanhToan> UpdateAsync(ThanhToan thanhToan)
         {
-            var updated = await _thanhToanRepository.UpdateAsync(thanhToan);
+            await _thanhToanRepository.UpdateAsync(thanhToan);
             await _unitOfWork.SaveChangesAsync();
-            return updated;
+            return thanhToan;
         }
 
         public async Task<bool> DeleteAsync(int id)

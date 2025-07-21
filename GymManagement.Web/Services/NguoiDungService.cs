@@ -134,6 +134,18 @@ namespace GymManagement.Web.Services
             return nguoiDungs.Select(MapToDto);
         }
 
+        public async Task<IEnumerable<NguoiDungDto>> GetMembersAsync()
+        {
+            var nguoiDungs = await _unitOfWork.NguoiDungs.GetMembersAsync();
+            return nguoiDungs.Select(MapToDto);
+        }
+
+        public async Task<IEnumerable<NguoiDungDto>> GetTrainersAsync()
+        {
+            var nguoiDungs = await _unitOfWork.NguoiDungs.GetTrainersAsync();
+            return nguoiDungs.Select(MapToDto);
+        }
+
         public async Task<bool> IsEmailExistsAsync(string email, int? excludeId = null)
         {
             var nguoiDung = await _unitOfWork.NguoiDungs.GetByEmailAsync(email);

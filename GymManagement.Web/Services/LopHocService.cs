@@ -55,14 +55,14 @@ namespace GymManagement.Web.Services
 
         public async Task<LopHoc> UpdateAsync(LopHoc lopHoc)
         {
-            var updated = await _lopHocRepository.UpdateAsync(lopHoc);
+            await _lopHocRepository.UpdateAsync(lopHoc);
             await _unitOfWork.SaveChangesAsync();
-            
+
             // Clear cache
             _cache.Remove("all_classes");
             _cache.Remove("active_classes");
-            
-            return updated;
+
+            return lopHoc;
         }
 
         public async Task<bool> DeleteAsync(int id)

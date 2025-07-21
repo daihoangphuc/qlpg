@@ -10,5 +10,6 @@ namespace GymManagement.Web.Data.Repositories
         Task<IEnumerable<LopHoc>> GetAvailableClassesAsync(DateOnly date);
         Task<LopHoc?> GetWithLichLopsAsync(int lopHocId);
         Task<IEnumerable<LopHoc>> GetClassesWithAvailableSlotsAsync();
+        Task<IEnumerable<LopHoc>> GetClassesByTrainerAsync(int trainerId);
     }
 }

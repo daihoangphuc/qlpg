@@ -34,6 +34,9 @@ namespace GymManagement.Web.Data
             _context = context;
         }
 
+        // DbContext access
+        public GymDbContext Context => _context;
+
         // Repository properties
         public INguoiDungRepository NguoiDungs => 
             _nguoiDungs ??= new NguoiDungRepository(_context);

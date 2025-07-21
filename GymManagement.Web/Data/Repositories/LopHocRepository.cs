@@ -60,5 +60,13 @@ namespace GymManagement.Web.Data.Repositories
                 .Where(x => x.DangKys.Count(d => d.TrangThai == "ACTIVE") < x.SucChua)
                 .ToListAsync();
         }
+
+        public async Task<IEnumerable<LopHoc>> GetClassesByTrainerAsync(int trainerId)
+        {
+            return await _dbSet
+                .Where(x => x.HlvId == trainerId)
+                .Include(x => x.Hlv)
+                .ToListAsync();
+        }
     }
 }

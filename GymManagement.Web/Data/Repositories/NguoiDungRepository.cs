@@ -49,6 +49,20 @@ namespace GymManagement.Web.Data.Repositories
                 .ToListAsync();
         }
 
+        public async Task<IEnumerable<NguoiDung>> GetMembersAsync()
+        {
+            return await _dbSet
+                .Where(x => x.LoaiNguoiDung == "THANHVIEN" && x.TrangThai == "ACTIVE")
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<NguoiDung>> GetTrainersAsync()
+        {
+            return await _dbSet
+                .Where(x => x.LoaiNguoiDung == "HLV" && x.TrangThai == "ACTIVE")
+                .ToListAsync();
+        }
+
         public async Task<NguoiDung?> GetWithTaiKhoanAsync(int nguoiDungId)
         {
             return await _dbSet

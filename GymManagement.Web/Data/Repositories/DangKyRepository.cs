@@ -26,7 +26,7 @@ namespace GymManagement.Web.Data.Repositories
                 .Include(d => d.NguoiDung)
                 .Include(d => d.GoiTap)
                 .Include(d => d.LopHoc)
-                .Where(d => d.TrangThai == "ACTIVE" && d.NgayKetThuc >= DateTime.Today)
+                .Where(d => d.TrangThai == "ACTIVE" && d.NgayKetThuc >= DateOnly.FromDateTime(DateTime.Today))
                 .ToListAsync();
         }
 
@@ -36,7 +36,7 @@ namespace GymManagement.Web.Data.Repositories
                 .Include(d => d.NguoiDung)
                 .Include(d => d.GoiTap)
                 .Include(d => d.LopHoc)
-                .Where(d => d.TrangThai == "ACTIVE" && d.NgayKetThuc < DateTime.Today)
+                .Where(d => d.TrangThai == "ACTIVE" && d.NgayKetThuc < DateOnly.FromDateTime(DateTime.Today))
                 .ToListAsync();
         }
 
@@ -51,7 +51,7 @@ namespace GymManagement.Web.Data.Repositories
                     d.GoiTapId == goiTapId &&
                     d.LopHocId == lopHocId &&
                     d.TrangThai == "ACTIVE" &&
-                    d.NgayKetThuc >= DateTime.Today);
+                    d.NgayKetThuc >= DateOnly.FromDateTime(DateTime.Today));
         }
 
         public async Task<bool> HasActiveRegistrationAsync(int nguoiDungId, int? goiTapId, int? lopHocId)
@@ -62,7 +62,7 @@ namespace GymManagement.Web.Data.Repositories
                     d.GoiTapId == goiTapId &&
                     d.LopHocId == lopHocId &&
                     d.TrangThai == "ACTIVE" &&
-                    d.NgayKetThuc >= DateTime.Today);
+                    d.NgayKetThuc >= DateOnly.FromDateTime(DateTime.Today));
         }
 
         public async Task<IEnumerable<DangKy>> GetRegistrationsByDateRangeAsync(DateTime startDate, DateTime endDate)
@@ -79,7 +79,7 @@ namespace GymManagement.Web.Data.Repositories
         public async Task<int> CountActiveRegistrationsAsync()
         {
             return await _context.DangKys
-                .CountAsync(d => d.TrangThai == "ACTIVE" && d.NgayKetThuc >= DateTime.Today);
+                .CountAsync(d => d.TrangThai == "ACTIVE" && d.NgayKetThuc >= DateOnly.FromDateTime(DateTime.Today));
         }
     }
 }

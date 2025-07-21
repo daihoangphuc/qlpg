@@ -10,6 +10,8 @@ namespace GymManagement.Web.Data.Repositories
         Task<IEnumerable<NguoiDung>> GetActiveUsersAsync();
         Task<IEnumerable<NguoiDung>> GetHuanLuyenViensAsync();
         Task<IEnumerable<NguoiDung>> GetThanhViensAsync();
+        Task<IEnumerable<NguoiDung>> GetMembersAsync();
+        Task<IEnumerable<NguoiDung>> GetTrainersAsync();
         Task<NguoiDung?> GetWithTaiKhoanAsync(int nguoiDungId);
     }
 }
