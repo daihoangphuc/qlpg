@@ -5,7 +5,7 @@ namespace GymManagement.Web.Data.Repositories
 {
     public class GoiTapRepository : Repository<GoiTap>, IGoiTapRepository
     {
-        public GoiTapRepository(GymDbContext context) : base(context)
+        public GoiTapRepository(ApplicationDbContext context) : base(context)
         {
         }
 
