@@ -1,0 +1,144 @@
+@model GymManagement.Web.Models.DTOs.RegisterDto
+@{
+    ViewData["Title"] = "Đăng ký";
+    Layout = "_Layout";
+}
+
+<div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full space-y-8">
+        <div>
+            <div class="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-green-100">
+                <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
+                </svg>
+            </div>
+            <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                Đăng ký tài khoản mới
+            </h2>
+            <p class="mt-2 text-center text-sm text-gray-600">
+                Hoặc
+                <a asp-action="Login" class="font-medium text-indigo-600 hover:text-indigo-500">
+                    đăng nhập vào tài khoản có sẵn
+                </a>
+            </p>
+        </div>
+
+        <form class="mt-8 space-y-6" asp-action="Register" method="post">
+            <div asp-validation-summary="All" class="text-red-600 text-sm"></div>
+
+            <div class="space-y-4">
+                <!-- Username -->
+                <div>
+                    <label asp-for="UserName" class="block text-sm font-medium text-gray-700">Tên đăng nhập</label>
+                    <input asp-for="UserName" 
+                           class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" 
+                           placeholder="Nhập tên đăng nhập" />
+                    <span asp-validation-for="UserName" class="text-red-600 text-sm"></span>
+                </div>
+
+                <!-- Email -->
+                <div>
+                    <label asp-for="Email" class="block text-sm font-medium text-gray-700">Email</label>
+                    <input asp-for="Email" 
+                           class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" 
+                           placeholder="Nhập email" />
+                    <span asp-validation-for="Email" class="text-red-600 text-sm"></span>
+                </div>
+
+                <!-- Password -->
+                <div>
+                    <label asp-for="Password" class="block text-sm font-medium text-gray-700">Mật khẩu</label>
+                    <input asp-for="Password" 
+                           class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" 
+                           placeholder="Nhập mật khẩu" />
+                    <span asp-validation-for="Password" class="text-red-600 text-sm"></span>
+                </div>
+
+                <!-- Confirm Password -->
+                <div>
+                    <label asp-for="ConfirmPassword" class="block text-sm font-medium text-gray-700">Xác nhận mật khẩu</label>
+                    <input asp-for="ConfirmPassword" 
+                           class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" 
+                           placeholder="Nhập lại mật khẩu" />
+                    <span asp-validation-for="ConfirmPassword" class="text-red-600 text-sm"></span>
+                </div>
+
+                <!-- Ho -->
+                <div>
+                    <label asp-for="Ho" class="block text-sm font-medium text-gray-700">Họ</label>
+                    <input asp-for="Ho" 
+                           class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" 
+                           placeholder="Nhập họ" />
+                    <span asp-validation-for="Ho" class="text-red-600 text-sm"></span>
+                </div>
+
+                <!-- Ten -->
+                <div>
+                    <label asp-for="Ten" class="block text-sm font-medium text-gray-700">Tên</label>
+                    <input asp-for="Ten" 
+                           class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" 
+                           placeholder="Nhập tên" />
+                    <span asp-validation-for="Ten" class="text-red-600 text-sm"></span>
+                </div>
+
+                <!-- Phone Number -->
+                <div>
+                    <label asp-for="PhoneNumber" class="block text-sm font-medium text-gray-700">Số điện thoại</label>
+                    <input asp-for="PhoneNumber" 
+                           class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" 
+                           placeholder="Nhập số điện thoại" />
+                    <span asp-validation-for="PhoneNumber" class="text-red-600 text-sm"></span>
+                </div>
+
+                <!-- Gender -->
+                <div>
+                    <label asp-for="GioiTinh" class="block text-sm font-medium text-gray-700">Giới tính</label>
+                    <select asp-for="GioiTinh" 
+                            class="mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        <option value="">Chọn giới tính</option>
+                        <option value="Nam">Nam</option>
+                        <option value="Nữ">Nữ</option>
+                        <option value="Khác">Khác</option>
+                    </select>
+                    <span asp-validation-for="GioiTinh" class="text-red-600 text-sm"></span>
+                </div>
+
+                <!-- Birth Date -->
+                <div>
+                    <label asp-for="NgaySinh" class="block text-sm font-medium text-gray-700">Ngày sinh</label>
+                    <input asp-for="NgaySinh" 
+                           class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+                    <span asp-validation-for="NgaySinh" class="text-red-600 text-sm"></span>
+                </div>
+
+                <!-- User Type -->
+                <div>
+                    <label asp-for="LoaiNguoiDung" class="block text-sm font-medium text-gray-700">Loại tài khoản</label>
+                    <select asp-for="LoaiNguoiDung" 
+                            class="mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        <option value="THANHVIEN">Thành viên</option>
+                        <option value="HLV">Huấn luyện viên</option>
+                        <option value="VANGLAI">Khách vãng lai</option>
+                    </select>
+                    <span asp-validation-for="LoaiNguoiDung" class="text-red-600 text-sm"></span>
+                </div>
+            </div>
+
+            <div>
+                <button type="submit" 
+                        class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                    <span class="absolute left-0 inset-y-0 flex items-center pl-3">
+                        <svg class="h-5 w-5 text-green-500 group-hover:text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
+                        </svg>
+                    </span>
+                    Đăng ký
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -5,7 +5,7 @@ namespace GymManagement.Web.Data.Repositories
 {
     public class NguoiDungRepository : Repository<NguoiDung>, INguoiDungRepository
     {
-        public NguoiDungRepository(GymDbContext context) : base(context)
+        public NguoiDungRepository(ApplicationDbContext context) : base(context)
         {
         }
 

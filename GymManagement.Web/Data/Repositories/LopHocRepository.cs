@@ -5,7 +5,7 @@ namespace GymManagement.Web.Data.Repositories
 {
     public class LopHocRepository : Repository<LopHoc>, ILopHocRepository
     {
-        public LopHocRepository(GymDbContext context) : base(context)
+        public LopHocRepository(ApplicationDbContext context) : base(context)
         {
         }
 

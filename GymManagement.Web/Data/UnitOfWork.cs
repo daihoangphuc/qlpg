@@ -5,7 +5,7 @@ namespace GymManagement.Web.Data
 {
     public class UnitOfWork : IUnitOfWork
     {
-        private readonly GymDbContext _context;
+        private readonly ApplicationDbContext _context;
         private IDbContextTransaction? _transaction;
 
         // Repository instances
@@ -29,7 +29,7 @@ namespace GymManagement.Web.Data
         private IRepository<Models.ThongBao>? _thongBaos;
         private IRepository<Models.LichSuAnh>? _lichSuAnhs;
 
-        public UnitOfWork(GymDbContext context)
+        public UnitOfWork(ApplicationDbContext context)
         {
             _context = context;
         }
