@@ -95,7 +95,7 @@ public class HomeController : Controller
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error occurred while loading packages");
-            return View(new List<GoiTap>());
+            return View(new List<GoiTapDto>());
         }
     }
 
@@ -109,7 +109,7 @@ public class HomeController : Controller
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error occurred while loading classes");
-            return View(new List<LopHoc>());
+            return View(new List<LopHocDto>());
         }
     }
 

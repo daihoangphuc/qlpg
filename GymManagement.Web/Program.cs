@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Identity;
 using GymManagement.Web.Data.Models;
 using Serilog;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 // Configure Serilog
 Log.Logger = new LoggerConfiguration()
