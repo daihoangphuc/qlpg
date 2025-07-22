@@ -6,7 +6,7 @@ Hệ thống quản lý phòng gym hiện đại và chuyên nghiệp được x
 
 ### 👥 Quản lý người dùng
 - Đăng ký/đăng nhập với ASP.NET Core Identity
-- Phân quyền theo vai trò (Admin, Manager, Staff, Trainer, Member)
+- Phân quyền theo vai trò (Admin, Trainer, Member)
 - Quản lý thông tin cá nhân và avatar
 - Hệ thống thông báo tích hợp
 

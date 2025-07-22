@@ -9,67 +9,87 @@ build_property.EnforceExtendedAnalyzerRules =
 build_property._SupportedPlatformList = Linux,macOS,Windows
 build_property.RootNamespace = GymManagement.Web
 build_property.RootNamespace = GymManagement.Web
-build_property.ProjectDir = /mnt/persist/workspace/GymManagement.Web/
+build_property.ProjectDir = D:\DATN\HANG_REMOTE\qlpg\GymManagement.Web\
 build_property.EnableComHosting = 
 build_property.EnableGeneratedComInterfaceComImportInterop = 
 build_property.RazorLangVersion = 8.0
 build_property.SupportLocalizedComponentNames = 
 build_property.GenerateRazorMetadataSourceChecksumAttributes = 
-build_property.MSBuildProjectDirectory = /mnt/persist/workspace/GymManagement.Web
+build_property.MSBuildProjectDirectory = D:\DATN\HANG_REMOTE\qlpg\GymManagement.Web
 build_property._RazorSourceGeneratorDebug = 
 
-[/mnt/persist/workspace/GymManagement.Web/Views/Auth/Login.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3MvQXV0aC9Mb2dpbi5jc2h0bWw=
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/Auth/AccessDenied.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQXV0aFxBY2Nlc3NEZW5pZWQuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[/mnt/persist/workspace/GymManagement.Web/Views/Auth/Register.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3MvQXV0aC9SZWdpc3Rlci5jc2h0bWw=
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/Auth/ForgotPassword.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQXV0aFxGb3Jnb3RQYXNzd29yZC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[/mnt/persist/workspace/GymManagement.Web/Views/Home/Dashboard.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3MvSG9tZS9EYXNoYm9hcmQuY3NodG1s
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/Auth/Login.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQXV0aFxMb2dpbi5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[/mnt/persist/workspace/GymManagement.Web/Views/Home/Index.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3MvSG9tZS9JbmRleC5jc2h0bWw=
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/Auth/Register.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQXV0aFxSZWdpc3Rlci5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[/mnt/persist/workspace/GymManagement.Web/Views/Home/Landing.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3MvSG9tZS9MYW5kaW5nLmNzaHRtbA==
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/Home/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxJbmRleC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[/mnt/persist/workspace/GymManagement.Web/Views/Home/Privacy.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3MvSG9tZS9Qcml2YWN5LmNzaHRtbA==
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/Shared/Error.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXEVycm9yLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[/mnt/persist/workspace/GymManagement.Web/Views/NguoiDung/Index.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3MvTmd1b2lEdW5nL0luZGV4LmNzaHRtbA==
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/Shared/_AuthLayout.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9BdXRoTGF5b3V0LmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[/mnt/persist/workspace/GymManagement.Web/Views/Shared/Error.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3MvU2hhcmVkL0Vycm9yLmNzaHRtbA==
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/Shared/_LandingLayout.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9MYW5kaW5nTGF5b3V0LmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[/mnt/persist/workspace/GymManagement.Web/Views/Shared/_AuthLayout.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3MvU2hhcmVkL19BdXRoTGF5b3V0LmNzaHRtbA==
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/Shared/_ValidationScriptsPartial.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9WYWxpZGF0aW9uU2NyaXB0c1BhcnRpYWwuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[/mnt/persist/workspace/GymManagement.Web/Views/Shared/_LandingLayout.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3MvU2hhcmVkL19MYW5kaW5nTGF5b3V0LmNzaHRtbA==
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/_ViewImports.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcX1ZpZXdJbXBvcnRzLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[/mnt/persist/workspace/GymManagement.Web/Views/Shared/_ValidationScriptsPartial.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3MvU2hhcmVkL19WYWxpZGF0aW9uU2NyaXB0c1BhcnRpYWwuY3NodG1s
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/_ViewStart.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcX1ZpZXdTdGFydC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[/mnt/persist/workspace/GymManagement.Web/Views/_ViewImports.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3MvX1ZpZXdJbXBvcnRzLmNzaHRtbA==
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views_old/Account/Login.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3Nfb2xkXEFjY291bnRcTG9naW4uY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[/mnt/persist/workspace/GymManagement.Web/Views/_ViewStart.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3MvX1ZpZXdTdGFydC5jc2h0bWw=
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views_old/Home/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3Nfb2xkXEhvbWVcSW5kZXguY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[/mnt/persist/workspace/GymManagement.Web/Views/Shared/_Layout.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3MvU2hhcmVkL19MYXlvdXQuY3NodG1s
-build_metadata.AdditionalFiles.CssScope = b-gx1kphs8ri
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views_old/Shared/_Layout.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3Nfb2xkXFNoYXJlZFxfTGF5b3V0LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views_old/Shared/_LoginLayout.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3Nfb2xkXFNoYXJlZFxfTG9naW5MYXlvdXQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views_old/Shared/_Sidebar.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3Nfb2xkXFNoYXJlZFxfU2lkZWJhci5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views_old/_ViewImports.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3Nfb2xkXF9WaWV3SW1wb3J0cy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views_old/_ViewStart.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3Nfb2xkXF9WaWV3U3RhcnQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/Shared/_Layout.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9MYXlvdXQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = b-a0wry5c5g2

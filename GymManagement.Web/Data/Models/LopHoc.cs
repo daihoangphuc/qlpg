@@ -32,6 +32,11 @@ namespace GymManagement.Web.Data.Models
         [StringLength(20)]
         public string TrangThai { get; set; } = "OPEN";
 
+        [StringLength(500)]
+        public string? MoTa { get; set; }
+
+        public int? ThoiLuong { get; set; } // Thời lượng tính bằng phút
+
         // Navigation properties
         public virtual NguoiDung? Hlv { get; set; }
         public virtual ICollection<LichLop> LichLops { get; set; } = new List<LichLop>();

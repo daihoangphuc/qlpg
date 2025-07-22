@@ -1,0 +1,290 @@
+2025-07-22 21:47:29.900 +07:00 [INF] Executed DbCommand (17ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT 1
+2025-07-22 21:47:29.978 +07:00 [INF] Executed DbCommand (21ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+
+IF EXISTS
+    (SELECT *
+     FROM [sys].[objects] o
+     WHERE [o].[type] = 'U'
+     AND [o].[is_ms_shipped] = 0
+     AND NOT EXISTS (SELECT *
+         FROM [sys].[extended_properties] AS [ep]
+         WHERE [ep].[major_id] = [o].[object_id]
+             AND [ep].[minor_id] = 0
+             AND [ep].[class] = 1
+             AND [ep].[name] = N'microsoft_database_tools_support'
+    )
+)
+SELECT 1 ELSE SELECT 0
+2025-07-22 21:47:30.100 +07:00 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT CASE
+    WHEN EXISTS (
+        SELECT 1
+        FROM [VaiTro] AS [v]) THEN CAST(1 AS bit)
+    ELSE CAST(0 AS bit)
+END
+2025-07-22 21:47:30.115 +07:00 [INF] Starting web application
+2025-07-22 21:47:30.127 +07:00 [INF] User profile is available. Using 'C:\Users\ADMIN\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+2025-07-22 21:47:30.169 +07:00 [INF] Now listening on: http://localhost:5149
+2025-07-22 21:47:30.173 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-07-22 21:47:30.175 +07:00 [INF] Hosting environment: Development
+2025-07-22 21:47:30.178 +07:00 [INF] Content root path: D:\DATN\HANG_REMOTE\qlpg\GymManagement.Web
+2025-07-22 21:47:36.144 +07:00 [INF] Request starting HTTP/1.1 GET http://localhost:5149/ - null null
+2025-07-22 21:47:36.157 +07:00 [WRN] Failed to determine the https port for redirect.
+2025-07-22 21:47:36.226 +07:00 [INF] Executing endpoint 'GymManagement.Web.Controllers.HomeController.Index (GymManagement.Web)'
+2025-07-22 21:47:36.261 +07:00 [INF] Route matched with {action = "Index", controller = "Home"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] Index() on controller GymManagement.Web.Controllers.HomeController (GymManagement.Web).
+2025-07-22 21:47:36.347 +07:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [g].[GoiTapId], [g].[Gia], [g].[MoTa], [g].[SoBuoiToiDa], [g].[TenGoi], [g].[ThoiHanThang]
+FROM [GoiTaps] AS [g]
+2025-07-22 21:47:36.526 +07:00 [ERR] Failed executing DbCommand (7ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [l].[LopHocId], [l].[GiaTuyChinh], [l].[GioBatDau], [l].[GioKetThuc], [l].[HlvId], [l].[MoTa], [l].[SucChua], [l].[TenLop], [l].[ThoiLuong], [l].[ThuTrongTuan], [l].[TrangThai], [n].[NguoiDungId], [n].[AnhDaiDien], [n].[Email], [n].[GioiTinh], [n].[Ho], [n].[LoaiNguoiDung], [n].[NgaySinh], [n].[NgayTao], [n].[NgayThamGia], [n].[SoDienThoai], [n].[Ten], [n].[TrangThai]
+FROM [LopHocs] AS [l]
+LEFT JOIN [NguoiDungs] AS [n] ON [l].[HlvId] = [n].[NguoiDungId]
+WHERE [l].[TrangThai] = N'OPEN'
+2025-07-22 21:47:36.551 +07:00 [ERR] An exception occurred while iterating over the results of a query for context type 'GymManagement.Web.Data.GymDbContext'.
+Microsoft.Data.SqlClient.SqlException (0x80131904): Invalid column name 'MoTa'.
+Invalid column name 'ThoiLuong'.
+   at Microsoft.Data.SqlClient.SqlCommand.<>c.<ExecuteDbDataReaderAsync>b__209_0(Task`1 result)
+   at System.Threading.Tasks.ContinuationResultTaskFromResultTask`2.InnerInvoke()
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+ClientConnectionId:54d8e1f1-c592-42dc-ac68-98f42aa96fbc
+Error Number:207,State:1,Class:16
+Microsoft.Data.SqlClient.SqlException (0x80131904): Invalid column name 'MoTa'.
+Invalid column name 'ThoiLuong'.
+   at Microsoft.Data.SqlClient.SqlCommand.<>c.<ExecuteDbDataReaderAsync>b__209_0(Task`1 result)
+   at System.Threading.Tasks.ContinuationResultTaskFromResultTask`2.InnerInvoke()
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+ClientConnectionId:54d8e1f1-c592-42dc-ac68-98f42aa96fbc
+Error Number:207,State:1,Class:16
+2025-07-22 21:47:36.572 +07:00 [ERR] Error occurred while loading home page
+Microsoft.Data.SqlClient.SqlException (0x80131904): Invalid column name 'MoTa'.
+Invalid column name 'ThoiLuong'.
+   at Microsoft.Data.SqlClient.SqlCommand.<>c.<ExecuteDbDataReaderAsync>b__209_0(Task`1 result)
+   at System.Threading.Tasks.ContinuationResultTaskFromResultTask`2.InnerInvoke()
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+   at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
+   at GymManagement.Web.Data.Repositories.LopHocRepository.GetActiveClassesAsync() in D:\DATN\HANG_REMOTE\qlpg\GymManagement.Web\Data\Repositories\LopHocRepository.cs:line 14
+   at GymManagement.Web.Services.LopHocService.GetActiveClassesAsync() in D:\DATN\HANG_REMOTE\qlpg\GymManagement.Web\Services\LopHocService.cs:line 88
+   at GymManagement.Web.Controllers.HomeController.Index() in D:\DATN\HANG_REMOTE\qlpg\GymManagement.Web\Controllers\HomeController.cs:line 53
+ClientConnectionId:54d8e1f1-c592-42dc-ac68-98f42aa96fbc
+Error Number:207,State:1,Class:16
+2025-07-22 21:47:36.681 +07:00 [INF] Executing ViewResult, running view Index.
+2025-07-22 21:47:36.781 +07:00 [INF] Executed ViewResult - view Index executed in 104.563ms.
+2025-07-22 21:47:36.788 +07:00 [INF] Executed action GymManagement.Web.Controllers.HomeController.Index (GymManagement.Web) in 520.9464ms
+2025-07-22 21:47:36.794 +07:00 [INF] Executed endpoint 'GymManagement.Web.Controllers.HomeController.Index (GymManagement.Web)'
+2025-07-22 21:47:36.809 +07:00 [INF] Request finished HTTP/1.1 GET http://localhost:5149/ - 200 null text/html; charset=utf-8 666.4321ms
+2025-07-22 21:47:36.861 +07:00 [INF] Request starting HTTP/1.1 GET http://localhost:5149/.well-known/appspecific/com.chrome.devtools.json - null null
+2025-07-22 21:47:36.877 +07:00 [INF] Request finished HTTP/1.1 GET http://localhost:5149/.well-known/appspecific/com.chrome.devtools.json - 404 0 null 16.2129ms
+2025-07-22 21:47:36.889 +07:00 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET http://localhost:5149/.well-known/appspecific/com.chrome.devtools.json, Response status code: 404
+2025-07-22 21:47:36.928 +07:00 [INF] Request starting HTTP/1.1 GET http://localhost:5149/css/site.css?v=IZ0M0_wM2Uhi7-ENWQ8Kv8mmXHQ3MTv13A9DrzRhDqk - null null
+2025-07-22 21:47:37.004 +07:00 [INF] Sending file. Request path: '/css/site.css'. Physical path: 'D:\DATN\HANG_REMOTE\qlpg\GymManagement.Web\wwwroot\css\site.css'
+2025-07-22 21:47:37.016 +07:00 [INF] Request finished HTTP/1.1 GET http://localhost:5149/css/site.css?v=IZ0M0_wM2Uhi7-ENWQ8Kv8mmXHQ3MTv13A9DrzRhDqk - 200 9833 text/css 87.4129ms
+2025-07-22 21:47:40.341 +07:00 [INF] Request starting HTTP/1.1 GET http://localhost:5149/favicon.ico - null null
+2025-07-22 21:47:40.352 +07:00 [INF] Sending file. Request path: '/favicon.ico'. Physical path: 'D:\DATN\HANG_REMOTE\qlpg\GymManagement.Web\wwwroot\favicon.ico'
+2025-07-22 21:47:40.356 +07:00 [INF] Request finished HTTP/1.1 GET http://localhost:5149/favicon.ico - 200 5430 image/x-icon 14.7985ms
+2025-07-22 21:47:52.820 +07:00 [INF] Application is shutting down...
+2025-07-22 21:47:55.360 +07:00 [INF] Executed DbCommand (20ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT 1
+2025-07-22 21:47:55.455 +07:00 [INF] Executed DbCommand (28ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+
+IF EXISTS
+    (SELECT *
+     FROM [sys].[objects] o
+     WHERE [o].[type] = 'U'
+     AND [o].[is_ms_shipped] = 0
+     AND NOT EXISTS (SELECT *
+         FROM [sys].[extended_properties] AS [ep]
+         WHERE [ep].[major_id] = [o].[object_id]
+             AND [ep].[minor_id] = 0
+             AND [ep].[class] = 1
+             AND [ep].[name] = N'microsoft_database_tools_support'
+    )
+)
+SELECT 1 ELSE SELECT 0
+2025-07-22 21:47:55.614 +07:00 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT CASE
+    WHEN EXISTS (
+        SELECT 1
+        FROM [VaiTro] AS [v]) THEN CAST(1 AS bit)
+    ELSE CAST(0 AS bit)
+END
+2025-07-22 21:47:55.634 +07:00 [INF] Starting web application
+2025-07-22 21:47:55.650 +07:00 [INF] User profile is available. Using 'C:\Users\ADMIN\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+2025-07-22 21:47:55.722 +07:00 [INF] Now listening on: http://localhost:5149
+2025-07-22 21:47:55.728 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-07-22 21:47:55.733 +07:00 [INF] Hosting environment: Development
+2025-07-22 21:47:55.739 +07:00 [INF] Content root path: D:\DATN\HANG_REMOTE\qlpg\GymManagement.Web
+2025-07-22 21:48:00.148 +07:00 [INF] Request starting HTTP/1.1 GET http://localhost:5149/ - null null
+2025-07-22 21:48:00.164 +07:00 [WRN] Failed to determine the https port for redirect.
+2025-07-22 21:48:00.256 +07:00 [INF] Executing endpoint 'GymManagement.Web.Controllers.HomeController.Index (GymManagement.Web)'
+2025-07-22 21:48:00.290 +07:00 [INF] Route matched with {action = "Index", controller = "Home"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] Index() on controller GymManagement.Web.Controllers.HomeController (GymManagement.Web).
+2025-07-22 21:48:00.388 +07:00 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [g].[GoiTapId], [g].[Gia], [g].[MoTa], [g].[SoBuoiToiDa], [g].[TenGoi], [g].[ThoiHanThang]
+FROM [GoiTaps] AS [g]
+2025-07-22 21:48:00.544 +07:00 [ERR] Failed executing DbCommand (5ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [l].[LopHocId], [l].[GiaTuyChinh], [l].[GioBatDau], [l].[GioKetThuc], [l].[HlvId], [l].[MoTa], [l].[SucChua], [l].[TenLop], [l].[ThoiLuong], [l].[ThuTrongTuan], [l].[TrangThai], [n].[NguoiDungId], [n].[AnhDaiDien], [n].[Email], [n].[GioiTinh], [n].[Ho], [n].[LoaiNguoiDung], [n].[NgaySinh], [n].[NgayTao], [n].[NgayThamGia], [n].[SoDienThoai], [n].[Ten], [n].[TrangThai]
+FROM [LopHocs] AS [l]
+LEFT JOIN [NguoiDungs] AS [n] ON [l].[HlvId] = [n].[NguoiDungId]
+WHERE [l].[TrangThai] = N'OPEN'
+2025-07-22 21:48:00.566 +07:00 [ERR] An exception occurred while iterating over the results of a query for context type 'GymManagement.Web.Data.GymDbContext'.
+Microsoft.Data.SqlClient.SqlException (0x80131904): Invalid column name 'MoTa'.
+Invalid column name 'ThoiLuong'.
+   at Microsoft.Data.SqlClient.SqlCommand.<>c.<ExecuteDbDataReaderAsync>b__209_0(Task`1 result)
+   at System.Threading.Tasks.ContinuationResultTaskFromResultTask`2.InnerInvoke()
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+ClientConnectionId:8d9b2a98-a436-4852-be08-e02776236671
+Error Number:207,State:1,Class:16
+Microsoft.Data.SqlClient.SqlException (0x80131904): Invalid column name 'MoTa'.
+Invalid column name 'ThoiLuong'.
+   at Microsoft.Data.SqlClient.SqlCommand.<>c.<ExecuteDbDataReaderAsync>b__209_0(Task`1 result)
+   at System.Threading.Tasks.ContinuationResultTaskFromResultTask`2.InnerInvoke()
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+ClientConnectionId:8d9b2a98-a436-4852-be08-e02776236671
+Error Number:207,State:1,Class:16
+2025-07-22 21:48:00.581 +07:00 [ERR] Error occurred while loading home page
+Microsoft.Data.SqlClient.SqlException (0x80131904): Invalid column name 'MoTa'.
+Invalid column name 'ThoiLuong'.
+   at Microsoft.Data.SqlClient.SqlCommand.<>c.<ExecuteDbDataReaderAsync>b__209_0(Task`1 result)
+   at System.Threading.Tasks.ContinuationResultTaskFromResultTask`2.InnerInvoke()
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+   at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
+   at GymManagement.Web.Data.Repositories.LopHocRepository.GetActiveClassesAsync() in D:\DATN\HANG_REMOTE\qlpg\GymManagement.Web\Data\Repositories\LopHocRepository.cs:line 14
+   at GymManagement.Web.Services.LopHocService.GetActiveClassesAsync() in D:\DATN\HANG_REMOTE\qlpg\GymManagement.Web\Services\LopHocService.cs:line 88
+   at GymManagement.Web.Controllers.HomeController.Index() in D:\DATN\HANG_REMOTE\qlpg\GymManagement.Web\Controllers\HomeController.cs:line 53
+ClientConnectionId:8d9b2a98-a436-4852-be08-e02776236671
+Error Number:207,State:1,Class:16
+2025-07-22 21:48:00.643 +07:00 [INF] Executing ViewResult, running view Index.
+2025-07-22 21:48:00.725 +07:00 [INF] Executed ViewResult - view Index executed in 82.9886ms.
+2025-07-22 21:48:00.733 +07:00 [INF] Executed action GymManagement.Web.Controllers.HomeController.Index (GymManagement.Web) in 434.6504ms
+2025-07-22 21:48:00.739 +07:00 [INF] Executed endpoint 'GymManagement.Web.Controllers.HomeController.Index (GymManagement.Web)'
+2025-07-22 21:48:00.752 +07:00 [INF] Request finished HTTP/1.1 GET http://localhost:5149/ - 200 null text/html; charset=utf-8 605.0245ms
+2025-07-22 21:48:00.798 +07:00 [INF] Request starting HTTP/1.1 GET http://localhost:5149/.well-known/appspecific/com.chrome.devtools.json - null null
+2025-07-22 21:48:00.814 +07:00 [INF] Request finished HTTP/1.1 GET http://localhost:5149/.well-known/appspecific/com.chrome.devtools.json - 404 0 null 15.5346ms
+2025-07-22 21:48:00.825 +07:00 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET http://localhost:5149/.well-known/appspecific/com.chrome.devtools.json, Response status code: 404
+2025-07-22 21:48:43.459 +07:00 [INF] Request starting HTTP/1.1 GET http://localhost:5149/ - null null
+2025-07-22 21:48:43.471 +07:00 [INF] Executing endpoint 'GymManagement.Web.Controllers.HomeController.Index (GymManagement.Web)'
+2025-07-22 21:48:43.476 +07:00 [INF] Route matched with {action = "Index", controller = "Home"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] Index() on controller GymManagement.Web.Controllers.HomeController (GymManagement.Web).
+2025-07-22 21:48:43.563 +07:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [g].[GoiTapId], [g].[Gia], [g].[MoTa], [g].[SoBuoiToiDa], [g].[TenGoi], [g].[ThoiHanThang]
+FROM [GoiTaps] AS [g]
+2025-07-22 21:48:43.576 +07:00 [ERR] Failed executing DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [l].[LopHocId], [l].[GiaTuyChinh], [l].[GioBatDau], [l].[GioKetThuc], [l].[HlvId], [l].[MoTa], [l].[SucChua], [l].[TenLop], [l].[ThoiLuong], [l].[ThuTrongTuan], [l].[TrangThai], [n].[NguoiDungId], [n].[AnhDaiDien], [n].[Email], [n].[GioiTinh], [n].[Ho], [n].[LoaiNguoiDung], [n].[NgaySinh], [n].[NgayTao], [n].[NgayThamGia], [n].[SoDienThoai], [n].[Ten], [n].[TrangThai]
+FROM [LopHocs] AS [l]
+LEFT JOIN [NguoiDungs] AS [n] ON [l].[HlvId] = [n].[NguoiDungId]
+WHERE [l].[TrangThai] = N'OPEN'
+2025-07-22 21:48:43.587 +07:00 [ERR] An exception occurred while iterating over the results of a query for context type 'GymManagement.Web.Data.GymDbContext'.
+Microsoft.Data.SqlClient.SqlException (0x80131904): Invalid column name 'MoTa'.
+Invalid column name 'ThoiLuong'.
+   at Microsoft.Data.SqlClient.SqlCommand.<>c.<ExecuteDbDataReaderAsync>b__209_0(Task`1 result)
+   at System.Threading.Tasks.ContinuationResultTaskFromResultTask`2.InnerInvoke()
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+ClientConnectionId:8d9b2a98-a436-4852-be08-e02776236671
+Error Number:207,State:1,Class:16
+Microsoft.Data.SqlClient.SqlException (0x80131904): Invalid column name 'MoTa'.
+Invalid column name 'ThoiLuong'.
+   at Microsoft.Data.SqlClient.SqlCommand.<>c.<ExecuteDbDataReaderAsync>b__209_0(Task`1 result)
+   at System.Threading.Tasks.ContinuationResultTaskFromResultTask`2.InnerInvoke()
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+ClientConnectionId:8d9b2a98-a436-4852-be08-e02776236671
+Error Number:207,State:1,Class:16
+2025-07-22 21:48:43.604 +07:00 [ERR] Error occurred while loading home page
+Microsoft.Data.SqlClient.SqlException (0x80131904): Invalid column name 'MoTa'.
+Invalid column name 'ThoiLuong'.
+   at Microsoft.Data.SqlClient.SqlCommand.<>c.<ExecuteDbDataReaderAsync>b__209_0(Task`1 result)
+   at System.Threading.Tasks.ContinuationResultTaskFromResultTask`2.InnerInvoke()
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+   at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
+   at GymManagement.Web.Data.Repositories.LopHocRepository.GetActiveClassesAsync() in D:\DATN\HANG_REMOTE\qlpg\GymManagement.Web\Data\Repositories\LopHocRepository.cs:line 14
+   at GymManagement.Web.Services.LopHocService.GetActiveClassesAsync() in D:\DATN\HANG_REMOTE\qlpg\GymManagement.Web\Services\LopHocService.cs:line 88
+   at GymManagement.Web.Controllers.HomeController.Index() in D:\DATN\HANG_REMOTE\qlpg\GymManagement.Web\Controllers\HomeController.cs:line 53
+ClientConnectionId:8d9b2a98-a436-4852-be08-e02776236671
+Error Number:207,State:1,Class:16
+2025-07-22 21:48:43.634 +07:00 [INF] Executing ViewResult, running view Index.
+2025-07-22 21:48:43.642 +07:00 [INF] Executed ViewResult - view Index executed in 8.8077ms.
+2025-07-22 21:48:43.645 +07:00 [INF] Executed action GymManagement.Web.Controllers.HomeController.Index (GymManagement.Web) in 163.9064ms
+2025-07-22 21:48:43.648 +07:00 [INF] Executed endpoint 'GymManagement.Web.Controllers.HomeController.Index (GymManagement.Web)'
+2025-07-22 21:48:43.656 +07:00 [INF] Request finished HTTP/1.1 GET http://localhost:5149/ - 200 null text/html; charset=utf-8 197.5385ms

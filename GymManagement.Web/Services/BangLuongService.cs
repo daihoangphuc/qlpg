@@ -127,15 +127,15 @@ namespace GymManagement.Web.Services
             var bangLuong = await _bangLuongRepository.GetByIdAsync(bangLuongId);
             if (bangLuong == null || bangLuong.NgayThanhToan != null) return false;
 
-            bangLuong.NgayThanhToan = DateTime.Today;
+            bangLuong.NgayThanhToan = DateOnly.FromDateTime(DateTime.Today);
             await _unitOfWork.SaveChangesAsync();
 
             // Send notifications
-            var trainer = await _nguoiDungRepository.GetByIdAsync(bangLuong.HlvId);
+            var trainer = await _nguoiDungRepository.GetByIdAsync(bangLuong.HlvId ?? 0);
             if (trainer != null)
             {
                 await _thongBaoService.CreateNotificationAsync(
-                    bangLuong.HlvId,
+                    bangLuong.HlvId ?? 0,
                     "Đã thanh toán lương",
                     $"Lương tháng {bangLuong.Thang} đã được thanh toán: {bangLuong.TongThanhToan:N0} VNĐ",
                     "APP"
@@ -224,12 +224,15 @@ namespace GymManagement.Web.Services
             }
 
             // Calculate commission from personal training sessions
+            var monthStartDateOnly = DateOnly.FromDateTime(monthStart);
+            var monthEndDateOnly = DateOnly.FromDateTime(monthEnd);
+
             var personalSessions = await _unitOfWork.Context.BuoiHlvs
-                .Where(b => b.HlvId == hlvId && b.NgayTap >= monthStart && b.NgayTap <= monthEnd)
+                .Where(b => b.HlvId == hlvId && b.NgayTap >= monthStartDateOnly && b.NgayTap <= monthEndDateOnly)
                 .ToListAsync();
 
             // Assume 100,000 VND commission per personal training session
-            totalCommission += personalSessions.Count * 100000;
+            totalCommission += personalSessions.Count() * 100000;
 
             return totalCommission;
         }

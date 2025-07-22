@@ -1,19 +1,22 @@
 using Microsoft.EntityFrameworkCore;
 using GymManagement.Web.Data.Models;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 
 namespace GymManagement.Web.Data
 {
-    public class GymDbContext : IdentityDbContext<TaiKhoan, VaiTro, int>
+    public class GymDbContext : DbContext
     {
         public GymDbContext(DbContextOptions<GymDbContext> options) : base(options)
         {
         }
 
-        // Bảo mật
-        public DbSet<VaiTro> VaiTros { get; set; }
-        public DbSet<NguoiDung> NguoiDungs { get; set; }
+        // Authentication
         public DbSet<TaiKhoan> TaiKhoans { get; set; }
+        public DbSet<VaiTro> VaiTros { get; set; }
+        public DbSet<TaiKhoanVaiTro> TaiKhoanVaiTros { get; set; }
+        public DbSet<ExternalLogin> ExternalLogins { get; set; }
+
+        // User Management
+        public DbSet<NguoiDung> NguoiDungs { get; set; }
 
         // Sản phẩm - Khuyến mãi
         public DbSet<GoiTap> GoiTaps { get; set; }
@@ -47,24 +50,73 @@ namespace GymManagement.Web.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            // Rename Identity tables to match our schema
+            // Configure Authentication tables
             modelBuilder.Entity<TaiKhoan>().ToTable("TaiKhoan");
             modelBuilder.Entity<VaiTro>().ToTable("VaiTro");
-            modelBuilder.Entity<Microsoft.AspNetCore.Identity.IdentityUserClaim<int>>().ToTable("TaiKhoanClaims");
-            modelBuilder.Entity<Microsoft.AspNetCore.Identity.IdentityUserLogin<int>>().ToTable("TaiKhoanLogins");
-            modelBuilder.Entity<Microsoft.AspNetCore.Identity.IdentityUserToken<int>>().ToTable("TaiKhoanTokens");
-            modelBuilder.Entity<Microsoft.AspNetCore.Identity.IdentityUserRole<int>>().ToTable("TaiKhoanVaiTros");
-            modelBuilder.Entity<Microsoft.AspNetCore.Identity.IdentityRoleClaim<int>>().ToTable("VaiTroClaims");
+            modelBuilder.Entity<TaiKhoanVaiTro>().ToTable("TaiKhoanVaiTros");
+            modelBuilder.Entity<ExternalLogin>().ToTable("ExternalLogins");
+
+            // Cấu hình bảng TaiKhoan
+            modelBuilder.Entity<TaiKhoan>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.TenDangNhap).HasMaxLength(100).IsRequired();
+                entity.Property(e => e.Email).HasMaxLength(256).IsRequired();
+                entity.Property(e => e.MatKhauHash).IsRequired();
+                entity.Property(e => e.Salt).IsRequired();
+                entity.HasIndex(e => e.TenDangNhap).IsUnique();
+                entity.HasIndex(e => e.Email).IsUnique();
+                entity.Property(e => e.KichHoat).HasDefaultValue(true);
+                entity.Property(e => e.NgayTao).HasDefaultValueSql("GETUTCDATE()");
+            });
 
             // Cấu hình bảng VaiTro
             modelBuilder.Entity<VaiTro>(entity =>
             {
-                entity.Property(e => e.Id).HasColumnName("VaiTroId");
-                entity.Property(e => e.Name).HasColumnName("TenVaiTro").HasMaxLength(50).IsRequired();
-                entity.Property(e => e.TenVaiTro).HasMaxLength(50).IsRequired();
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.TenVaiTro).HasMaxLength(100).IsRequired();
                 entity.HasIndex(e => e.TenVaiTro).IsUnique();
-                entity.Property(e => e.MoTa).HasMaxLength(200);
+                entity.Property(e => e.MoTa).HasMaxLength(500);
+                entity.Property(e => e.NgayTao).HasDefaultValueSql("GETUTCDATE()");
             });
+
+            // Cấu hình bảng TaiKhoanVaiTro
+            modelBuilder.Entity<TaiKhoanVaiTro>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.HasIndex(e => new { e.TaiKhoanId, e.VaiTroId }).IsUnique();
+                entity.HasOne(e => e.TaiKhoan)
+                    .WithMany(e => e.TaiKhoanVaiTros)
+                    .HasForeignKey(e => e.TaiKhoanId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(e => e.VaiTro)
+                    .WithMany(e => e.TaiKhoanVaiTros)
+                    .HasForeignKey(e => e.VaiTroId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                entity.Property(e => e.NgayGan).HasDefaultValueSql("GETUTCDATE()");
+            });
+
+            // Cấu hình bảng ExternalLogin
+            modelBuilder.Entity<ExternalLogin>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.HasIndex(e => new { e.Provider, e.ProviderKey }).IsUnique();
+                entity.Property(e => e.Provider).HasMaxLength(100).IsRequired();
+                entity.Property(e => e.ProviderKey).HasMaxLength(200).IsRequired();
+                entity.Property(e => e.ProviderDisplayName).HasMaxLength(200);
+                entity.HasOne(e => e.TaiKhoan)
+                    .WithMany(e => e.ExternalLogins)
+                    .HasForeignKey(e => e.TaiKhoanId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                entity.Property(e => e.NgayTao).HasDefaultValueSql("GETUTCDATE()");
+            });
+
+            // Configure relationship between TaiKhoan and NguoiDung
+            modelBuilder.Entity<TaiKhoan>()
+                .HasOne(t => t.NguoiDung)
+                .WithOne(n => n.TaiKhoan)
+                .HasForeignKey<TaiKhoan>(t => t.NguoiDungId)
+                .OnDelete(DeleteBehavior.SetNull);
 
             // Cấu hình bảng NguoiDung
             modelBuilder.Entity<NguoiDung>(entity =>
@@ -81,24 +133,7 @@ namespace GymManagement.Web.Data
                 entity.Property(e => e.TrangThai).HasMaxLength(20).HasDefaultValue("ACTIVE");
             });
 
-            // Cấu hình bảng TaiKhoan
-            modelBuilder.Entity<TaiKhoan>(entity =>
-            {
-                entity.Property(e => e.Id).HasColumnName("TaiKhoanId");
-                entity.Property(e => e.UserName).HasColumnName("TenDangNhap").HasMaxLength(50).IsRequired();
-                entity.Property(e => e.TenDangNhap).HasMaxLength(50);
-                entity.Property(e => e.KichHoat).HasDefaultValue(true);
-                entity.Property(e => e.NgayTao).HasDefaultValueSql("GETDATE()");
 
-                entity.HasOne(d => d.VaiTro)
-                    .WithMany(p => p.TaiKhoans)
-                    .HasForeignKey(d => d.VaiTroId);
-
-                entity.HasOne(d => d.NguoiDung)
-                    .WithMany()
-                    .HasForeignKey(d => d.NguoiDungId)
-                    .OnDelete(DeleteBehavior.SetNull);
-            });
 
             // Cấu hình bảng GoiTap
             modelBuilder.Entity<GoiTap>(entity =>
@@ -155,7 +190,7 @@ namespace GymManagement.Web.Data
                 entity.HasKey(e => e.DangKyId);
                 entity.Property(e => e.DangKyId).ValueGeneratedOnAdd();
                 entity.Property(e => e.TrangThai).HasMaxLength(20).HasDefaultValue("ACTIVE");
-                entity.Property(e => e.NgayTao).HasDefaultValueSql("datetime('now')");
+                entity.Property(e => e.NgayTao).HasDefaultValueSql("GETDATE()");
                 
                 entity.HasOne(d => d.NguoiDung)
                     .WithMany(p => p.DangKys)
@@ -177,7 +212,7 @@ namespace GymManagement.Web.Data
                 entity.HasKey(e => e.ThanhToanId);
                 entity.Property(e => e.ThanhToanId).ValueGeneratedOnAdd();
                 entity.Property(e => e.SoTien).HasColumnType("decimal(12,2)").IsRequired();
-                entity.Property(e => e.NgayThanhToan).HasDefaultValueSql("datetime('now')");
+                entity.Property(e => e.NgayThanhToan).HasDefaultValueSql("GETDATE()");
                 entity.Property(e => e.PhuongThuc).HasMaxLength(20);
                 entity.Property(e => e.TrangThai).HasMaxLength(20).HasDefaultValue("PENDING");
                 entity.Property(e => e.GhiChu).HasMaxLength(200);
@@ -267,7 +302,7 @@ namespace GymManagement.Web.Data
             {
                 entity.HasKey(e => e.MauMatId);
                 entity.Property(e => e.MauMatId).ValueGeneratedOnAdd();
-                entity.Property(e => e.NgayTao).HasDefaultValueSql("datetime('now')");
+                entity.Property(e => e.NgayTao).HasDefaultValueSql("GETDATE()");
                 entity.Property(e => e.ThuatToan).HasMaxLength(50).HasDefaultValue("ArcFace");
                 
                 entity.HasOne(d => d.NguoiDung)
@@ -281,7 +316,7 @@ namespace GymManagement.Web.Data
             {
                 entity.HasKey(e => e.DiemDanhId);
                 entity.Property(e => e.DiemDanhId).ValueGeneratedOnAdd();
-                entity.Property(e => e.ThoiGian).HasDefaultValueSql("datetime('now')");
+                entity.Property(e => e.ThoiGian).HasDefaultValueSql("GETDATE()");
                 entity.Property(e => e.AnhMinhChung).HasMaxLength(255);
                 
                 entity.HasOne(d => d.ThanhVien)
@@ -321,7 +356,7 @@ namespace GymManagement.Web.Data
                 entity.Property(e => e.ThongBaoId).ValueGeneratedOnAdd();
                 entity.Property(e => e.TieuDe).HasMaxLength(100);
                 entity.Property(e => e.NoiDung).HasMaxLength(1000);
-                entity.Property(e => e.NgayTao).HasDefaultValueSql("datetime('now')");
+                entity.Property(e => e.NgayTao).HasDefaultValueSql("GETDATE()");
                 entity.Property(e => e.Kenh).HasMaxLength(10);
                 entity.Property(e => e.DaDoc).HasDefaultValue(false);
                 
@@ -337,7 +372,7 @@ namespace GymManagement.Web.Data
                 entity.Property(e => e.LichSuAnhId).ValueGeneratedOnAdd();
                 entity.Property(e => e.AnhCu).HasMaxLength(255);
                 entity.Property(e => e.AnhMoi).HasMaxLength(255);
-                entity.Property(e => e.NgayCapNhat).HasDefaultValueSql("datetime('now')");
+                entity.Property(e => e.NgayCapNhat).HasDefaultValueSql("GETDATE()");
                 entity.Property(e => e.LyDo).HasMaxLength(200);
                 
                 entity.HasOne(d => d.NguoiDung)

@@ -147,7 +147,7 @@ namespace GymManagement.Web.Controllers
             return View();
         }
 
-        [Authorize(Roles = "Admin,Manager")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Create()
         {
             await LoadSelectLists();
@@ -156,7 +156,7 @@ namespace GymManagement.Web.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin,Manager")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Create(DangKy dangKy)
         {
             try
@@ -221,7 +221,7 @@ namespace GymManagement.Web.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin,Manager")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Cancel(int id, string reason)
         {
             try

@@ -196,7 +196,9 @@ namespace GymManagement.Web.Services
                 SoDienThoai = nguoiDung.SoDienThoai,
                 Email = nguoiDung.Email,
                 NgayThamGia = nguoiDung.NgayThamGia,
-                TrangThai = nguoiDung.TrangThai
+                TrangThai = nguoiDung.TrangThai,
+                AnhDaiDien = nguoiDung.AnhDaiDien,
+                NgayTao = nguoiDung.NgayTao
             };
         }
 

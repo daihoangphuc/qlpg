@@ -39,7 +39,7 @@ namespace GymManagement.Web.Data.Models
         public DateTime NgayTao { get; set; } = DateTime.Now;
 
         // Navigation properties
-        public virtual ICollection<TaiKhoan> TaiKhoans { get; set; } = new List<TaiKhoan>();
+        public virtual TaiKhoan? TaiKhoan { get; set; }
         public virtual ICollection<LopHoc> LopHocs { get; set; } = new List<LopHoc>(); // HLV
         public virtual ICollection<DangKy> DangKys { get; set; } = new List<DangKy>();
         public virtual ICollection<Booking> Bookings { get; set; } = new List<Booking>();

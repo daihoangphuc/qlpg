@@ -29,7 +29,7 @@ namespace GymManagement.Web.Controllers
             {
                 _logger.LogError(ex, "Error occurred while getting packages");
                 TempData["ErrorMessage"] = "Có lỗi xảy ra khi tải danh sách gói tập.";
-                return View(new List<GoiTap>());
+                return View(new List<GoiTapDto>());
             }
         }
 
@@ -52,7 +52,7 @@ namespace GymManagement.Web.Controllers
             }
         }
 
-        [Authorize(Roles = "Admin,Manager")]
+        [Authorize(Roles = "Admin")]
         public IActionResult Create()
         {
             return View();
@@ -60,7 +60,7 @@ namespace GymManagement.Web.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin,Manager")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Create(CreateGoiTapDto createDto)
         {
             try
@@ -81,7 +81,7 @@ namespace GymManagement.Web.Controllers
             }
         }
 
-        [Authorize(Roles = "Admin,Manager")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Edit(int id)
         {
             try

@@ -21,6 +21,8 @@ namespace GymManagement.Web.Data.Models
         [StringLength(20)]
         public string TrangThai { get; set; } = "SCHEDULED"; // OPEN/CANCELED/FINISHED
 
+        public int SoLuongDaDat { get; set; } = 0;
+
         // Navigation properties
         public virtual LopHoc LopHoc { get; set; } = null!;
         public virtual ICollection<Booking> Bookings { get; set; } = new List<Booking>();

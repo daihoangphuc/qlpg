@@ -1,12 +1,12 @@
 using GymManagement.Web.Data.Models;
+using GymManagement.Web.Services;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Identity;
 
 namespace GymManagement.Web.Data
 {
     public static class DbInitializer
     {
-        public static async Task InitializeAsync(GymDbContext context, UserManager<TaiKhoan> userManager, RoleManager<VaiTro> roleManager)
+        public static async Task InitializeAsync(GymDbContext context, IAuthService authService)
         {
             // Ensure database is created
             await context.Database.EnsureCreatedAsync();
@@ -15,13 +15,11 @@ namespace GymManagement.Web.Data
             if (await context.VaiTros.AnyAsync())
                 return; // Database has been seeded
 
-            // Seed VaiTro (Identity Roles)
-            var roleNames = new[] { "Admin", "Manager", "Staff", "Trainer", "Member" };
+            // Seed VaiTro (Identity Roles) - Simplified to 3 roles
+            var roleNames = new[] { "Admin", "Trainer", "Member" };
             var roleDescriptions = new[]
             {
-                "Quản trị viên hệ thống",
-                "Quản lý phòng gym",
-                "Nhân viên",
+                "Quản trị viên hệ thống (bao gồm Manager và Staff)",
                 "Huấn luyện viên",
                 "Thành viên"
             };
@@ -31,17 +29,14 @@ namespace GymManagement.Web.Data
             {
                 var role = new VaiTro
                 {
-                    Name = roleNames[i],
                     TenVaiTro = roleNames[i],
                     MoTa = roleDescriptions[i]
                 };
 
-                var result = await roleManager.CreateAsync(role);
-                if (result.Succeeded)
-                {
-                    vaiTros.Add(role);
-                }
+                context.VaiTros.Add(role);
+                vaiTros.Add(role);
             }
+            await context.SaveChangesAsync();
 
             // Seed NguoiDung
             var nguoiDungs = new[]
@@ -215,18 +210,17 @@ namespace GymManagement.Web.Data
             {
                 var user = new TaiKhoan
                 {
-                    UserName = account.Username,
-                    Email = account.Email,
                     TenDangNhap = account.Username,
+                    Email = account.Email,
                     NguoiDungId = account.NguoiDungId,
                     KichHoat = true,
-                    EmailConfirmed = true
+                    EmailXacNhan = true
                 };
 
-                var result = await userManager.CreateAsync(user, account.Password);
-                if (result.Succeeded)
+                var result = await authService.CreateUserAsync(user, account.Password);
+                if (result)
                 {
-                    await userManager.AddToRoleAsync(user, account.Role);
+                    await authService.AssignRoleAsync(user.Id, account.Role);
                 }
             }
         }

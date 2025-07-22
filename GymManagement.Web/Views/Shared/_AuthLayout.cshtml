@@ -1,52 +1,41 @@
 <!DOCTYPE html>
-<html lang="vi" class="h-full bg-gray-50 dark:bg-gray-900">
+<html lang="vi" class="h-full bg-gray-50 ">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - Quản Lý Phòng GYM</title>
     
-    <!-- Tailwind CSS + Flowbite CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Flowbite CSS (includes Tailwind CSS) -->
     <link href="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.css" rel="stylesheet" />
-    
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-pVIb6q3lP4N7GnS5/g6h8vY0vxM09+ZZ2E0c65c4Vp+4V+fD7zJAq0ZWNvlht8q6mJXjad7ym1XoyYdU3NGk6Q==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
     <!-- Custom CSS -->
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    
-    <!-- Tailwind Config -->
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        primary: {"50":"#eff6ff","100":"#dbeafe","200":"#bfdbfe","300":"#93c5fd","400":"#60a5fa","500":"#3b82f6","600":"#2563eb","700":"#1d4ed8","800":"#1e40af","900":"#1e3a8a","950":"#172554"}
-                    }
-                }
-            }
-        }
-    </script>
 </head>
-<body class="h-full bg-gray-50 dark:bg-gray-900">
-    <div class="min-h-full flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-        <div class="sm:mx-auto sm:w-full sm:max-w-md">
-            <div class="text-center">
-                <a href="/" class="text-3xl font-bold text-primary-600 dark:text-primary-400">
+<body class="h-full bg-gray-50 ">
+    <div class="min-h-screen flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div class="mx-auto w-full max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl">
+            <div class="text-center mb-8">
+                <a href="/" class="text-4xl font-bold text-blue-600 hover:text-blue-700 transition-colors" style="color: #2563eb;">
                     🏋️ GYM Manager
                 </a>
+                <p class="mt-2 text-sm text-gray-600">Hệ thống quản lý phòng gym hiện đại</p>
             </div>
         </div>
 
-        <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+        <div class="mx-auto w-full max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl">
             @if (TempData["SuccessMessage"] != null)
             {
-                <div class="mb-4 p-4 text-sm text-green-800 rounded-lg bg-green-50 dark:bg-gray-800 dark:text-green-400" role="alert">
+                <div class="mb-4 p-4 text-sm text-green-800 rounded-lg bg-green-50 " role="alert">
                     @TempData["SuccessMessage"]
                 </div>
             }
 
             @if (TempData["ErrorMessage"] != null)
             {
-                <div class="mb-4 p-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400" role="alert">
+                <div class="mb-4 p-4 text-sm text-red-800 rounded-lg bg-red-50 " role="alert">
                     @TempData["ErrorMessage"]
                 </div>
             }
@@ -55,7 +44,7 @@
         </div>
 
         <div class="mt-8 text-center">
-            <p class="text-sm text-gray-600 dark:text-gray-400">
+            <p class="text-sm text-gray-600 ">
                 © 2025 Gym Management System. All rights reserved.
             </p>
         </div>

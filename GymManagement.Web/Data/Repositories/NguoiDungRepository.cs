@@ -66,8 +66,7 @@ namespace GymManagement.Web.Data.Repositories
         public async Task<NguoiDung?> GetWithTaiKhoanAsync(int nguoiDungId)
         {
             return await _dbSet
-                .Include(x => x.TaiKhoans)
-                .ThenInclude(x => x.VaiTro)
+                .Include(x => x.TaiKhoan)
                 .FirstOrDefaultAsync(x => x.NguoiDungId == nguoiDungId);
         }
     }

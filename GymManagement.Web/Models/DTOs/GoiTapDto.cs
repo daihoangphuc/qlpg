@@ -30,8 +30,23 @@ namespace GymManagement.Web.Models.DTOs
         [StringLength(500, ErrorMessage = "Mô tả không được vượt quá 500 ký tự")]
         public string? MoTa { get; set; }
 
+        [Display(Name = "Loại gói")]
+        public string? LoaiGoi { get; set; }
+
+        [Display(Name = "Trạng thái")]
+        public string TrangThai { get; set; } = "ACTIVE";
+
+        [Display(Name = "Ưu đãi đặc biệt")]
+        public string? UuDaiDacBiet { get; set; }
+
+        [Display(Name = "Ngày tạo")]
+        public DateTime NgayTao { get; set; } = DateTime.Now;
+
         [Display(Name = "Giá định dạng")]
         public string GiaFormatted => Gia.ToString("N0") + " VNĐ";
+
+        [Display(Name = "Số lượng đăng ký")]
+        public int? SoLuongDangKy { get; set; }
     }
 
     public class CreateGoiTapDto
@@ -59,6 +74,15 @@ namespace GymManagement.Web.Models.DTOs
         [Display(Name = "Mô tả")]
         [StringLength(500, ErrorMessage = "Mô tả không được vượt quá 500 ký tự")]
         public string? MoTa { get; set; }
+
+        [Display(Name = "Loại gói")]
+        public string? LoaiGoi { get; set; }
+
+        [Display(Name = "Trạng thái")]
+        public string TrangThai { get; set; } = "ACTIVE";
+
+        [Display(Name = "Ưu đãi đặc biệt")]
+        public string? UuDaiDacBiet { get; set; }
     }
 
     public class UpdateGoiTapDto
@@ -88,5 +112,14 @@ namespace GymManagement.Web.Models.DTOs
         [Display(Name = "Mô tả")]
         [StringLength(500, ErrorMessage = "Mô tả không được vượt quá 500 ký tự")]
         public string? MoTa { get; set; }
+
+        [Display(Name = "Loại gói")]
+        public string? LoaiGoi { get; set; }
+
+        [Display(Name = "Trạng thái")]
+        public string TrangThai { get; set; } = "ACTIVE";
+
+        [Display(Name = "Ưu đãi đặc biệt")]
+        public string? UuDaiDacBiet { get; set; }
     }
 }

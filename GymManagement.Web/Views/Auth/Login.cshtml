@@ -1,53 +1,65 @@
-@model GymManagement.Web.Models.ViewModels.LoginViewModel
+@model LoginViewModel
 @{
     ViewData["Title"] = "Đăng nhập";
-    Layout = "_AuthLayout";
+    Layout = "~/Views/Shared/_AuthLayout.cshtml";
 }
 
-<div class="w-full max-w-md mx-auto">
-    <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg px-8 pt-6 pb-8 mb-4">
-        <div class="mb-6 text-center">
-            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Đăng nhập</h1>
-            <p class="text-gray-600 dark:text-gray-400 mt-2">Chào mừng trở lại!</p>
+<div class="w-full bg-white rounded-xl shadow-lg border border-gray-100">
+    <div class="p-8 space-y-6">
+        <div class="text-center">
+            <h1 class="text-2xl font-bold leading-tight tracking-tight text-gray-900 md:text-3xl">
+                Đăng nhập vào tài khoản
+            </h1>
+            <p class="mt-2 text-sm text-gray-600">Chào mừng bạn quay trở lại!</p>
         </div>
-
-        <form asp-action="Login" method="post" class="space-y-4">
-            <div asp-validation-summary="ModelOnly" class="text-red-600 text-sm"></div>
-            
-            <div>
-                <label asp-for="Username" class="form-label">Tên đăng nhập</label>
-                <input asp-for="Username" class="form-input" placeholder="Nhập tên đăng nhập" />
-                <span asp-validation-for="Username" class="text-red-600 text-sm"></span>
+        
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 " role="alert">
+                <div asp-validation-summary="All" class="text-red-600"></div>
             </div>
+        }
 
-            <div>
-                <label asp-for="Password" class="form-label">Mật khẩu</label>
-                <input asp-for="Password" class="form-input" placeholder="Nhập mật khẩu" />
-                <span asp-validation-for="Password" class="text-red-600 text-sm"></span>
-            </div>
+        <form class="space-y-6" asp-action="Login" method="post">
+            <input type="hidden" asp-for="@ViewData["ReturnUrl"]" />
 
-            <div class="flex items-center justify-between">
-                <div class="flex items-center">
-                    <input asp-for="RememberMe" type="checkbox" class="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
-                    <label asp-for="RememberMe" class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300">Ghi nhớ đăng nhập</label>
+            <div class="space-y-6">
+                <div>
+                    <label asp-for="Username" class="block mb-2 text-sm font-medium text-gray-900">Tên đăng nhập</label>
+                    <input asp-for="Username" type="text" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-3 transition-colors" placeholder="Nhập tên đăng nhập" required>
+                    <span asp-validation-for="Username" class="text-red-600 text-sm"></span>
                 </div>
-                <a asp-action="ForgotPassword" class="text-sm text-primary-600 hover:underline dark:text-primary-500">Quên mật khẩu?</a>
+
+                <div>
+                    <label asp-for="Password" class="block mb-2 text-sm font-medium text-gray-900">Mật khẩu</label>
+                    <input asp-for="Password" type="password" placeholder="••••••••" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-3 transition-colors" required>
+                    <span asp-validation-for="Password" class="text-red-600 text-sm"></span>
+                </div>
             </div>
-
-            <button type="submit" class="btn-primary w-full">
-                Đăng nhập
+            
+            <div class="flex items-center justify-between">
+                <div class="flex items-start">
+                    <div class="flex items-center h-5">
+                        <input asp-for="RememberMe" type="checkbox" class="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-blue-300 ">
+                    </div>
+                    <div class="ml-3 text-sm">
+                        <label asp-for="RememberMe" class="text-gray-500 ">Ghi nhớ đăng nhập</label>
+                    </div>
+                </div>
+                <a asp-action="ForgotPassword" class="text-sm font-medium text-blue-600 hover:underline ">Quên mật khẩu?</a>
+            </div>
+            
+            <button type="submit" class="w-full text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-6 py-3 text-center transition-colors">
+                <strong>Đăng nhập</strong>
             </button>
-        </form>
-
-        <div class="text-center mt-6">
-            <p class="text-sm text-gray-600 dark:text-gray-400">
-                Chưa có tài khoản? 
-                <a asp-action="Register" class="text-primary-600 hover:underline dark:text-primary-500">Đăng ký ngay</a>
+            
+            <p class="text-sm font-light text-gray-500 ">
+                Chưa có tài khoản? <a asp-action="Register" class="font-medium text-blue-600 hover:underline ">Đăng ký ngay</a>
             </p>
-        </div>
+        </form>
     </div>
 </div>
 
 @section Scripts {
-    <partial name="_ValidationScriptsPartial" />
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
 }

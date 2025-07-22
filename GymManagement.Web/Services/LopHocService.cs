@@ -128,15 +128,16 @@ namespace GymManagement.Web.Services
                 if (thuTrongTuan.Contains(dayOfWeek))
                 {
                     // Check if schedule already exists
+                    var currentDateOnly = DateOnly.FromDateTime(currentDate);
                     var existingSchedule = await _unitOfWork.Context.LichLops
-                        .FirstOrDefaultAsync(l => l.LopHocId == lopHocId && l.Ngay == currentDate);
+                        .FirstOrDefaultAsync(l => l.LopHocId == lopHocId && l.Ngay == currentDateOnly);
 
                     if (existingSchedule == null)
                     {
                         var lichLop = new LichLop
                         {
                             LopHocId = lopHocId,
-                            Ngay = currentDate,
+                            Ngay = currentDateOnly,
                             GioBatDau = lopHoc.GioBatDau,
                             GioKetThuc = lopHoc.GioKetThuc,
                             TrangThai = "SCHEDULED"
@@ -153,9 +154,12 @@ namespace GymManagement.Web.Services
 
         public async Task<IEnumerable<LichLop>> GetClassScheduleAsync(int lopHocId, DateTime startDate, DateTime endDate)
         {
+            var startDateOnly = DateOnly.FromDateTime(startDate);
+            var endDateOnly = DateOnly.FromDateTime(endDate);
+
             return await _unitOfWork.Context.LichLops
                 .Include(l => l.LopHoc)
-                .Where(l => l.LopHocId == lopHocId && l.Ngay >= startDate && l.Ngay <= endDate)
+                .Where(l => l.LopHocId == lopHocId && l.Ngay >= startDateOnly && l.Ngay <= endDateOnly)
                 .OrderBy(l => l.Ngay)
                 .ThenBy(l => l.GioBatDau)
                 .ToListAsync();

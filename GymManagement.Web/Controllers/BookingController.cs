@@ -254,8 +254,11 @@ namespace GymManagement.Web.Controllers
                 }
 
                 var bookings = await _bookingService.GetByMemberIdAsync(user.NguoiDungId.Value);
+                var startDateOnly = DateOnly.FromDateTime(start.Date);
+                var endDateOnly = DateOnly.FromDateTime(end.Date);
+
                 var events = bookings
-                    .Where(b => b.Ngay >= start.Date && b.Ngay <= end.Date && b.TrangThai == "BOOKED")
+                    .Where(b => b.Ngay >= startDateOnly && b.Ngay <= endDateOnly && b.TrangThai == "BOOKED")
                     .Select(b => new {
                         id = b.BookingId,
                         title = b.LopHoc?.TenLop ?? "Lớp học",
@@ -280,8 +283,8 @@ namespace GymManagement.Web.Controllers
                 var classes = await _lopHocService.GetActiveClassesAsync();
                 ViewBag.Classes = new SelectList(classes, "LopHocId", "TenLop");
 
-                // Only load members for admin/staff
-                if (User.IsInRole("Admin") || User.IsInRole("Manager") || User.IsInRole("Staff"))
+                // Only load members for admin
+                if (User.IsInRole("Admin"))
                 {
                     var members = await _nguoiDungService.GetMembersAsync();
                     ViewBag.Members = new SelectList(members, "NguoiDungId", "Ho");

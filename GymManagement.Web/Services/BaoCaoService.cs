@@ -93,8 +93,11 @@ namespace GymManagement.Web.Services
 
         public async Task<int> GetExpiredMembersCountAsync(DateTime startDate, DateTime endDate)
         {
+            var startDateOnly = DateOnly.FromDateTime(startDate);
+            var endDateOnly = DateOnly.FromDateTime(endDate);
+
             var expiredRegistrations = await _dangKyRepository.GetExpiredRegistrationsAsync();
-            return expiredRegistrations.Count(r => r.NgayKetThuc >= startDate && r.NgayKetThuc <= endDate);
+            return expiredRegistrations.Count(r => r.NgayKetThuc >= startDateOnly && r.NgayKetThuc <= endDateOnly);
         }
 
         public async Task<Dictionary<string, int>> GetMembersByPackageAsync()
@@ -170,8 +173,7 @@ namespace GymManagement.Web.Services
                     >= 12 and < 15 => "12:00-15:00",
                     >= 15 and < 18 => "15:00-18:00",
                     >= 18 and < 21 => "18:00-21:00",
-                    >= 21 or < 6 => "21:00-24:00",
-                    _ => "Unknown"
+                    _ => "21:00-24:00"
                 };
 
                 if (timeSlots.ContainsKey(timeSlot))
@@ -189,9 +191,12 @@ namespace GymManagement.Web.Services
 
         public async Task<Dictionary<string, int>> GetPopularClassesAsync(DateTime startDate, DateTime endDate)
         {
+            var startDateOnly = DateOnly.FromDateTime(startDate);
+            var endDateOnly = DateOnly.FromDateTime(endDate);
+
             var bookings = await _unitOfWork.Context.Bookings
                 .Include(b => b.LopHoc)
-                .Where(b => b.Ngay >= startDate && b.Ngay <= endDate && b.TrangThai == "BOOKED")
+                .Where(b => b.Ngay >= startDateOnly && b.Ngay <= endDateOnly && b.TrangThai == "BOOKED")
                 .ToListAsync();
 
             return bookings
@@ -202,6 +207,9 @@ namespace GymManagement.Web.Services
 
         public async Task<Dictionary<string, double>> GetClassOccupancyRatesAsync(DateTime startDate, DateTime endDate)
         {
+            var startDateOnly = DateOnly.FromDateTime(startDate);
+            var endDateOnly = DateOnly.FromDateTime(endDate);
+
             var classes = await _unitOfWork.Context.LopHocs
                 .Where(l => l.TrangThai == "OPEN")
                 .ToListAsync();
@@ -211,9 +219,9 @@ namespace GymManagement.Web.Services
             foreach (var lopHoc in classes)
             {
                 var totalBookings = await _unitOfWork.Context.Bookings
-                    .CountAsync(b => b.LopHocId == lopHoc.LopHocId && 
-                                    b.Ngay >= startDate && 
-                                    b.Ngay <= endDate && 
+                    .CountAsync(b => b.LopHocId == lopHoc.LopHocId &&
+                                    b.Ngay >= startDateOnly &&
+                                    b.Ngay <= endDateOnly &&
                                     b.TrangThai == "BOOKED");
 
                 var totalDays = (endDate - startDate).Days + 1;
@@ -228,9 +236,12 @@ namespace GymManagement.Web.Services
 
         public async Task<Dictionary<string, int>> GetClassCancellationRatesAsync(DateTime startDate, DateTime endDate)
         {
+            var startDateOnly = DateOnly.FromDateTime(startDate);
+            var endDateOnly = DateOnly.FromDateTime(endDate);
+
             var schedules = await _unitOfWork.Context.LichLops
                 .Include(l => l.LopHoc)
-                .Where(l => l.Ngay >= startDate && l.Ngay <= endDate)
+                .Where(l => l.Ngay >= startDateOnly && l.Ngay <= endDateOnly)
                 .ToListAsync();
 
             return schedules
@@ -263,10 +274,13 @@ namespace GymManagement.Web.Services
 
         public async Task<Dictionary<string, int>> GetTrainerClassCountAsync(DateTime startDate, DateTime endDate)
         {
+            var startDateOnly = DateOnly.FromDateTime(startDate);
+            var endDateOnly = DateOnly.FromDateTime(endDate);
+
             var schedules = await _unitOfWork.Context.LichLops
                 .Include(l => l.LopHoc)
                     .ThenInclude(lh => lh.Hlv)
-                .Where(l => l.Ngay >= startDate && l.Ngay <= endDate && l.TrangThai != "CANCELED")
+                .Where(l => l.Ngay >= startDateOnly && l.Ngay <= endDateOnly && l.TrangThai != "CANCELED")
                 .ToListAsync();
 
             return schedules

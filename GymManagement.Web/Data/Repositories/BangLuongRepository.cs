@@ -70,9 +70,12 @@ namespace GymManagement.Web.Data.Repositories
 
         public async Task<IEnumerable<BangLuong>> GetSalariesByDateRangeAsync(DateTime startDate, DateTime endDate)
         {
+            var startDateOnly = DateOnly.FromDateTime(startDate);
+            var endDateOnly = DateOnly.FromDateTime(endDate);
+
             return await _context.BangLuongs
                 .Include(b => b.Hlv)
-                .Where(b => b.NgayThanhToan >= startDate && b.NgayThanhToan <= endDate)
+                .Where(b => b.NgayThanhToan >= startDateOnly && b.NgayThanhToan <= endDateOnly)
                 .OrderByDescending(b => b.NgayThanhToan)
                 .ToListAsync();
         }

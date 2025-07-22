@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace GymManagement.Web.Controllers
 {
-    [Authorize(Roles = "Admin,Manager")]
+    [Authorize(Roles = "Admin")]
     public class BaoCaoController : Controller
     {
         private readonly IBaoCaoService _baoCaoService;

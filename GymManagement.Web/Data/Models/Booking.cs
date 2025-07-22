@@ -18,6 +18,13 @@ namespace GymManagement.Web.Data.Models
         [StringLength(20)]
         public string TrangThai { get; set; } = "BOOKED"; // BOOKED/CANCELED/ATTENDED
 
+        public DateTime NgayTao { get; set; } = DateTime.Now;
+
+        public DateOnly NgayDat { get; set; }
+
+        [StringLength(500)]
+        public string? GhiChu { get; set; }
+
         // Navigation properties
         public virtual NguoiDung? ThanhVien { get; set; }
         public virtual LopHoc? LopHoc { get; set; }

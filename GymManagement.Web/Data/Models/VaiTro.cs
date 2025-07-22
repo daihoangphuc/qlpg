@@ -1,18 +1,22 @@
 using System.ComponentModel.DataAnnotations;
-using Microsoft.AspNetCore.Identity;
 
 namespace GymManagement.Web.Data.Models
 {
-    public class VaiTro : IdentityRole<int>
+    public class VaiTro
     {
-        [Required]
-        [StringLength(50)]
-        public string TenVaiTro { get; set; } = null!;
+        [Key]
+        public string Id { get; set; } = Guid.NewGuid().ToString();
 
-        [StringLength(200)]
+        [Required]
+        [StringLength(100)]
+        public string TenVaiTro { get; set; } = string.Empty;
+
+        [StringLength(500)]
         public string? MoTa { get; set; }
 
+        public DateTime NgayTao { get; set; } = DateTime.UtcNow;
+
         // Navigation properties
-        public virtual ICollection<TaiKhoan> TaiKhoans { get; set; } = new List<TaiKhoan>();
+        public virtual ICollection<TaiKhoanVaiTro> TaiKhoanVaiTros { get; set; } = new List<TaiKhoanVaiTro>();
     }
 }

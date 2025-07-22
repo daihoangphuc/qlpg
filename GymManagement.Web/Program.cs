@@ -9,17 +9,15 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-// Configure Serilog
-Log.Logger = new LoggerConfiguration()
-    .ReadFrom.Configuration(new ConfigurationBuilder()
-        .AddJsonFile("appsettings.json")
-        .Build())
-    .CreateLogger();
-
 var builder = WebApplication.CreateBuilder(args);
 
-// Add Serilog
-builder.Host.UseSerilog();
+// Configure Serilog with proper hosting information display
+builder.Host.UseSerilog((context, services, configuration) => configuration
+    .ReadFrom.Configuration(context.Configuration)
+    .Enrich.FromLogContext()
+    .WriteTo.Console(outputTemplate:
+        "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}")
+    .WriteTo.File("Logs/log-.txt", rollingInterval: RollingInterval.Day));
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
@@ -28,28 +26,20 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddDbContext<GymDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("GymDb")));
 
-// Add ASP.NET Core Identity
-builder.Services.AddIdentity<TaiKhoan, VaiTro>(options =>
-{
-    // Password settings
-    options.Password.RequireDigit = true;
-    options.Password.RequireLowercase = true;
-    options.Password.RequireNonAlphanumeric = false;
-    options.Password.RequireUppercase = false;
-    options.Password.RequiredLength = 6;
-    options.Password.RequiredUniqueChars = 1;
+// Add Custom Authentication Services
+builder.Services.AddScoped<IPasswordService, PasswordService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 
-    // Lockout settings
-    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
-    options.Lockout.MaxFailedAccessAttempts = 5;
-    options.Lockout.AllowedForNewUsers = true;
-
-    // User settings
-    options.User.AllowedUserNameCharacters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+";
-    options.User.RequireUniqueEmail = true;
-})
-.AddEntityFrameworkStores<GymDbContext>()
-.AddDefaultTokenProviders();
+// Add Authentication
+builder.Services.AddAuthentication("Cookies")
+    .AddCookie("Cookies", options =>
+    {
+        options.LoginPath = "/Auth/Login";
+        options.LogoutPath = "/Auth/Logout";
+        options.AccessDeniedPath = "/Auth/AccessDenied";
+        options.ExpireTimeSpan = TimeSpan.FromHours(24);
+        options.SlidingExpiration = true;
+    });
 
 // Configure cookie settings
 builder.Services.ConfigureApplicationCookie(options =>
@@ -133,9 +123,8 @@ app.MapControllerRoute(
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<GymDbContext>();
-    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<TaiKhoan>>();
-    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<VaiTro>>();
-    await DbInitializer.InitializeAsync(context, userManager, roleManager);
+    var authService = scope.ServiceProvider.GetRequiredService<IAuthService>();
+    await DbInitializer.InitializeAsync(context, authService);
 }
 
 try

@@ -26,7 +26,7 @@ namespace GymManagement.Web.Controllers
             _logger = logger;
         }
 
-        [Authorize(Roles = "Admin,Manager")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Index()
         {
             try
@@ -64,7 +64,7 @@ namespace GymManagement.Web.Controllers
             }
         }
 
-        [Authorize(Roles = "Admin,Manager")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Details(int id)
         {
             try
@@ -84,7 +84,7 @@ namespace GymManagement.Web.Controllers
             }
         }
 
-        [Authorize(Roles = "Admin,Manager")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> MonthlyView(string? month = null)
         {
             try
@@ -107,7 +107,7 @@ namespace GymManagement.Web.Controllers
             }
         }
 
-        [Authorize(Roles = "Admin,Manager")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UnpaidSalaries()
         {
             try

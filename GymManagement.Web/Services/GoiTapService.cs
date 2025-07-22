@@ -46,6 +46,8 @@ namespace GymManagement.Web.Services
                 SoBuoiToiDa = createDto.SoBuoiToiDa,
                 Gia = createDto.Gia,
                 MoTa = createDto.MoTa
+                // Note: LoaiGoi, TrangThai, UuDaiDacBiet are not in GoiTap model
+                // They will be handled by MapToDto with default values
             };
 
             await _unitOfWork.GoiTaps.AddAsync(goiTap);
@@ -124,7 +126,11 @@ namespace GymManagement.Web.Services
                 ThoiHanThang = goiTap.ThoiHanThang,
                 SoBuoiToiDa = goiTap.SoBuoiToiDa,
                 Gia = goiTap.Gia,
-                MoTa = goiTap.MoTa
+                MoTa = goiTap.MoTa,
+                LoaiGoi = "BASIC", // Default value since not in model
+                TrangThai = "ACTIVE", // Default value since not in model
+                UuDaiDacBiet = null, // Default value since not in model
+                NgayTao = DateTime.Now // Default value since not in model
             };
         }
 

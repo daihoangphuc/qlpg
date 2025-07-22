@@ -114,7 +114,7 @@ namespace GymManagement.Web.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin,Manager")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> ProcessCashPayment(int paymentId)
         {
             try

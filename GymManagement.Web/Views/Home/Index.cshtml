@@ -1,8 +1,244 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+@using GymManagement.Web.Models.DTOs
+@{
+    ViewData["Title"] = "Trang chủ";
+    Layout = "~/Views/Shared/_LandingLayout.cshtml";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+<!-- Hero Section -->
+<section class="bg-blue-600 text-white">
+    <div class="max-w-screen-xl mx-auto px-4 py-24 lg:py-32">
+        <div class="text-center">
+            <h1 class="mb-6 text-4xl font-extrabold tracking-tight leading-none md:text-5xl lg:text-6xl">
+                Chào mừng đến với <span class="text-yellow-300">GYM Manager</span>
+            </h1>
+            <p class="mb-10 text-lg font-normal lg:text-xl sm:px-16 lg:px-48">
+                Hệ thống quản lý phòng gym hiện đại và chuyên nghiệp
+            </p>
+            <div class="flex flex-col space-y-4 sm:flex-row sm:justify-center sm:space-y-0 sm:space-x-4">
+                @if (User.Identity?.IsAuthenticated != true)
+                {
+                    <a href="@Url.Action("Register", "Account")" class="inline-flex justify-center items-center py-3 px-5 text-base font-medium text-center text-blue-600 rounded-lg bg-yellow-300 hover:bg-yellow-400 focus:ring-4 focus:ring-yellow-300">
+                       <strong>Đăng ký ngay</strong>
+                        <svg class="w-3.5 h-3.5 ms-2 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 10">
+                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 5h12m0 0L9 1m4 4L9 9"/>
+                        </svg>
+                    </a>
+                    <a href="@Url.Action("Login", "Account")" class="inline-flex justify-center items-center py-3 px-5 text-base font-medium text-center text-white rounded-lg border border-white hover:bg-gray-100 hover:text-gray-900 focus:ring-4 focus:ring-gray-400">
+                        Đăng nhập
+                    </a>
+                }
+                else
+                {
+                    <a href="@Url.Action("Dashboard", "Home")" class="inline-flex justify-center items-center py-3 px-5 text-base font-medium text-center text-blue-600 rounded-lg bg-yellow-300 hover:bg-yellow-400 focus:ring-4 focus:ring-yellow-300">
+                        Vào Dashboard
+                        <svg class="w-3.5 h-3.5 ms-2 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 10">
+                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 5h12m0 0L9 1m4 4L9 9"/>
+                        </svg>
+                    </a>
+                }
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="py-20 bg-white">
+    <div class="max-w-screen-xl mx-auto px-4">
+        <div class="text-center mb-16">
+            <h2 class="text-3xl font-bold pt-5 text-gray-900 mb-4">Tính năng nổi bật</h2>
+            <p class="text-lg text-gray-600">Quản lý toàn diện mọi hoạt động của phòng gym</p>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
+            <!-- Feature 1: Quản lý thành viên -->
+            <div class="text-center p-6 bg-gray-50 rounded-lg">
+                <div class="w-16 h-16 mx-auto mb-4 bg-blue-100 rounded-full flex items-center justify-center">
+                    <i class="fas fa-users text-2xl text-blue-600"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-900 mb-2">Quản lý thành viên</h3>
+                <p class="text-gray-600">Quản lý thông tin thành viên, gói tập, và lịch sử hoạt động một cách dễ dàng và hiệu quả.</p>
+            </div>
+
+            <!-- Feature 2: Điểm danh thông minh -->
+            <div class="text-center p-6 bg-gray-50 rounded-lg">
+                <div class="w-16 h-16 mx-auto mb-4 bg-green-100 rounded-full flex items-center justify-center">
+                    <i class="fas fa-check-circle text-2xl text-green-600"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-900 mb-2">Điểm danh thông minh</h3>
+                <p class="text-gray-600">Hệ thống điểm danh tự động với nhận diện khuôn mặt và theo dõi thời gian tập luyện.</p>
+            </div>
+
+            <!-- Feature 3: Thanh toán linh hoạt -->
+            <div class="text-center p-6 bg-gray-50 rounded-lg">
+                <div class="w-16 h-16 mx-auto mb-4 bg-yellow-100 rounded-full flex items-center justify-center">
+                    <i class="fas fa-credit-card text-2xl text-yellow-600"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-900 mb-2">Thanh toán linh hoạt</h3>
+                <p class="text-gray-600">Tích hợp nhiều phương thức thanh toán hiện đại, giúp việc thanh toán trở nên dễ dàng.</p>
+            </div>
+
+            <!-- Feature 4: Quản lý lớp học -->
+            <div class="text-center p-6 bg-gray-50 rounded-lg">
+                <div class="w-16 h-16 mx-auto mb-4 bg-purple-100 rounded-full flex items-center justify-center">
+                    <i class="fas fa-calendar-alt text-2xl text-purple-600"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-900 mb-2">Quản lý lớp học</h3>
+                <p class="text-gray-600">Tạo và quản lý lịch học, đăng ký lớp học và theo dõi sức chứa một cách chính xác.</p>
+            </div>
+
+            <!-- Feature 5: Báo cáo thống kê -->
+            <div class="text-center p-6 bg-gray-50 rounded-lg">
+                <div class="w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center">
+                    <i class="fas fa-chart-bar text-2xl text-red-600"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-900 mb-2">Báo cáo thống kê</h3>
+                <p class="text-gray-600">Thống kê doanh thu, số lượng thành viên và hiệu suất hoạt động của phòng gym.</p>
+            </div>
+
+            <!-- Feature 6: Quản lý lương -->
+            <div class="text-center p-6 bg-gray-50 rounded-lg">
+                <div class="w-16 h-16 mx-auto mb-4 bg-indigo-100 rounded-full flex items-center justify-center">
+                    <i class="fas fa-money-bill-wave text-2xl text-indigo-600"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-900 mb-2">Quản lý lương</h3>
+                <p class="text-gray-600">Tính toán lương và hoa hồng cho huấn luyện viên một cách tự động và chính xác.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Pricing Section -->
+<section class="py-20">
+    <div class="max-w-screen-xl mx-auto px-4">
+        <div class="text-center mb-16">
+            <h2 class="text-3xl font-bold text-gray-900 mb-4">Gói tập phổ biến</h2>
+            <p class="text-lg text-gray-600 mb-5">Chọn gói tập phù hợp với nhu cầu của bạn</p>
+        </div>
+
+        <!-- Swiper Container -->
+        <div class="swiper packagesSwiper">
+            <div class="swiper-wrapper">
+                @if (ViewBag.Packages != null)
+                {
+                    @foreach (var package in (IEnumerable<GoiTapDto>)ViewBag.Packages)
+                    {
+                        <div class="swiper-slide">
+                            <div class="bg-white rounded-lg shadow-lg p-6 text-center mx-2 h-full">
+                                <h3 class="text-2xl font-bold text-gray-900 mb-4">@package.TenGoi</h3>
+                                <p class="text-gray-600 mb-6">@package.MoTa</p>
+                                <div class="text-4xl font-bold text-blue-600 mb-6">
+                                    @package.Gia.ToString("N0") VNĐ
+                                    <span class="text-lg font-normal text-gray-500">/@package.ThoiHanThang tháng</span>
+                                </div>
+                                @if (User.Identity?.IsAuthenticated == true)
+                                {
+                                    <a href="@Url.Action("Register", "DangKy", new { goiTapId = package.GoiTapId })" class="w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition duration-300 inline-block">
+                                        <strong>Đăng ký ngay</strong>
+                                    </a>
+                                }
+                                else
+                                {
+                                    <a href="@Url.Action("Login", "Account")" class="w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition duration-300 inline-block">
+                                        <strong>Đăng ký ngay</strong>
+                                    </a>
+                                }
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    @* <!-- Default packages if no data -->
+                    <div class="swiper-slide">
+                        <div class="bg-white rounded-lg shadow-lg p-6 text-center mx-2 h-full">
+                            <h3 class="text-2xl font-bold text-gray-900 mb-4">Gói Cơ Bản</h3>
+                            <p class="text-gray-600 mb-6">Gói tập cơ bản 1 tháng, tối đa 20 buổi</p>
+                            <div class="text-4xl font-bold text-blue-600 mb-6">
+                                500,000 VNĐ
+                                <span class="text-lg font-normal text-gray-500">/tháng</span>
+                            </div>
+                            <a href="@Url.Action("Login", "Account")" class="w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition duration-300 inline-block">
+                                <strong>Đăng ký ngay</strong>
+                            </a>
+                        </div>
+                    </div> *@
+                }
+            </div>
+
+            <!-- Navigation buttons -->
+            <div class="swiper-button-next text-blue-600"></div>
+            <div class="swiper-button-prev text-blue-600"></div>
+
+            <!-- Pagination -->
+            <div class="swiper-pagination mt-8"></div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="bg-blue-600 text-white py-24 mt-8">
+    <div class="max-w-screen-xl mx-auto px-4 text-center">
+        <h2 class="text-3xl font-bold mb-6">Sẵn sàng bắt đầu?</h2>
+        <p class="text-lg mb-10">Tham gia cùng chúng tôi để có trải nghiệm tập luyện tuyệt vời</p>
+        @if (User.Identity?.IsAuthenticated != true)
+        {
+            <a href="@Url.Action("Register", "Account")" class="inline-flex justify-center items-center py-3 px-6 text-base font-medium text-center text-blue-600 rounded-lg bg-yellow-300 hover:bg-yellow-400 focus:ring-4 focus:ring-yellow-300">
+                <strong>Đăng ký thành viên</strong>
+            </a>
+        }
+        else
+        {
+            <a href="@Url.Action("Dashboard", "Home")" class="inline-flex justify-center items-center py-3 px-6 text-base font-medium text-center text-blue-600 rounded-lg bg-yellow-300 hover:bg-yellow-400 focus:ring-4 focus:ring-yellow-300">
+                Vào Dashboard
+            </a>
+        }
+    </div>
+</section>
+
+@section Styles {
+    <style>
+        .packagesSwiper .swiper-button-next,
+        .packagesSwiper .swiper-button-prev {
+            color: #2563eb !important;
+            background: white;
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .packagesSwiper .swiper-button-next:hover,
+        .packagesSwiper .swiper-button-prev:hover {
+            background: #2563eb;
+            color: white !important;
+            transform: scale(1.1);
+        }
+
+        .packagesSwiper .swiper-button-next::after,
+        .packagesSwiper .swiper-button-prev::after {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .packagesSwiper .swiper-pagination-bullet {
+            background: #2563eb;
+            opacity: 0.3;
+        }
+
+        .packagesSwiper .swiper-pagination-bullet-active {
+            opacity: 1;
+        }
+
+        .packagesSwiper .swiper-slide {
+            height: auto;
+        }
+
+        .packagesSwiper .swiper-slide > div {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+    </style>
+}
