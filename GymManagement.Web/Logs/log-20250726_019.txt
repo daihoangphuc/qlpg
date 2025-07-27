@@ -1,0 +1,607 @@
+2025-07-26 20:19:30.191 +07:00 [INF] Executed DbCommand (67ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT 1
+2025-07-26 20:19:30.670 +07:00 [INF] Executed DbCommand (197ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+
+IF EXISTS
+    (SELECT *
+     FROM [sys].[objects] o
+     WHERE [o].[type] = 'U'
+     AND [o].[is_ms_shipped] = 0
+     AND NOT EXISTS (SELECT *
+         FROM [sys].[extended_properties] AS [ep]
+         WHERE [ep].[major_id] = [o].[object_id]
+             AND [ep].[minor_id] = 0
+             AND [ep].[class] = 1
+             AND [ep].[name] = N'microsoft_database_tools_support'
+    )
+)
+SELECT 1 ELSE SELECT 0
+2025-07-26 20:19:34.024 +07:00 [INF] Executed DbCommand (12ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT CASE
+    WHEN EXISTS (
+        SELECT 1
+        FROM [VaiTro] AS [v]) THEN CAST(1 AS bit)
+    ELSE CAST(0 AS bit)
+END
+2025-07-26 20:19:34.060 +07:00 [INF] Starting web application
+2025-07-26 20:19:34.087 +07:00 [INF] User profile is available. Using 'C:\Users\ADMIN\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+2025-07-26 20:19:34.210 +07:00 [INF] Now listening on: http://localhost:5003
+2025-07-26 20:19:34.230 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-07-26 20:19:34.238 +07:00 [INF] Hosting environment: Development
+2025-07-26 20:19:34.245 +07:00 [INF] Content root path: D:\DATN\HANG_REMOTE\qlpg\GymManagement.Web
+2025-07-26 20:20:46.767 +07:00 [INF] Request starting HTTP/1.1 GET http://localhost:5003/ - null null
+2025-07-26 20:20:46.789 +07:00 [WRN] Failed to determine the https port for redirect.
+2025-07-26 20:20:46.882 +07:00 [INF] Accessing expired session, Key:96d4d356-aa06-d99e-1df6-8a370b6c4bb2
+2025-07-26 20:20:47.106 +07:00 [INF] Executed DbCommand (23ms) [Parameters=[@__id_0='?' (Size = 450)], CommandType='"Text"', CommandTimeout='30']
+SELECT [t0].[Id], [t0].[Email], [t0].[EmailXacNhan], [t0].[KichHoat], [t0].[LanDangNhapCuoi], [t0].[MatKhauHash], [t0].[NgayTao], [t0].[NguoiDungId], [t0].[Salt], [t0].[TenDangNhap], [t0].[NguoiDungId0], [t0].[AnhDaiDien], [t0].[Email0], [t0].[GioiTinh], [t0].[Ho], [t0].[LoaiNguoiDung], [t0].[NgaySinh], [t0].[NgayTao0], [t0].[NgayThamGia], [t0].[SoDienThoai], [t0].[Ten], [t0].[TrangThai], [t1].[Id], [t1].[NgayGan], [t1].[TaiKhoanId], [t1].[VaiTroId], [t1].[Id0], [t1].[MoTa], [t1].[NgayTao], [t1].[TenVaiTro]
+FROM (
+    SELECT TOP(1) [t].[Id], [t].[Email], [t].[EmailXacNhan], [t].[KichHoat], [t].[LanDangNhapCuoi], [t].[MatKhauHash], [t].[NgayTao], [t].[NguoiDungId], [t].[Salt], [t].[TenDangNhap], [n].[NguoiDungId] AS [NguoiDungId0], [n].[AnhDaiDien], [n].[Email] AS [Email0], [n].[GioiTinh], [n].[Ho], [n].[LoaiNguoiDung], [n].[NgaySinh], [n].[NgayTao] AS [NgayTao0], [n].[NgayThamGia], [n].[SoDienThoai], [n].[Ten], [n].[TrangThai]
+    FROM [TaiKhoan] AS [t]
+    LEFT JOIN [NguoiDungs] AS [n] ON [t].[NguoiDungId] = [n].[NguoiDungId]
+    WHERE [t].[Id] = @__id_0
+) AS [t0]
+LEFT JOIN (
+    SELECT [t2].[Id], [t2].[NgayGan], [t2].[TaiKhoanId], [t2].[VaiTroId], [v].[Id] AS [Id0], [v].[MoTa], [v].[NgayTao], [v].[TenVaiTro]
+    FROM [TaiKhoanVaiTros] AS [t2]
+    INNER JOIN [VaiTro] AS [v] ON [t2].[VaiTroId] = [v].[Id]
+) AS [t1] ON [t0].[Id] = [t1].[TaiKhoanId]
+ORDER BY [t0].[Id], [t0].[NguoiDungId0], [t1].[Id]
+2025-07-26 20:20:47.304 +07:00 [INF] Executed DbCommand (7ms) [Parameters=[@__userId_0='?' (Size = 450)], CommandType='"Text"', CommandTimeout='30']
+SELECT [v].[TenVaiTro]
+FROM [TaiKhoanVaiTros] AS [t]
+INNER JOIN [VaiTro] AS [v] ON [t].[VaiTroId] = [v].[Id]
+WHERE [t].[TaiKhoanId] = @__userId_0
+2025-07-26 20:20:47.397 +07:00 [INF] User session set for user: admin
+2025-07-26 20:20:47.405 +07:00 [INF] Executing endpoint 'GymManagement.Web.Controllers.HomeController.Index (GymManagement.Web)'
+2025-07-26 20:20:47.429 +07:00 [INF] Route matched with {action = "Index", controller = "Home"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] Index() on controller GymManagement.Web.Controllers.HomeController (GymManagement.Web).
+2025-07-26 20:20:47.482 +07:00 [INF] Executing RedirectResult, redirecting to /Home/Dashboard.
+2025-07-26 20:20:47.490 +07:00 [INF] Executed action GymManagement.Web.Controllers.HomeController.Index (GymManagement.Web) in 54.4261ms
+2025-07-26 20:20:47.497 +07:00 [INF] Executed endpoint 'GymManagement.Web.Controllers.HomeController.Index (GymManagement.Web)'
+2025-07-26 20:20:47.504 +07:00 [INF] Session started; Key:96d4d356-aa06-d99e-1df6-8a370b6c4bb2, Id:d20f9898-5f2a-b12b-9aab-74edd4c8d5a6
+2025-07-26 20:20:47.513 +07:00 [INF] Request finished HTTP/1.1 GET http://localhost:5003/ - 302 0 null 749.9729ms
+2025-07-26 20:20:47.522 +07:00 [INF] Request starting HTTP/1.1 GET http://localhost:5003/Home/Dashboard - null null
+2025-07-26 20:20:47.541 +07:00 [INF] Executing endpoint 'GymManagement.Web.Controllers.HomeController.Dashboard (GymManagement.Web)'
+2025-07-26 20:20:47.551 +07:00 [INF] Route matched with {action = "Dashboard", controller = "Home"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] Dashboard() on controller GymManagement.Web.Controllers.HomeController (GymManagement.Web).
+2025-07-26 20:20:47.635 +07:00 [INF] User action: admin (f2a371dc-c45f-4619-84fe-691582c7fe10) performed AccessDashboard
+2025-07-26 20:20:47.688 +07:00 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [DangKys] AS [d]
+WHERE [d].[TrangThai] = N'ACTIVE' AND [d].[NgayKetThuc] >= CAST(CONVERT(date, GETDATE()) AS date)
+2025-07-26 20:20:47.703 +07:00 [INF] Executed DbCommand (3ms) [Parameters=[@__startDate_0='?' (DbType = DateTime2), @__endDate_1='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [DiemDanhs] AS [d]
+WHERE [d].[ThoiGian] >= @__startDate_0 AND [d].[ThoiGian] < @__endDate_1
+2025-07-26 20:20:47.725 +07:00 [INF] Executed DbCommand (2ms) [Parameters=[@__startDate_0='?' (DbType = DateTime2), @__endDate_1='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SELECT COALESCE(SUM([t].[SoTien]), 0.0)
+FROM [ThanhToans] AS [t]
+WHERE [t].[TrangThai] = N'SUCCESS' AND [t].[NgayThanhToan] >= @__startDate_0 AND [t].[NgayThanhToan] <= @__endDate_1
+2025-07-26 20:20:47.748 +07:00 [INF] Executed DbCommand (3ms) [Parameters=[@__year_0='?' (DbType = Int32), @__month_1='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT COALESCE(SUM([t].[SoTien]), 0.0)
+FROM [ThanhToans] AS [t]
+WHERE [t].[TrangThai] = N'SUCCESS' AND DATEPART(year, [t].[NgayThanhToan]) = @__year_0 AND DATEPART(month, [t].[NgayThanhToan]) = @__month_1
+2025-07-26 20:20:47.755 +07:00 [INF] Executed DbCommand (1ms) [Parameters=[@__year_0='?' (DbType = Int32), @__month_1='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT COALESCE(SUM([t].[SoTien]), 0.0)
+FROM [ThanhToans] AS [t]
+WHERE [t].[TrangThai] = N'SUCCESS' AND DATEPART(year, [t].[NgayThanhToan]) = @__year_0 AND DATEPART(month, [t].[NgayThanhToan]) = @__month_1
+2025-07-26 20:20:47.789 +07:00 [INF] Executed DbCommand (6ms) [Parameters=[@__startDate_0='?' (DbType = DateTime2), @__endDate_1='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SELECT [d].[DangKyId], [d].[GoiTapId], [d].[LopHocId], [d].[LyDoHuy], [d].[NgayBatDau], [d].[NgayKetThuc], [d].[NgayTao], [d].[NguoiDungId], [d].[PhiDangKy], [d].[TrangThai], [n].[NguoiDungId], [n].[AnhDaiDien], [n].[Email], [n].[GioiTinh], [n].[Ho], [n].[LoaiNguoiDung], [n].[NgaySinh], [n].[NgayTao], [n].[NgayThamGia], [n].[SoDienThoai], [n].[Ten], [n].[TrangThai], [g].[GoiTapId], [g].[Gia], [g].[MoTa], [g].[SoBuoiToiDa], [g].[TenGoi], [g].[ThoiHanThang], [l].[LopHocId], [l].[GiaTuyChinh], [l].[GioBatDau], [l].[GioKetThuc], [l].[HlvId], [l].[MoTa], [l].[SucChua], [l].[TenLop], [l].[ThoiLuong], [l].[ThuTrongTuan], [l].[TrangThai]
+FROM [DangKys] AS [d]
+INNER JOIN [NguoiDungs] AS [n] ON [d].[NguoiDungId] = [n].[NguoiDungId]
+LEFT JOIN [GoiTaps] AS [g] ON [d].[GoiTapId] = [g].[GoiTapId]
+LEFT JOIN [LopHocs] AS [l] ON [d].[LopHocId] = [l].[LopHocId]
+WHERE [d].[NgayTao] >= @__startDate_0 AND [d].[NgayTao] <= @__endDate_1
+ORDER BY [d].[NgayTao] DESC
+2025-07-26 20:20:47.988 +07:00 [INF] Executed DbCommand (15ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [d].[DangKyId], [d].[GoiTapId], [d].[LopHocId], [d].[LyDoHuy], [d].[NgayBatDau], [d].[NgayKetThuc], [d].[NgayTao], [d].[NguoiDungId], [d].[PhiDangKy], [d].[TrangThai], [n].[NguoiDungId], [n].[AnhDaiDien], [n].[Email], [n].[GioiTinh], [n].[Ho], [n].[LoaiNguoiDung], [n].[NgaySinh], [n].[NgayTao], [n].[NgayThamGia], [n].[SoDienThoai], [n].[Ten], [n].[TrangThai], [g].[GoiTapId], [g].[Gia], [g].[MoTa], [g].[SoBuoiToiDa], [g].[TenGoi], [g].[ThoiHanThang], [l].[LopHocId], [l].[GiaTuyChinh], [l].[GioBatDau], [l].[GioKetThuc], [l].[HlvId], [l].[MoTa], [l].[SucChua], [l].[TenLop], [l].[ThoiLuong], [l].[ThuTrongTuan], [l].[TrangThai]
+FROM [DangKys] AS [d]
+INNER JOIN [NguoiDungs] AS [n] ON [d].[NguoiDungId] = [n].[NguoiDungId]
+LEFT JOIN [GoiTaps] AS [g] ON [d].[GoiTapId] = [g].[GoiTapId]
+LEFT JOIN [LopHocs] AS [l] ON [d].[LopHocId] = [l].[LopHocId]
+WHERE [d].[TrangThai] = N'ACTIVE' AND [d].[NgayKetThuc] >= CAST(CONVERT(date, GETDATE()) AS date)
+2025-07-26 20:20:48.001 +07:00 [INF] Executed DbCommand (1ms) [Parameters=[@__startDate_0='?' (DbType = DateTime2), @__endDate_1='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [DiemDanhs] AS [d]
+WHERE [d].[ThoiGian] >= @__startDate_0 AND [d].[ThoiGian] < @__endDate_1
+2025-07-26 20:20:48.016 +07:00 [INF] Executed DbCommand (1ms) [Parameters=[@__startDate_0='?' (DbType = DateTime2), @__endDate_1='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [DiemDanhs] AS [d]
+WHERE [d].[ThoiGian] >= @__startDate_0 AND [d].[ThoiGian] < @__endDate_1
+2025-07-26 20:20:48.023 +07:00 [INF] Executed DbCommand (1ms) [Parameters=[@__startDate_0='?' (DbType = DateTime2), @__endDate_1='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [DiemDanhs] AS [d]
+WHERE [d].[ThoiGian] >= @__startDate_0 AND [d].[ThoiGian] < @__endDate_1
+2025-07-26 20:20:48.034 +07:00 [INF] Executed DbCommand (1ms) [Parameters=[@__startDate_0='?' (DbType = DateTime2), @__endDate_1='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [DiemDanhs] AS [d]
+WHERE [d].[ThoiGian] >= @__startDate_0 AND [d].[ThoiGian] < @__endDate_1
+2025-07-26 20:20:48.041 +07:00 [INF] Executed DbCommand (1ms) [Parameters=[@__startDate_0='?' (DbType = DateTime2), @__endDate_1='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [DiemDanhs] AS [d]
+WHERE [d].[ThoiGian] >= @__startDate_0 AND [d].[ThoiGian] < @__endDate_1
+2025-07-26 20:20:48.052 +07:00 [INF] Executed DbCommand (1ms) [Parameters=[@__startDate_0='?' (DbType = DateTime2), @__endDate_1='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [DiemDanhs] AS [d]
+WHERE [d].[ThoiGian] >= @__startDate_0 AND [d].[ThoiGian] < @__endDate_1
+2025-07-26 20:20:48.061 +07:00 [INF] Executed DbCommand (1ms) [Parameters=[@__startDate_0='?' (DbType = DateTime2), @__endDate_1='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [DiemDanhs] AS [d]
+WHERE [d].[ThoiGian] >= @__startDate_0 AND [d].[ThoiGian] < @__endDate_1
+2025-07-26 20:20:48.067 +07:00 [INF] Executed DbCommand (1ms) [Parameters=[@__startDate_0='?' (DbType = DateTime2), @__endDate_1='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [DiemDanhs] AS [d]
+WHERE [d].[ThoiGian] >= @__startDate_0 AND [d].[ThoiGian] < @__endDate_1
+2025-07-26 20:20:48.133 +07:00 [INF] Executed DbCommand (9ms) [Parameters=[@__startDate_0='?' (DbType = DateTime2), @__endDate_1='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SELECT [t].[ThanhToanId], [t].[DangKyId], [t].[GhiChu], [t].[NgayThanhToan], [t].[PhuongThuc], [t].[SoTien], [t].[TrangThai], [d].[DangKyId], [d].[GoiTapId], [d].[LopHocId], [d].[LyDoHuy], [d].[NgayBatDau], [d].[NgayKetThuc], [d].[NgayTao], [d].[NguoiDungId], [d].[PhiDangKy], [d].[TrangThai], [n].[NguoiDungId], [n].[AnhDaiDien], [n].[Email], [n].[GioiTinh], [n].[Ho], [n].[LoaiNguoiDung], [n].[NgaySinh], [n].[NgayTao], [n].[NgayThamGia], [n].[SoDienThoai], [n].[Ten], [n].[TrangThai], [g].[GoiTapId], [g].[Gia], [g].[MoTa], [g].[SoBuoiToiDa], [g].[TenGoi], [g].[ThoiHanThang], [l].[LopHocId], [l].[GiaTuyChinh], [l].[GioBatDau], [l].[GioKetThuc], [l].[HlvId], [l].[MoTa], [l].[SucChua], [l].[TenLop], [l].[ThoiLuong], [l].[ThuTrongTuan], [l].[TrangThai]
+FROM [ThanhToans] AS [t]
+INNER JOIN [DangKys] AS [d] ON [t].[DangKyId] = [d].[DangKyId]
+INNER JOIN [NguoiDungs] AS [n] ON [d].[NguoiDungId] = [n].[NguoiDungId]
+LEFT JOIN [GoiTaps] AS [g] ON [d].[GoiTapId] = [g].[GoiTapId]
+LEFT JOIN [LopHocs] AS [l] ON [d].[LopHocId] = [l].[LopHocId]
+WHERE [t].[NgayThanhToan] >= @__startDate_0 AND [t].[NgayThanhToan] <= @__endDate_1
+ORDER BY [t].[NgayThanhToan] DESC
+2025-07-26 20:20:48.169 +07:00 [INF] Executing ViewResult, running view Dashboard.
+2025-07-26 20:20:48.279 +07:00 [INF] Executed ViewResult - view Dashboard executed in 114.2827ms.
+2025-07-26 20:20:48.284 +07:00 [INF] Executed action GymManagement.Web.Controllers.HomeController.Dashboard (GymManagement.Web) in 728.0987ms
+2025-07-26 20:20:48.288 +07:00 [INF] Executed endpoint 'GymManagement.Web.Controllers.HomeController.Dashboard (GymManagement.Web)'
+2025-07-26 20:20:48.406 +07:00 [INF] Request starting HTTP/1.1 GET http://localhost:5003/images/gym-logo.png - null null
+2025-07-26 20:20:48.404 +07:00 [INF] Request finished HTTP/1.1 GET http://localhost:5003/Home/Dashboard - 200 null text/html; charset=utf-8 881.0906ms
+2025-07-26 20:20:48.450 +07:00 [INF] Request finished HTTP/1.1 GET http://localhost:5003/images/gym-logo.png - 404 0 null 44.4591ms
+2025-07-26 20:20:49.067 +07:00 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET http://localhost:5003/images/gym-logo.png, Response status code: 404
+2025-07-26 20:20:50.744 +07:00 [INF] Request starting HTTP/1.1 GET http://localhost:5003/Home/GetRealtimeStats - null null
+2025-07-26 20:20:50.918 +07:00 [INF] Executing endpoint 'GymManagement.Web.Controllers.HomeController.GetRealtimeStats (GymManagement.Web)'
+2025-07-26 20:20:50.927 +07:00 [INF] Route matched with {action = "GetRealtimeStats", controller = "Home"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] GetRealtimeStats() on controller GymManagement.Web.Controllers.HomeController (GymManagement.Web).
+2025-07-26 20:20:50.947 +07:00 [INF] Executed DbCommand (1ms) [Parameters=[@__startDate_0='?' (DbType = DateTime2), @__endDate_1='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [DiemDanhs] AS [d]
+WHERE [d].[ThoiGian] >= @__startDate_0 AND [d].[ThoiGian] < @__endDate_1
+2025-07-26 20:20:50.954 +07:00 [INF] Executed DbCommand (1ms) [Parameters=[@__startDate_0='?' (DbType = DateTime2), @__endDate_1='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SELECT COALESCE(SUM([t].[SoTien]), 0.0)
+FROM [ThanhToans] AS [t]
+WHERE [t].[TrangThai] = N'SUCCESS' AND [t].[NgayThanhToan] >= @__startDate_0 AND [t].[NgayThanhToan] <= @__endDate_1
+2025-07-26 20:20:50.962 +07:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [DangKys] AS [d]
+WHERE [d].[TrangThai] = N'ACTIVE' AND [d].[NgayKetThuc] >= CAST(CONVERT(date, GETDATE()) AS date)
+2025-07-26 20:20:50.967 +07:00 [INF] Executing JsonResult, writing value of type '<>f__AnonymousType67`4[[System.Int32, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Decimal, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Int32, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.DateTime, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]'.
+2025-07-26 20:20:50.979 +07:00 [INF] Executed action GymManagement.Web.Controllers.HomeController.GetRealtimeStats (GymManagement.Web) in 46.8955ms
+2025-07-26 20:20:50.981 +07:00 [INF] Executed endpoint 'GymManagement.Web.Controllers.HomeController.GetRealtimeStats (GymManagement.Web)'
+2025-07-26 20:20:50.983 +07:00 [INF] Request finished HTTP/1.1 GET http://localhost:5003/Home/GetRealtimeStats - 200 null application/json; charset=utf-8 239.1165ms
+2025-07-26 20:22:37.794 +07:00 [INF] Request starting HTTP/1.1 GET http://localhost:5003/GoiTap - null null
+2025-07-26 20:22:37.812 +07:00 [INF] Executing endpoint 'GymManagement.Web.Controllers.GoiTapController.Index (GymManagement.Web)'
+2025-07-26 20:22:37.823 +07:00 [INF] Route matched with {action = "Index", controller = "GoiTap"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] Index() on controller GymManagement.Web.Controllers.GoiTapController (GymManagement.Web).
+2025-07-26 20:22:37.844 +07:00 [INF] Executed DbCommand (3ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [g].[GoiTapId], [g].[Gia], [g].[MoTa], [g].[SoBuoiToiDa], [g].[TenGoi], [g].[ThoiHanThang]
+FROM [GoiTaps] AS [g]
+2025-07-26 20:22:37.854 +07:00 [INF] Executing ViewResult, running view Index.
+2025-07-26 20:22:37.888 +07:00 [INF] Executed ViewResult - view Index executed in 34.4255ms.
+2025-07-26 20:22:37.892 +07:00 [INF] Executed action GymManagement.Web.Controllers.GoiTapController.Index (GymManagement.Web) in 64.5543ms
+2025-07-26 20:22:37.897 +07:00 [INF] Executed endpoint 'GymManagement.Web.Controllers.GoiTapController.Index (GymManagement.Web)'
+2025-07-26 20:22:37.902 +07:00 [INF] Request finished HTTP/1.1 GET http://localhost:5003/GoiTap - 200 null text/html; charset=utf-8 107.8607ms
+2025-07-26 20:22:38.011 +07:00 [INF] Request starting HTTP/1.1 GET http://localhost:5003/images/gym-logo.png - null null
+2025-07-26 20:22:38.018 +07:00 [INF] Request finished HTTP/1.1 GET http://localhost:5003/images/gym-logo.png - 404 0 null 7.0146ms
+2025-07-26 20:22:38.026 +07:00 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET http://localhost:5003/images/gym-logo.png, Response status code: 404
+2025-07-26 20:22:41.394 +07:00 [INF] Request starting HTTP/1.1 POST http://localhost:5003/GoiTap/DeleteConfirmed?id=5 - multipart/form-data; boundary=----WebKitFormBoundaryPwcnx0zLKMDp8iz8 134
+2025-07-26 20:22:41.401 +07:00 [INF] Request finished HTTP/1.1 POST http://localhost:5003/GoiTap/DeleteConfirmed?id=5 - 404 0 null 7.1104ms
+2025-07-26 20:22:41.405 +07:00 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: POST http://localhost:5003/GoiTap/DeleteConfirmed, Response status code: 404
+2025-07-26 20:23:00.697 +07:00 [INF] Request starting HTTP/1.1 GET http://localhost:5003/GoiTap/Create - null null
+2025-07-26 20:23:00.702 +07:00 [INF] Executing endpoint 'GymManagement.Web.Controllers.GoiTapController.Create (GymManagement.Web)'
+2025-07-26 20:23:00.706 +07:00 [INF] Route matched with {action = "Create", controller = "GoiTap"}. Executing controller action with signature Microsoft.AspNetCore.Mvc.IActionResult Create() on controller GymManagement.Web.Controllers.GoiTapController (GymManagement.Web).
+2025-07-26 20:23:00.711 +07:00 [INF] GoiTap Create GET called
+2025-07-26 20:23:00.716 +07:00 [INF] Executing ViewResult, running view Create.
+2025-07-26 20:23:00.762 +07:00 [INF] Executed ViewResult - view Create executed in 47.7424ms.
+2025-07-26 20:23:00.767 +07:00 [INF] Executed action GymManagement.Web.Controllers.GoiTapController.Create (GymManagement.Web) in 56.9399ms
+2025-07-26 20:23:00.770 +07:00 [INF] Executed endpoint 'GymManagement.Web.Controllers.GoiTapController.Create (GymManagement.Web)'
+2025-07-26 20:23:00.774 +07:00 [INF] Request finished HTTP/1.1 GET http://localhost:5003/GoiTap/Create - 200 null text/html; charset=utf-8 76.3448ms
+2025-07-26 20:23:00.836 +07:00 [INF] Request starting HTTP/1.1 GET http://localhost:5003/images/gym-logo.png - null null
+2025-07-26 20:23:00.851 +07:00 [INF] Request finished HTTP/1.1 GET http://localhost:5003/images/gym-logo.png - 404 0 null 15.2479ms
+2025-07-26 20:23:00.864 +07:00 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET http://localhost:5003/images/gym-logo.png, Response status code: 404
+2025-07-26 20:23:04.998 +07:00 [INF] Request starting HTTP/1.1 POST http://localhost:5003/GoiTap/Create - application/x-www-form-urlencoded 367
+2025-07-26 20:23:05.005 +07:00 [INF] Executing endpoint 'GymManagement.Web.Controllers.GoiTapController.Create (GymManagement.Web)'
+2025-07-26 20:23:05.020 +07:00 [INF] Route matched with {action = "Create", controller = "GoiTap"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] Create(GymManagement.Web.Models.DTOs.CreateGoiTapDto) on controller GymManagement.Web.Controllers.GoiTapController (GymManagement.Web).
+2025-07-26 20:23:05.052 +07:00 [INF] GoiTap Create POST called with data: {"TenGoi":"Gói tập 1","ThoiHanThang":2,"SoBuoiToiDa":20,"Gia":900000,"MoTa":null,"$type":"CreateGoiTapDto"}
+2025-07-26 20:23:05.065 +07:00 [INF] ModelState is valid, creating package
+2025-07-26 20:23:05.185 +07:00 [INF] Executed DbCommand (5ms) [Parameters=[@p0='?' (Precision = 12) (Scale = 2) (DbType = Decimal), @p1='?' (Size = 500), @p2='?' (DbType = Int32), @p3='?' (Size = 100), @p4='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [GoiTaps] ([Gia], [MoTa], [SoBuoiToiDa], [TenGoi], [ThoiHanThang])
+OUTPUT INSERTED.[GoiTapId]
+VALUES (@p0, @p1, @p2, @p3, @p4);
+2025-07-26 20:23:05.218 +07:00 [INF] Executing RedirectResult, redirecting to /GoiTap.
+2025-07-26 20:23:05.231 +07:00 [INF] Executed action GymManagement.Web.Controllers.GoiTapController.Create (GymManagement.Web) in 205.5059ms
+2025-07-26 20:23:05.235 +07:00 [INF] Executed endpoint 'GymManagement.Web.Controllers.GoiTapController.Create (GymManagement.Web)'
+2025-07-26 20:23:05.238 +07:00 [INF] Request finished HTTP/1.1 POST http://localhost:5003/GoiTap/Create - 302 0 null 239.8591ms
+2025-07-26 20:23:05.249 +07:00 [INF] Request starting HTTP/1.1 GET http://localhost:5003/GoiTap - null null
+2025-07-26 20:23:05.256 +07:00 [INF] Executing endpoint 'GymManagement.Web.Controllers.GoiTapController.Index (GymManagement.Web)'
+2025-07-26 20:23:05.258 +07:00 [INF] Route matched with {action = "Index", controller = "GoiTap"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] Index() on controller GymManagement.Web.Controllers.GoiTapController (GymManagement.Web).
+2025-07-26 20:23:05.263 +07:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [g].[GoiTapId], [g].[Gia], [g].[MoTa], [g].[SoBuoiToiDa], [g].[TenGoi], [g].[ThoiHanThang]
+FROM [GoiTaps] AS [g]
+2025-07-26 20:23:05.267 +07:00 [INF] Executing ViewResult, running view Index.
+2025-07-26 20:23:05.270 +07:00 [INF] Executed ViewResult - view Index executed in 3.0126ms.
+2025-07-26 20:23:05.272 +07:00 [INF] Executed action GymManagement.Web.Controllers.GoiTapController.Index (GymManagement.Web) in 10.489ms
+2025-07-26 20:23:05.275 +07:00 [INF] Executed endpoint 'GymManagement.Web.Controllers.GoiTapController.Index (GymManagement.Web)'
+2025-07-26 20:23:05.278 +07:00 [INF] Request finished HTTP/1.1 GET http://localhost:5003/GoiTap - 200 null text/html; charset=utf-8 29.1112ms
+2025-07-26 20:23:05.347 +07:00 [INF] Request starting HTTP/1.1 GET http://localhost:5003/images/gym-logo.png - null null
+2025-07-26 20:23:05.354 +07:00 [INF] Request finished HTTP/1.1 GET http://localhost:5003/images/gym-logo.png - 404 0 null 7.2286ms
+2025-07-26 20:23:05.363 +07:00 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET http://localhost:5003/images/gym-logo.png, Response status code: 404
+2025-07-26 20:23:17.533 +07:00 [INF] Request starting HTTP/1.1 POST http://localhost:5003/GoiTap/DeleteConfirmed?id=6 - multipart/form-data; boundary=----WebKitFormBoundaryiJYr55eCpSo7ZzW1 134
+2025-07-26 20:23:17.540 +07:00 [INF] Request finished HTTP/1.1 POST http://localhost:5003/GoiTap/DeleteConfirmed?id=6 - 404 0 null 7.7586ms
+2025-07-26 20:23:17.546 +07:00 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: POST http://localhost:5003/GoiTap/DeleteConfirmed, Response status code: 404
+2025-07-26 20:23:48.529 +07:00 [INF] Request starting HTTP/1.1 GET http://localhost:5003/GoiTap/Edit/5 - null null
+2025-07-26 20:23:48.537 +07:00 [INF] Executing endpoint 'GymManagement.Web.Controllers.GoiTapController.Edit (GymManagement.Web)'
+2025-07-26 20:23:48.546 +07:00 [INF] Route matched with {action = "Edit", controller = "GoiTap"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] Edit(Int32) on controller GymManagement.Web.Controllers.GoiTapController (GymManagement.Web).
+2025-07-26 20:23:48.583 +07:00 [INF] Executed DbCommand (3ms) [Parameters=[@__p_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [g].[GoiTapId], [g].[Gia], [g].[MoTa], [g].[SoBuoiToiDa], [g].[TenGoi], [g].[ThoiHanThang]
+FROM [GoiTaps] AS [g]
+WHERE [g].[GoiTapId] = @__p_0
+2025-07-26 20:23:48.592 +07:00 [INF] Executing ViewResult, running view Edit.
+2025-07-26 20:23:48.600 +07:00 [INF] Executed action GymManagement.Web.Controllers.GoiTapController.Edit (GymManagement.Web) in 47.9857ms
+2025-07-26 20:23:48.604 +07:00 [INF] Executed endpoint 'GymManagement.Web.Controllers.GoiTapController.Edit (GymManagement.Web)'
+2025-07-26 20:23:48.607 +07:00 [ERR] Error in UserSessionMiddleware for path: /GoiTap/Edit/5
+System.InvalidOperationException: The model item passed into the ViewDataDictionary is of type 'GymManagement.Web.Models.DTOs.GoiTapDto', but this ViewDataDictionary instance requires a model item of type 'GymManagement.Web.Models.DTOs.UpdateGoiTapDto'.
+   at Microsoft.AspNetCore.Mvc.ViewFeatures.ViewDataDictionary.EnsureCompatible(Object value)
+   at lambda_method655(Closure, ViewDataDictionary)
+   at Microsoft.AspNetCore.Mvc.Razor.RazorPagePropertyActivator.Activate(Object page, ViewContext context)
+   at Microsoft.AspNetCore.Mvc.Razor.RazorView.RenderPageCoreAsync(IRazorPage page, ViewContext context)
+   at Microsoft.AspNetCore.Mvc.Razor.RazorView.RenderPageAsync(IRazorPage page, ViewContext context, Boolean invokeViewStarts)
+   at Microsoft.AspNetCore.Mvc.Razor.RazorView.RenderAsync(ViewContext context)
+   at Microsoft.AspNetCore.Mvc.ViewFeatures.ViewExecutor.ExecuteAsync(ViewContext viewContext, String contentType, Nullable`1 statusCode)
+   at Microsoft.AspNetCore.Mvc.ViewFeatures.ViewExecutor.ExecuteAsync(ViewContext viewContext, String contentType, Nullable`1 statusCode)
+   at Microsoft.AspNetCore.Mvc.ViewFeatures.ViewExecutor.ExecuteAsync(ActionContext actionContext, IView view, ViewDataDictionary viewData, ITempDataDictionary tempData, String contentType, Nullable`1 statusCode)
+   at Microsoft.AspNetCore.Mvc.ViewFeatures.ViewResultExecutor.ExecuteAsync(ActionContext context, ViewResult result)
+   at Microsoft.AspNetCore.Mvc.ViewResult.ExecuteResultAsync(ActionContext context)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeNextResultFilterAsync>g__Awaited|30_0[TFilter,TFilterAsync](ResourceInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.Rethrow(ResultExecutedContextSealed context)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.ResultNext[TFilter,TFilterAsync](State& next, Scope& scope, Object& state, Boolean& isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.InvokeResultFilters()
+--- End of stack trace from previous location ---
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeNextResourceFilter>g__Awaited|25_0(ResourceInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.Rethrow(ResourceExecutedContextSealed context)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.Next(State& next, Scope& scope, Object& state, Boolean& isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeFilterPipelineAsync>g__Awaited|20_0(ResourceInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Logged|17_1(ResourceInvoker invoker)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Logged|17_1(ResourceInvoker invoker)
+   at Microsoft.AspNetCore.Routing.EndpointMiddleware.<Invoke>g__AwaitRequestTask|7_0(Endpoint endpoint, Task requestTask, ILogger logger)
+   at Microsoft.AspNetCore.Authorization.AuthorizationMiddleware.Invoke(HttpContext context)
+   at GymManagement.Web.Middleware.UserSessionMiddleware.InvokeAsync(HttpContext context, IUserSessionService userSessionService) in D:\DATN\HANG_REMOTE\qlpg\GymManagement.Web\Middleware\UserSessionMiddleware.cs:line 74
+2025-07-26 20:23:48.647 +07:00 [INF] User session cleared
+2025-07-26 20:23:48.650 +07:00 [INF] Request finished HTTP/1.1 GET http://localhost:5003/GoiTap/Edit/5 - 302 0 text/html; charset=utf-8 121.0818ms
+2025-07-26 20:23:48.663 +07:00 [INF] Request starting HTTP/1.1 GET http://localhost:5003/Auth/Login?message=%C4%90%C3%A3%20x%E1%BA%A3y%20ra%20l%E1%BB%97i%20v%E1%BB%9Bi%20phi%C3%AAn%20%C4%91%C4%83ng%20nh%E1%BA%ADp.%20Vui%20l%C3%B2ng%20%C4%91%C4%83ng%20nh%E1%BA%ADp%20l%E1%BA%A1i. - null null
+2025-07-26 20:23:48.673 +07:00 [INF] Executing endpoint 'GymManagement.Web.Controllers.AuthController.Login (GymManagement.Web)'
+2025-07-26 20:23:48.680 +07:00 [INF] Route matched with {action = "Login", controller = "Auth"}. Executing controller action with signature Microsoft.AspNetCore.Mvc.IActionResult Login(System.String) on controller GymManagement.Web.Controllers.AuthController (GymManagement.Web).
+2025-07-26 20:23:48.696 +07:00 [INF] Executing RedirectResult, redirecting to /.
+2025-07-26 20:23:48.699 +07:00 [INF] Executed action GymManagement.Web.Controllers.AuthController.Login (GymManagement.Web) in 11.518ms
+2025-07-26 20:23:48.705 +07:00 [INF] Executed endpoint 'GymManagement.Web.Controllers.AuthController.Login (GymManagement.Web)'
+2025-07-26 20:23:48.708 +07:00 [INF] Request finished HTTP/1.1 GET http://localhost:5003/Auth/Login?message=%C4%90%C3%A3%20x%E1%BA%A3y%20ra%20l%E1%BB%97i%20v%E1%BB%9Bi%20phi%C3%AAn%20%C4%91%C4%83ng%20nh%E1%BA%ADp.%20Vui%20l%C3%B2ng%20%C4%91%C4%83ng%20nh%E1%BA%ADp%20l%E1%BA%A1i. - 302 0 null 45.7529ms
+2025-07-26 20:23:48.719 +07:00 [INF] Request starting HTTP/1.1 GET http://localhost:5003/ - null null
+2025-07-26 20:23:48.742 +07:00 [INF] Executed DbCommand (12ms) [Parameters=[@__id_0='?' (Size = 450)], CommandType='"Text"', CommandTimeout='30']
+SELECT [t0].[Id], [t0].[Email], [t0].[EmailXacNhan], [t0].[KichHoat], [t0].[LanDangNhapCuoi], [t0].[MatKhauHash], [t0].[NgayTao], [t0].[NguoiDungId], [t0].[Salt], [t0].[TenDangNhap], [t0].[NguoiDungId0], [t0].[AnhDaiDien], [t0].[Email0], [t0].[GioiTinh], [t0].[Ho], [t0].[LoaiNguoiDung], [t0].[NgaySinh], [t0].[NgayTao0], [t0].[NgayThamGia], [t0].[SoDienThoai], [t0].[Ten], [t0].[TrangThai], [t1].[Id], [t1].[NgayGan], [t1].[TaiKhoanId], [t1].[VaiTroId], [t1].[Id0], [t1].[MoTa], [t1].[NgayTao], [t1].[TenVaiTro]
+FROM (
+    SELECT TOP(1) [t].[Id], [t].[Email], [t].[EmailXacNhan], [t].[KichHoat], [t].[LanDangNhapCuoi], [t].[MatKhauHash], [t].[NgayTao], [t].[NguoiDungId], [t].[Salt], [t].[TenDangNhap], [n].[NguoiDungId] AS [NguoiDungId0], [n].[AnhDaiDien], [n].[Email] AS [Email0], [n].[GioiTinh], [n].[Ho], [n].[LoaiNguoiDung], [n].[NgaySinh], [n].[NgayTao] AS [NgayTao0], [n].[NgayThamGia], [n].[SoDienThoai], [n].[Ten], [n].[TrangThai]
+    FROM [TaiKhoan] AS [t]
+    LEFT JOIN [NguoiDungs] AS [n] ON [t].[NguoiDungId] = [n].[NguoiDungId]
+    WHERE [t].[Id] = @__id_0
+) AS [t0]
+LEFT JOIN (
+    SELECT [t2].[Id], [t2].[NgayGan], [t2].[TaiKhoanId], [t2].[VaiTroId], [v].[Id] AS [Id0], [v].[MoTa], [v].[NgayTao], [v].[TenVaiTro]
+    FROM [TaiKhoanVaiTros] AS [t2]
+    INNER JOIN [VaiTro] AS [v] ON [t2].[VaiTroId] = [v].[Id]
+) AS [t1] ON [t0].[Id] = [t1].[TaiKhoanId]
+ORDER BY [t0].[Id], [t0].[NguoiDungId0], [t1].[Id]
+2025-07-26 20:23:48.757 +07:00 [INF] Executed DbCommand (7ms) [Parameters=[@__userId_0='?' (Size = 450)], CommandType='"Text"', CommandTimeout='30']
+SELECT [v].[TenVaiTro]
+FROM [TaiKhoanVaiTros] AS [t]
+INNER JOIN [VaiTro] AS [v] ON [t].[VaiTroId] = [v].[Id]
+WHERE [t].[TaiKhoanId] = @__userId_0
+2025-07-26 20:23:48.762 +07:00 [INF] User session set for user: admin
+2025-07-26 20:23:48.765 +07:00 [INF] Executing endpoint 'GymManagement.Web.Controllers.HomeController.Index (GymManagement.Web)'
+2025-07-26 20:23:48.769 +07:00 [INF] Route matched with {action = "Index", controller = "Home"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] Index() on controller GymManagement.Web.Controllers.HomeController (GymManagement.Web).
+2025-07-26 20:23:48.775 +07:00 [INF] Executing RedirectResult, redirecting to /Home/Dashboard.
+2025-07-26 20:23:48.777 +07:00 [INF] Executed action GymManagement.Web.Controllers.HomeController.Index (GymManagement.Web) in 3.3231ms
+2025-07-26 20:23:48.780 +07:00 [INF] Executed endpoint 'GymManagement.Web.Controllers.HomeController.Index (GymManagement.Web)'
+2025-07-26 20:23:48.783 +07:00 [INF] Request finished HTTP/1.1 GET http://localhost:5003/ - 302 0 null 64.0927ms
+2025-07-26 20:23:48.796 +07:00 [INF] Request starting HTTP/1.1 GET http://localhost:5003/Home/Dashboard - null null
+2025-07-26 20:23:48.805 +07:00 [INF] Executing endpoint 'GymManagement.Web.Controllers.HomeController.Dashboard (GymManagement.Web)'
+2025-07-26 20:23:48.808 +07:00 [INF] Route matched with {action = "Dashboard", controller = "Home"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] Dashboard() on controller GymManagement.Web.Controllers.HomeController (GymManagement.Web).
+2025-07-26 20:23:48.813 +07:00 [INF] User action: admin (f2a371dc-c45f-4619-84fe-691582c7fe10) performed AccessDashboard
+2025-07-26 20:23:48.816 +07:00 [INF] Executing ViewResult, running view Dashboard.
+2025-07-26 20:23:48.820 +07:00 [INF] Executed ViewResult - view Dashboard executed in 4.0039ms.
+2025-07-26 20:23:48.825 +07:00 [INF] Executed action GymManagement.Web.Controllers.HomeController.Dashboard (GymManagement.Web) in 12.9851ms
+2025-07-26 20:23:48.829 +07:00 [INF] Executed endpoint 'GymManagement.Web.Controllers.HomeController.Dashboard (GymManagement.Web)'
+2025-07-26 20:23:48.832 +07:00 [INF] Request finished HTTP/1.1 GET http://localhost:5003/Home/Dashboard - 200 null text/html; charset=utf-8 36.3024ms
+2025-07-26 20:23:48.948 +07:00 [INF] Request starting HTTP/1.1 GET http://localhost:5003/images/gym-logo.png - null null
+2025-07-26 20:23:48.974 +07:00 [INF] Request finished HTTP/1.1 GET http://localhost:5003/images/gym-logo.png - 404 0 null 26.3503ms
+2025-07-26 20:23:48.980 +07:00 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET http://localhost:5003/images/gym-logo.png, Response status code: 404
+2025-07-26 20:23:50.340 +07:00 [INF] Request starting HTTP/1.1 GET http://localhost:5003/Home/GetRealtimeStats - null null
+2025-07-26 20:23:50.346 +07:00 [INF] Executing endpoint 'GymManagement.Web.Controllers.HomeController.GetRealtimeStats (GymManagement.Web)'
+2025-07-26 20:23:50.348 +07:00 [INF] Route matched with {action = "GetRealtimeStats", controller = "Home"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] GetRealtimeStats() on controller GymManagement.Web.Controllers.HomeController (GymManagement.Web).
+2025-07-26 20:23:50.357 +07:00 [INF] Executed DbCommand (2ms) [Parameters=[@__startDate_0='?' (DbType = DateTime2), @__endDate_1='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [DiemDanhs] AS [d]
+WHERE [d].[ThoiGian] >= @__startDate_0 AND [d].[ThoiGian] < @__endDate_1
+2025-07-26 20:23:50.367 +07:00 [INF] Executed DbCommand (4ms) [Parameters=[@__startDate_0='?' (DbType = DateTime2), @__endDate_1='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SELECT COALESCE(SUM([t].[SoTien]), 0.0)
+FROM [ThanhToans] AS [t]
+WHERE [t].[TrangThai] = N'SUCCESS' AND [t].[NgayThanhToan] >= @__startDate_0 AND [t].[NgayThanhToan] <= @__endDate_1
+2025-07-26 20:23:50.376 +07:00 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [DangKys] AS [d]
+WHERE [d].[TrangThai] = N'ACTIVE' AND [d].[NgayKetThuc] >= CAST(CONVERT(date, GETDATE()) AS date)
+2025-07-26 20:23:50.381 +07:00 [INF] Executing JsonResult, writing value of type '<>f__AnonymousType67`4[[System.Int32, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Decimal, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Int32, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.DateTime, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]'.
+2025-07-26 20:23:50.385 +07:00 [INF] Executed action GymManagement.Web.Controllers.HomeController.GetRealtimeStats (GymManagement.Web) in 32.0829ms
+2025-07-26 20:23:50.390 +07:00 [INF] Executed endpoint 'GymManagement.Web.Controllers.HomeController.GetRealtimeStats (GymManagement.Web)'
+2025-07-26 20:23:50.393 +07:00 [INF] Request finished HTTP/1.1 GET http://localhost:5003/Home/GetRealtimeStats - 200 null application/json; charset=utf-8 52.7383ms
+2025-07-26 20:23:54.188 +07:00 [INF] Request starting HTTP/1.1 GET http://localhost:5003/GoiTap - null null
+2025-07-26 20:23:54.203 +07:00 [INF] Executing endpoint 'GymManagement.Web.Controllers.GoiTapController.Index (GymManagement.Web)'
+2025-07-26 20:23:54.205 +07:00 [INF] Route matched with {action = "Index", controller = "GoiTap"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] Index() on controller GymManagement.Web.Controllers.GoiTapController (GymManagement.Web).
+2025-07-26 20:23:54.219 +07:00 [INF] Executed DbCommand (7ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [g].[GoiTapId], [g].[Gia], [g].[MoTa], [g].[SoBuoiToiDa], [g].[TenGoi], [g].[ThoiHanThang]
+FROM [GoiTaps] AS [g]
+2025-07-26 20:23:54.227 +07:00 [INF] Executing ViewResult, running view Index.
+2025-07-26 20:23:54.236 +07:00 [INF] Executed ViewResult - view Index executed in 9.11ms.
+2025-07-26 20:23:54.241 +07:00 [INF] Executed action GymManagement.Web.Controllers.GoiTapController.Index (GymManagement.Web) in 31.0367ms
+2025-07-26 20:23:54.250 +07:00 [INF] Executed endpoint 'GymManagement.Web.Controllers.GoiTapController.Index (GymManagement.Web)'
+2025-07-26 20:23:54.264 +07:00 [INF] Request finished HTTP/1.1 GET http://localhost:5003/GoiTap - 200 null text/html; charset=utf-8 76.8084ms
+2025-07-26 20:23:54.336 +07:00 [INF] Request starting HTTP/1.1 GET http://localhost:5003/images/gym-logo.png - null null
+2025-07-26 20:23:54.354 +07:00 [INF] Request finished HTTP/1.1 GET http://localhost:5003/images/gym-logo.png - 404 0 null 18.1817ms
+2025-07-26 20:23:54.372 +07:00 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET http://localhost:5003/images/gym-logo.png, Response status code: 404
+2025-07-26 20:24:29.436 +07:00 [INF] Request starting HTTP/1.1 GET http://localhost:5003/GoiTap/Edit/2 - null null
+2025-07-26 20:24:29.443 +07:00 [INF] Executing endpoint 'GymManagement.Web.Controllers.GoiTapController.Edit (GymManagement.Web)'
+2025-07-26 20:24:29.446 +07:00 [INF] Route matched with {action = "Edit", controller = "GoiTap"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] Edit(Int32) on controller GymManagement.Web.Controllers.GoiTapController (GymManagement.Web).
+2025-07-26 20:24:29.463 +07:00 [INF] Executed DbCommand (5ms) [Parameters=[@__p_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [g].[GoiTapId], [g].[Gia], [g].[MoTa], [g].[SoBuoiToiDa], [g].[TenGoi], [g].[ThoiHanThang]
+FROM [GoiTaps] AS [g]
+WHERE [g].[GoiTapId] = @__p_0
+2025-07-26 20:24:29.471 +07:00 [INF] Executing ViewResult, running view Edit.
+2025-07-26 20:24:29.474 +07:00 [INF] Executed action GymManagement.Web.Controllers.GoiTapController.Edit (GymManagement.Web) in 19.7776ms
+2025-07-26 20:24:29.480 +07:00 [INF] Executed endpoint 'GymManagement.Web.Controllers.GoiTapController.Edit (GymManagement.Web)'
+2025-07-26 20:24:29.484 +07:00 [ERR] Error in UserSessionMiddleware for path: /GoiTap/Edit/2
+System.InvalidOperationException: The model item passed into the ViewDataDictionary is of type 'GymManagement.Web.Models.DTOs.GoiTapDto', but this ViewDataDictionary instance requires a model item of type 'GymManagement.Web.Models.DTOs.UpdateGoiTapDto'.
+   at Microsoft.AspNetCore.Mvc.ViewFeatures.ViewDataDictionary.EnsureCompatible(Object value)
+   at lambda_method655(Closure, ViewDataDictionary)
+   at Microsoft.AspNetCore.Mvc.Razor.RazorPagePropertyActivator.Activate(Object page, ViewContext context)
+   at Microsoft.AspNetCore.Mvc.Razor.RazorView.RenderPageCoreAsync(IRazorPage page, ViewContext context)
+   at Microsoft.AspNetCore.Mvc.Razor.RazorView.RenderPageAsync(IRazorPage page, ViewContext context, Boolean invokeViewStarts)
+   at Microsoft.AspNetCore.Mvc.Razor.RazorView.RenderAsync(ViewContext context)
+   at Microsoft.AspNetCore.Mvc.ViewFeatures.ViewExecutor.ExecuteAsync(ViewContext viewContext, String contentType, Nullable`1 statusCode)
+   at Microsoft.AspNetCore.Mvc.ViewFeatures.ViewExecutor.ExecuteAsync(ViewContext viewContext, String contentType, Nullable`1 statusCode)
+   at Microsoft.AspNetCore.Mvc.ViewFeatures.ViewExecutor.ExecuteAsync(ActionContext actionContext, IView view, ViewDataDictionary viewData, ITempDataDictionary tempData, String contentType, Nullable`1 statusCode)
+   at Microsoft.AspNetCore.Mvc.ViewFeatures.ViewResultExecutor.ExecuteAsync(ActionContext context, ViewResult result)
+   at Microsoft.AspNetCore.Mvc.ViewResult.ExecuteResultAsync(ActionContext context)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeNextResultFilterAsync>g__Awaited|30_0[TFilter,TFilterAsync](ResourceInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.Rethrow(ResultExecutedContextSealed context)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.ResultNext[TFilter,TFilterAsync](State& next, Scope& scope, Object& state, Boolean& isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.InvokeResultFilters()
+--- End of stack trace from previous location ---
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeNextResourceFilter>g__Awaited|25_0(ResourceInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.Rethrow(ResourceExecutedContextSealed context)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.Next(State& next, Scope& scope, Object& state, Boolean& isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeFilterPipelineAsync>g__Awaited|20_0(ResourceInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Logged|17_1(ResourceInvoker invoker)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Logged|17_1(ResourceInvoker invoker)
+   at Microsoft.AspNetCore.Routing.EndpointMiddleware.<Invoke>g__AwaitRequestTask|7_0(Endpoint endpoint, Task requestTask, ILogger logger)
+   at Microsoft.AspNetCore.Authorization.AuthorizationMiddleware.Invoke(HttpContext context)
+   at GymManagement.Web.Middleware.UserSessionMiddleware.InvokeAsync(HttpContext context, IUserSessionService userSessionService) in D:\DATN\HANG_REMOTE\qlpg\GymManagement.Web\Middleware\UserSessionMiddleware.cs:line 74
+2025-07-26 20:24:29.504 +07:00 [INF] User session cleared
+2025-07-26 20:24:29.508 +07:00 [INF] Request finished HTTP/1.1 GET http://localhost:5003/GoiTap/Edit/2 - 302 0 text/html; charset=utf-8 71.6874ms
+2025-07-26 20:24:29.520 +07:00 [INF] Request starting HTTP/1.1 GET http://localhost:5003/Auth/Login?message=%C4%90%C3%A3%20x%E1%BA%A3y%20ra%20l%E1%BB%97i%20v%E1%BB%9Bi%20phi%C3%AAn%20%C4%91%C4%83ng%20nh%E1%BA%ADp.%20Vui%20l%C3%B2ng%20%C4%91%C4%83ng%20nh%E1%BA%ADp%20l%E1%BA%A1i. - null null
+2025-07-26 20:24:29.530 +07:00 [INF] Executing endpoint 'GymManagement.Web.Controllers.AuthController.Login (GymManagement.Web)'
+2025-07-26 20:24:29.533 +07:00 [INF] Route matched with {action = "Login", controller = "Auth"}. Executing controller action with signature Microsoft.AspNetCore.Mvc.IActionResult Login(System.String) on controller GymManagement.Web.Controllers.AuthController (GymManagement.Web).
+2025-07-26 20:24:29.540 +07:00 [INF] Executing RedirectResult, redirecting to /.
+2025-07-26 20:24:29.543 +07:00 [INF] Executed action GymManagement.Web.Controllers.AuthController.Login (GymManagement.Web) in 4.1001ms
+2025-07-26 20:24:29.547 +07:00 [INF] Executed endpoint 'GymManagement.Web.Controllers.AuthController.Login (GymManagement.Web)'
+2025-07-26 20:24:29.550 +07:00 [INF] Request finished HTTP/1.1 GET http://localhost:5003/Auth/Login?message=%C4%90%C3%A3%20x%E1%BA%A3y%20ra%20l%E1%BB%97i%20v%E1%BB%9Bi%20phi%C3%AAn%20%C4%91%C4%83ng%20nh%E1%BA%ADp.%20Vui%20l%C3%B2ng%20%C4%91%C4%83ng%20nh%E1%BA%ADp%20l%E1%BA%A1i. - 302 0 null 30.1351ms
+2025-07-26 20:24:29.562 +07:00 [INF] Request starting HTTP/1.1 GET http://localhost:5003/ - null null
+2025-07-26 20:24:29.589 +07:00 [INF] Executed DbCommand (13ms) [Parameters=[@__id_0='?' (Size = 450)], CommandType='"Text"', CommandTimeout='30']
+SELECT [t0].[Id], [t0].[Email], [t0].[EmailXacNhan], [t0].[KichHoat], [t0].[LanDangNhapCuoi], [t0].[MatKhauHash], [t0].[NgayTao], [t0].[NguoiDungId], [t0].[Salt], [t0].[TenDangNhap], [t0].[NguoiDungId0], [t0].[AnhDaiDien], [t0].[Email0], [t0].[GioiTinh], [t0].[Ho], [t0].[LoaiNguoiDung], [t0].[NgaySinh], [t0].[NgayTao0], [t0].[NgayThamGia], [t0].[SoDienThoai], [t0].[Ten], [t0].[TrangThai], [t1].[Id], [t1].[NgayGan], [t1].[TaiKhoanId], [t1].[VaiTroId], [t1].[Id0], [t1].[MoTa], [t1].[NgayTao], [t1].[TenVaiTro]
+FROM (
+    SELECT TOP(1) [t].[Id], [t].[Email], [t].[EmailXacNhan], [t].[KichHoat], [t].[LanDangNhapCuoi], [t].[MatKhauHash], [t].[NgayTao], [t].[NguoiDungId], [t].[Salt], [t].[TenDangNhap], [n].[NguoiDungId] AS [NguoiDungId0], [n].[AnhDaiDien], [n].[Email] AS [Email0], [n].[GioiTinh], [n].[Ho], [n].[LoaiNguoiDung], [n].[NgaySinh], [n].[NgayTao] AS [NgayTao0], [n].[NgayThamGia], [n].[SoDienThoai], [n].[Ten], [n].[TrangThai]
+    FROM [TaiKhoan] AS [t]
+    LEFT JOIN [NguoiDungs] AS [n] ON [t].[NguoiDungId] = [n].[NguoiDungId]
+    WHERE [t].[Id] = @__id_0
+) AS [t0]
+LEFT JOIN (
+    SELECT [t2].[Id], [t2].[NgayGan], [t2].[TaiKhoanId], [t2].[VaiTroId], [v].[Id] AS [Id0], [v].[MoTa], [v].[NgayTao], [v].[TenVaiTro]
+    FROM [TaiKhoanVaiTros] AS [t2]
+    INNER JOIN [VaiTro] AS [v] ON [t2].[VaiTroId] = [v].[Id]
+) AS [t1] ON [t0].[Id] = [t1].[TaiKhoanId]
+ORDER BY [t0].[Id], [t0].[NguoiDungId0], [t1].[Id]
+2025-07-26 20:24:29.600 +07:00 [INF] Executed DbCommand (3ms) [Parameters=[@__userId_0='?' (Size = 450)], CommandType='"Text"', CommandTimeout='30']
+SELECT [v].[TenVaiTro]
+FROM [TaiKhoanVaiTros] AS [t]
+INNER JOIN [VaiTro] AS [v] ON [t].[VaiTroId] = [v].[Id]
+WHERE [t].[TaiKhoanId] = @__userId_0
+2025-07-26 20:24:29.608 +07:00 [INF] User session set for user: admin
+2025-07-26 20:24:29.610 +07:00 [INF] Executing endpoint 'GymManagement.Web.Controllers.HomeController.Index (GymManagement.Web)'
+2025-07-26 20:24:29.613 +07:00 [INF] Route matched with {action = "Index", controller = "Home"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] Index() on controller GymManagement.Web.Controllers.HomeController (GymManagement.Web).
+2025-07-26 20:24:29.620 +07:00 [INF] Executing RedirectResult, redirecting to /Home/Dashboard.
+2025-07-26 20:24:29.623 +07:00 [INF] Executed action GymManagement.Web.Controllers.HomeController.Index (GymManagement.Web) in 3.5856ms
+2025-07-26 20:24:29.625 +07:00 [INF] Executed endpoint 'GymManagement.Web.Controllers.HomeController.Index (GymManagement.Web)'
+2025-07-26 20:24:29.628 +07:00 [INF] Request finished HTTP/1.1 GET http://localhost:5003/ - 302 0 null 65.6396ms
+2025-07-26 20:24:29.661 +07:00 [INF] Request starting HTTP/1.1 GET http://localhost:5003/Home/Dashboard - null null
+2025-07-26 20:24:29.675 +07:00 [INF] Executing endpoint 'GymManagement.Web.Controllers.HomeController.Dashboard (GymManagement.Web)'
+2025-07-26 20:24:29.678 +07:00 [INF] Route matched with {action = "Dashboard", controller = "Home"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] Dashboard() on controller GymManagement.Web.Controllers.HomeController (GymManagement.Web).
+2025-07-26 20:24:29.687 +07:00 [INF] User action: admin (f2a371dc-c45f-4619-84fe-691582c7fe10) performed AccessDashboard
+2025-07-26 20:24:29.692 +07:00 [INF] Executing ViewResult, running view Dashboard.
+2025-07-26 20:24:29.695 +07:00 [INF] Executed ViewResult - view Dashboard executed in 2.6329ms.
+2025-07-26 20:24:29.699 +07:00 [INF] Executed action GymManagement.Web.Controllers.HomeController.Dashboard (GymManagement.Web) in 13.4188ms
+2025-07-26 20:24:29.703 +07:00 [INF] Executed endpoint 'GymManagement.Web.Controllers.HomeController.Dashboard (GymManagement.Web)'
+2025-07-26 20:24:29.709 +07:00 [INF] Request finished HTTP/1.1 GET http://localhost:5003/Home/Dashboard - 200 null text/html; charset=utf-8 47.6272ms
+2025-07-26 20:24:29.829 +07:00 [INF] Request starting HTTP/1.1 GET http://localhost:5003/images/gym-logo.png - null null
+2025-07-26 20:24:29.871 +07:00 [INF] Request finished HTTP/1.1 GET http://localhost:5003/images/gym-logo.png - 404 0 null 41.7701ms
+2025-07-26 20:24:29.887 +07:00 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET http://localhost:5003/images/gym-logo.png, Response status code: 404
+2025-07-26 20:24:30.897 +07:00 [INF] Request starting HTTP/1.1 GET http://localhost:5003/Home/GetRealtimeStats - null null
+2025-07-26 20:24:30.902 +07:00 [INF] Executing endpoint 'GymManagement.Web.Controllers.HomeController.GetRealtimeStats (GymManagement.Web)'
+2025-07-26 20:24:30.904 +07:00 [INF] Route matched with {action = "GetRealtimeStats", controller = "Home"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] GetRealtimeStats() on controller GymManagement.Web.Controllers.HomeController (GymManagement.Web).
+2025-07-26 20:24:30.917 +07:00 [INF] Executed DbCommand (5ms) [Parameters=[@__startDate_0='?' (DbType = DateTime2), @__endDate_1='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [DiemDanhs] AS [d]
+WHERE [d].[ThoiGian] >= @__startDate_0 AND [d].[ThoiGian] < @__endDate_1
+2025-07-26 20:24:30.926 +07:00 [INF] Executed DbCommand (4ms) [Parameters=[@__startDate_0='?' (DbType = DateTime2), @__endDate_1='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SELECT COALESCE(SUM([t].[SoTien]), 0.0)
+FROM [ThanhToans] AS [t]
+WHERE [t].[TrangThai] = N'SUCCESS' AND [t].[NgayThanhToan] >= @__startDate_0 AND [t].[NgayThanhToan] <= @__endDate_1
+2025-07-26 20:24:30.953 +07:00 [INF] Executed DbCommand (8ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [DangKys] AS [d]
+WHERE [d].[TrangThai] = N'ACTIVE' AND [d].[NgayKetThuc] >= CAST(CONVERT(date, GETDATE()) AS date)
+2025-07-26 20:24:30.963 +07:00 [INF] Executing JsonResult, writing value of type '<>f__AnonymousType67`4[[System.Int32, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Decimal, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Int32, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.DateTime, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]'.
+2025-07-26 20:24:30.970 +07:00 [INF] Executed action GymManagement.Web.Controllers.HomeController.GetRealtimeStats (GymManagement.Web) in 61.6589ms
+2025-07-26 20:24:30.974 +07:00 [INF] Executed endpoint 'GymManagement.Web.Controllers.HomeController.GetRealtimeStats (GymManagement.Web)'
+2025-07-26 20:24:30.976 +07:00 [INF] Request finished HTTP/1.1 GET http://localhost:5003/Home/GetRealtimeStats - 200 null application/json; charset=utf-8 79.7624ms
+2025-07-26 20:25:18.875 +07:00 [INF] Application is shutting down...
+2025-07-26 20:30:26.895 +07:00 [INF] Executed DbCommand (25ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT 1
+2025-07-26 20:30:27.069 +07:00 [INF] Executed DbCommand (43ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+
+IF EXISTS
+    (SELECT *
+     FROM [sys].[objects] o
+     WHERE [o].[type] = 'U'
+     AND [o].[is_ms_shipped] = 0
+     AND NOT EXISTS (SELECT *
+         FROM [sys].[extended_properties] AS [ep]
+         WHERE [ep].[major_id] = [o].[object_id]
+             AND [ep].[minor_id] = 0
+             AND [ep].[class] = 1
+             AND [ep].[name] = N'microsoft_database_tools_support'
+    )
+)
+SELECT 1 ELSE SELECT 0
+2025-07-26 20:30:27.235 +07:00 [INF] Executed DbCommand (3ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT CASE
+    WHEN EXISTS (
+        SELECT 1
+        FROM [VaiTro] AS [v]) THEN CAST(1 AS bit)
+    ELSE CAST(0 AS bit)
+END
+2025-07-26 20:30:27.249 +07:00 [INF] Starting web application
+2025-07-26 20:30:27.261 +07:00 [INF] User profile is available. Using 'C:\Users\ADMIN\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+2025-07-26 20:30:27.322 +07:00 [INF] Now listening on: http://localhost:5003
+2025-07-26 20:30:27.328 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-07-26 20:30:27.332 +07:00 [INF] Hosting environment: Development
+2025-07-26 20:30:27.335 +07:00 [INF] Content root path: D:\DATN\HANG_REMOTE\qlpg\GymManagement.Web
+2025-07-26 20:31:32.711 +07:00 [INF] Request starting HTTP/1.1 GET http://localhost:5003/GoiTap - null null
+2025-07-26 20:31:32.729 +07:00 [WRN] Failed to determine the https port for redirect.
+2025-07-26 20:31:32.819 +07:00 [INF] Accessing expired session, Key:96d4d356-aa06-d99e-1df6-8a370b6c4bb2
+2025-07-26 20:31:33.046 +07:00 [INF] Executed DbCommand (20ms) [Parameters=[@__id_0='?' (Size = 450)], CommandType='"Text"', CommandTimeout='30']
+SELECT [t0].[Id], [t0].[Email], [t0].[EmailXacNhan], [t0].[KichHoat], [t0].[LanDangNhapCuoi], [t0].[MatKhauHash], [t0].[NgayTao], [t0].[NguoiDungId], [t0].[Salt], [t0].[TenDangNhap], [t0].[NguoiDungId0], [t0].[AnhDaiDien], [t0].[Email0], [t0].[GioiTinh], [t0].[Ho], [t0].[LoaiNguoiDung], [t0].[NgaySinh], [t0].[NgayTao0], [t0].[NgayThamGia], [t0].[SoDienThoai], [t0].[Ten], [t0].[TrangThai], [t1].[Id], [t1].[NgayGan], [t1].[TaiKhoanId], [t1].[VaiTroId], [t1].[Id0], [t1].[MoTa], [t1].[NgayTao], [t1].[TenVaiTro]
+FROM (
+    SELECT TOP(1) [t].[Id], [t].[Email], [t].[EmailXacNhan], [t].[KichHoat], [t].[LanDangNhapCuoi], [t].[MatKhauHash], [t].[NgayTao], [t].[NguoiDungId], [t].[Salt], [t].[TenDangNhap], [n].[NguoiDungId] AS [NguoiDungId0], [n].[AnhDaiDien], [n].[Email] AS [Email0], [n].[GioiTinh], [n].[Ho], [n].[LoaiNguoiDung], [n].[NgaySinh], [n].[NgayTao] AS [NgayTao0], [n].[NgayThamGia], [n].[SoDienThoai], [n].[Ten], [n].[TrangThai]
+    FROM [TaiKhoan] AS [t]
+    LEFT JOIN [NguoiDungs] AS [n] ON [t].[NguoiDungId] = [n].[NguoiDungId]
+    WHERE [t].[Id] = @__id_0
+) AS [t0]
+LEFT JOIN (
+    SELECT [t2].[Id], [t2].[NgayGan], [t2].[TaiKhoanId], [t2].[VaiTroId], [v].[Id] AS [Id0], [v].[MoTa], [v].[NgayTao], [v].[TenVaiTro]
+    FROM [TaiKhoanVaiTros] AS [t2]
+    INNER JOIN [VaiTro] AS [v] ON [t2].[VaiTroId] = [v].[Id]
+) AS [t1] ON [t0].[Id] = [t1].[TaiKhoanId]
+ORDER BY [t0].[Id], [t0].[NguoiDungId0], [t1].[Id]
+2025-07-26 20:31:33.234 +07:00 [INF] Executed DbCommand (4ms) [Parameters=[@__userId_0='?' (Size = 450)], CommandType='"Text"', CommandTimeout='30']
+SELECT [v].[TenVaiTro]
+FROM [TaiKhoanVaiTros] AS [t]
+INNER JOIN [VaiTro] AS [v] ON [t].[VaiTroId] = [v].[Id]
+WHERE [t].[TaiKhoanId] = @__userId_0
+2025-07-26 20:31:33.265 +07:00 [INF] User session set for user: admin
+2025-07-26 20:31:33.277 +07:00 [INF] Executing endpoint 'GymManagement.Web.Controllers.GoiTapController.Index (GymManagement.Web)'
+2025-07-26 20:31:33.299 +07:00 [INF] Route matched with {action = "Index", controller = "GoiTap"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] Index() on controller GymManagement.Web.Controllers.GoiTapController (GymManagement.Web).
+2025-07-26 20:31:33.319 +07:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [g].[GoiTapId], [g].[Gia], [g].[MoTa], [g].[SoBuoiToiDa], [g].[TenGoi], [g].[ThoiHanThang]
+FROM [GoiTaps] AS [g]
+2025-07-26 20:31:33.356 +07:00 [INF] Executing ViewResult, running view Index.
+2025-07-26 20:31:33.484 +07:00 [INF] Executed ViewResult - view Index executed in 128.864ms.
+2025-07-26 20:31:33.490 +07:00 [INF] Executed action GymManagement.Web.Controllers.GoiTapController.Index (GymManagement.Web) in 185.2892ms
+2025-07-26 20:31:33.495 +07:00 [INF] Executed endpoint 'GymManagement.Web.Controllers.GoiTapController.Index (GymManagement.Web)'
+2025-07-26 20:31:33.505 +07:00 [INF] Session started; Key:96d4d356-aa06-d99e-1df6-8a370b6c4bb2, Id:ec2fd460-d4f3-493f-92e4-b1b608df7578
+2025-07-26 20:31:33.520 +07:00 [INF] Request finished HTTP/1.1 GET http://localhost:5003/GoiTap - 200 null text/html; charset=utf-8 812.3482ms
+2025-07-26 20:31:33.575 +07:00 [INF] Request starting HTTP/1.1 GET http://localhost:5003/images/gym-logo.png - null null
+2025-07-26 20:31:33.623 +07:00 [INF] Request finished HTTP/1.1 GET http://localhost:5003/images/gym-logo.png - 404 0 null 48.3568ms
+2025-07-26 20:31:33.637 +07:00 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET http://localhost:5003/images/gym-logo.png, Response status code: 404
+2025-07-26 20:32:14.763 +07:00 [INF] Request starting HTTP/1.1 POST http://localhost:5003/GoiTap/DeleteConfirmed?id=6 - multipart/form-data; boundary=----WebKitFormBoundaryrYxUBLqYCBT8ichO 134
+2025-07-26 20:32:14.790 +07:00 [INF] Executing endpoint 'GymManagement.Web.Controllers.GoiTapController.DeleteConfirmed (GymManagement.Web)'
+2025-07-26 20:32:14.815 +07:00 [INF] Route matched with {action = "DeleteConfirmed", controller = "GoiTap"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] DeleteConfirmed(Int32) on controller GymManagement.Web.Controllers.GoiTapController (GymManagement.Web).
+2025-07-26 20:32:14.972 +07:00 [INF] Antiforgery token validation failed. The required antiforgery request token was not provided in either form field "__RequestVerificationToken" or header value "RequestVerificationToken".
+Microsoft.AspNetCore.Antiforgery.AntiforgeryValidationException: The required antiforgery request token was not provided in either form field "__RequestVerificationToken" or header value "RequestVerificationToken".
+   at Microsoft.AspNetCore.Antiforgery.DefaultAntiforgery.ValidateRequestAsync(HttpContext httpContext)
+   at Microsoft.AspNetCore.Mvc.ViewFeatures.Filters.ValidateAntiforgeryTokenAuthorizationFilter.OnAuthorizationAsync(AuthorizationFilterContext context)
+2025-07-26 20:32:15.017 +07:00 [INF] Authorization failed for the request at filter 'Microsoft.AspNetCore.Mvc.ViewFeatures.Filters.ValidateAntiforgeryTokenAuthorizationFilter'.
+2025-07-26 20:32:15.024 +07:00 [INF] Executing StatusCodeResult, setting HTTP status code 400
+2025-07-26 20:32:15.029 +07:00 [INF] Executed action GymManagement.Web.Controllers.GoiTapController.DeleteConfirmed (GymManagement.Web) in 208.4511ms
+2025-07-26 20:32:15.032 +07:00 [INF] Executed endpoint 'GymManagement.Web.Controllers.GoiTapController.DeleteConfirmed (GymManagement.Web)'
+2025-07-26 20:32:15.035 +07:00 [INF] Request finished HTTP/1.1 POST http://localhost:5003/GoiTap/DeleteConfirmed?id=6 - 400 0 null 272.0004ms
+2025-07-26 20:32:22.040 +07:00 [INF] Request starting HTTP/1.1 GET http://localhost:5003/GoiTap/DeleteConfirmed?id=6 - null null
+2025-07-26 20:32:22.072 +07:00 [INF] Executing endpoint '405 HTTP Method Not Supported'
+2025-07-26 20:32:22.083 +07:00 [INF] Executed endpoint '405 HTTP Method Not Supported'
+2025-07-26 20:32:22.093 +07:00 [INF] Request finished HTTP/1.1 GET http://localhost:5003/GoiTap/DeleteConfirmed?id=6 - 405 0 null 53.038ms
+2025-07-26 20:32:51.082 +07:00 [INF] Request starting HTTP/1.1 POST http://localhost:5003/GoiTap/DeleteConfirmed?id=6 - multipart/form-data; boundary=----WebKitFormBoundaryLWEj6xmwCQ1ymqaP 134
+2025-07-26 20:32:51.091 +07:00 [INF] Executing endpoint 'GymManagement.Web.Controllers.GoiTapController.DeleteConfirmed (GymManagement.Web)'
+2025-07-26 20:32:51.093 +07:00 [INF] Route matched with {action = "DeleteConfirmed", controller = "GoiTap"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] DeleteConfirmed(Int32) on controller GymManagement.Web.Controllers.GoiTapController (GymManagement.Web).
+2025-07-26 20:32:51.101 +07:00 [INF] Antiforgery token validation failed. The required antiforgery request token was not provided in either form field "__RequestVerificationToken" or header value "RequestVerificationToken".
+Microsoft.AspNetCore.Antiforgery.AntiforgeryValidationException: The required antiforgery request token was not provided in either form field "__RequestVerificationToken" or header value "RequestVerificationToken".
+   at Microsoft.AspNetCore.Antiforgery.DefaultAntiforgery.ValidateRequestAsync(HttpContext httpContext)
+   at Microsoft.AspNetCore.Mvc.ViewFeatures.Filters.ValidateAntiforgeryTokenAuthorizationFilter.OnAuthorizationAsync(AuthorizationFilterContext context)
+2025-07-26 20:32:51.104 +07:00 [INF] Authorization failed for the request at filter 'Microsoft.AspNetCore.Mvc.ViewFeatures.Filters.ValidateAntiforgeryTokenAuthorizationFilter'.
+2025-07-26 20:32:51.106 +07:00 [INF] Executing StatusCodeResult, setting HTTP status code 400
+2025-07-26 20:32:51.108 +07:00 [INF] Executed action GymManagement.Web.Controllers.GoiTapController.DeleteConfirmed (GymManagement.Web) in 10.4157ms
+2025-07-26 20:32:51.110 +07:00 [INF] Executed endpoint 'GymManagement.Web.Controllers.GoiTapController.DeleteConfirmed (GymManagement.Web)'
+2025-07-26 20:32:51.112 +07:00 [INF] Request finished HTTP/1.1 POST http://localhost:5003/GoiTap/DeleteConfirmed?id=6 - 400 0 null 29.7717ms
+2025-07-26 20:33:16.069 +07:00 [INF] Request starting HTTP/1.1 POST http://localhost:5003/GoiTap/DeleteConfirmed?id=5 - multipart/form-data; boundary=----WebKitFormBoundarysDbBlo36p1GIpYQK 134
+2025-07-26 20:33:16.075 +07:00 [INF] Executing endpoint 'GymManagement.Web.Controllers.GoiTapController.DeleteConfirmed (GymManagement.Web)'
+2025-07-26 20:33:16.077 +07:00 [INF] Route matched with {action = "DeleteConfirmed", controller = "GoiTap"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] DeleteConfirmed(Int32) on controller GymManagement.Web.Controllers.GoiTapController (GymManagement.Web).
+2025-07-26 20:33:16.080 +07:00 [INF] Antiforgery token validation failed. The required antiforgery request token was not provided in either form field "__RequestVerificationToken" or header value "RequestVerificationToken".
+Microsoft.AspNetCore.Antiforgery.AntiforgeryValidationException: The required antiforgery request token was not provided in either form field "__RequestVerificationToken" or header value "RequestVerificationToken".
+   at Microsoft.AspNetCore.Antiforgery.DefaultAntiforgery.ValidateRequestAsync(HttpContext httpContext)
+   at Microsoft.AspNetCore.Mvc.ViewFeatures.Filters.ValidateAntiforgeryTokenAuthorizationFilter.OnAuthorizationAsync(AuthorizationFilterContext context)
+2025-07-26 20:33:16.084 +07:00 [INF] Authorization failed for the request at filter 'Microsoft.AspNetCore.Mvc.ViewFeatures.Filters.ValidateAntiforgeryTokenAuthorizationFilter'.
+2025-07-26 20:33:16.086 +07:00 [INF] Executing StatusCodeResult, setting HTTP status code 400
+2025-07-26 20:33:16.088 +07:00 [INF] Executed action GymManagement.Web.Controllers.GoiTapController.DeleteConfirmed (GymManagement.Web) in 8.2785ms
+2025-07-26 20:33:16.090 +07:00 [INF] Executed endpoint 'GymManagement.Web.Controllers.GoiTapController.DeleteConfirmed (GymManagement.Web)'
+2025-07-26 20:33:16.092 +07:00 [INF] Request finished HTTP/1.1 POST http://localhost:5003/GoiTap/DeleteConfirmed?id=5 - 400 0 null 23.2476ms
+2025-07-26 20:33:29.447 +07:00 [INF] Request starting HTTP/1.1 GET http://localhost:5003/GoiTap/Edit/5 - null null
+2025-07-26 20:33:29.453 +07:00 [INF] Executing endpoint 'GymManagement.Web.Controllers.GoiTapController.Edit (GymManagement.Web)'
+2025-07-26 20:33:29.462 +07:00 [INF] Route matched with {action = "Edit", controller = "GoiTap"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] Edit(Int32) on controller GymManagement.Web.Controllers.GoiTapController (GymManagement.Web).
+2025-07-26 20:33:29.589 +07:00 [INF] Executed DbCommand (3ms) [Parameters=[@__p_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [g].[GoiTapId], [g].[Gia], [g].[MoTa], [g].[SoBuoiToiDa], [g].[TenGoi], [g].[ThoiHanThang]
+FROM [GoiTaps] AS [g]
+WHERE [g].[GoiTapId] = @__p_0
+2025-07-26 20:33:29.597 +07:00 [INF] Executing ViewResult, running view Edit.
+2025-07-26 20:33:29.665 +07:00 [INF] Executed ViewResult - view Edit executed in 69.3998ms.
+2025-07-26 20:33:29.669 +07:00 [INF] Executed action GymManagement.Web.Controllers.GoiTapController.Edit (GymManagement.Web) in 196.8333ms
+2025-07-26 20:33:29.672 +07:00 [INF] Executed endpoint 'GymManagement.Web.Controllers.GoiTapController.Edit (GymManagement.Web)'
+2025-07-26 20:33:29.676 +07:00 [INF] Request finished HTTP/1.1 GET http://localhost:5003/GoiTap/Edit/5 - 200 null text/html; charset=utf-8 227.8918ms
+2025-07-26 20:33:29.776 +07:00 [INF] Request starting HTTP/1.1 GET http://localhost:5003/images/gym-logo.png - null null
+2025-07-26 20:33:29.790 +07:00 [INF] Request finished HTTP/1.1 GET http://localhost:5003/images/gym-logo.png - 404 0 null 13.6431ms
+2025-07-26 20:33:29.806 +07:00 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET http://localhost:5003/images/gym-logo.png, Response status code: 404
+2025-07-26 20:33:43.187 +07:00 [INF] Request starting HTTP/1.1 POST http://localhost:5003/GoiTap/Edit/5 - application/x-www-form-urlencoded 427
+2025-07-26 20:33:43.194 +07:00 [INF] Executing endpoint 'GymManagement.Web.Controllers.GoiTapController.Edit (GymManagement.Web)'
+2025-07-26 20:33:43.206 +07:00 [INF] Route matched with {action = "Edit", controller = "GoiTap"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] Edit(Int32, GymManagement.Web.Models.DTOs.UpdateGoiTapDto) on controller GymManagement.Web.Controllers.GoiTapController (GymManagement.Web).
+2025-07-26 20:33:43.236 +07:00 [INF] Executed DbCommand (5ms) [Parameters=[@__p_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [g].[GoiTapId], [g].[Gia], [g].[MoTa], [g].[SoBuoiToiDa], [g].[TenGoi], [g].[ThoiHanThang]
+FROM [GoiTaps] AS [g]
+WHERE [g].[GoiTapId] = @__p_0
+2025-07-26 20:33:43.310 +07:00 [INF] Executed DbCommand (12ms) [Parameters=[@p5='?' (DbType = Int32), @p0='?' (Precision = 12) (Scale = 2) (DbType = Decimal), @p1='?' (Size = 500), @p2='?' (DbType = Int32), @p3='?' (Size = 100), @p4='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+UPDATE [GoiTaps] SET [Gia] = @p0, [MoTa] = @p1, [SoBuoiToiDa] = @p2, [TenGoi] = @p3, [ThoiHanThang] = @p4
+OUTPUT 1
+WHERE [GoiTapId] = @p5;
+2025-07-26 20:33:43.324 +07:00 [INF] Executing RedirectResult, redirecting to /GoiTap.
+2025-07-26 20:33:43.328 +07:00 [INF] Executed action GymManagement.Web.Controllers.GoiTapController.Edit (GymManagement.Web) in 117.3005ms
+2025-07-26 20:33:43.329 +07:00 [INF] Executed endpoint 'GymManagement.Web.Controllers.GoiTapController.Edit (GymManagement.Web)'
+2025-07-26 20:33:43.331 +07:00 [INF] Request finished HTTP/1.1 POST http://localhost:5003/GoiTap/Edit/5 - 302 0 null 144.4481ms
+2025-07-26 20:33:43.341 +07:00 [INF] Request starting HTTP/1.1 GET http://localhost:5003/GoiTap - null null
+2025-07-26 20:33:43.346 +07:00 [INF] Executing endpoint 'GymManagement.Web.Controllers.GoiTapController.Index (GymManagement.Web)'
+2025-07-26 20:33:43.347 +07:00 [INF] Route matched with {action = "Index", controller = "GoiTap"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] Index() on controller GymManagement.Web.Controllers.GoiTapController (GymManagement.Web).
+2025-07-26 20:33:43.354 +07:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [g].[GoiTapId], [g].[Gia], [g].[MoTa], [g].[SoBuoiToiDa], [g].[TenGoi], [g].[ThoiHanThang]
+FROM [GoiTaps] AS [g]
+2025-07-26 20:33:43.358 +07:00 [INF] Executing ViewResult, running view Index.
+2025-07-26 20:33:43.362 +07:00 [INF] Executed ViewResult - view Index executed in 4.0968ms.
+2025-07-26 20:33:43.365 +07:00 [INF] Executed action GymManagement.Web.Controllers.GoiTapController.Index (GymManagement.Web) in 13.239ms
+2025-07-26 20:33:43.368 +07:00 [INF] Executed endpoint 'GymManagement.Web.Controllers.GoiTapController.Index (GymManagement.Web)'
+2025-07-26 20:33:43.371 +07:00 [INF] Request finished HTTP/1.1 GET http://localhost:5003/GoiTap - 200 null text/html; charset=utf-8 29.8413ms
+2025-07-26 20:33:43.440 +07:00 [INF] Request starting HTTP/1.1 GET http://localhost:5003/images/gym-logo.png - null null
+2025-07-26 20:33:43.448 +07:00 [INF] Request finished HTTP/1.1 GET http://localhost:5003/images/gym-logo.png - 404 0 null 8.3385ms
+2025-07-26 20:33:43.456 +07:00 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET http://localhost:5003/images/gym-logo.png, Response status code: 404
+2025-07-26 20:33:48.651 +07:00 [INF] Application is shutting down...

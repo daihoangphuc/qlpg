@@ -9,12 +9,31 @@ namespace GymManagement.Web.Data.Repositories
         {
         }
 
+        // Override GetAllAsync to include navigation properties
+        public override async Task<IEnumerable<LopHoc>> GetAllAsync()
+        {
+            return await _dbSet
+                .Include(x => x.Hlv)
+                .Include(x => x.DangKys.Where(d => d.TrangThai == "ACTIVE"))
+                .ToListAsync();
+        }
+
         public async Task<IEnumerable<LopHoc>> GetActiveClassesAsync()
         {
             return await _dbSet
                 .Where(x => x.TrangThai == "OPEN")
                 .Include(x => x.Hlv)
+                .Include(x => x.DangKys.Where(d => d.TrangThai == "ACTIVE"))
                 .ToListAsync();
+        }
+
+        // Override GetByIdAsync to include navigation properties
+        public override async Task<LopHoc?> GetByIdAsync(int id)
+        {
+            return await _dbSet
+                .Include(x => x.Hlv)
+                .Include(x => x.DangKys.Where(d => d.TrangThai == "ACTIVE"))
+                .FirstOrDefaultAsync(x => x.LopHocId == id);
         }
 
         public async Task<IEnumerable<LopHoc>> GetByHuanLuyenVienAsync(int hlvId)

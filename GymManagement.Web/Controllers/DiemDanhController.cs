@@ -1,8 +1,8 @@
 using GymManagement.Web.Data.Models;
 using GymManagement.Web.Services;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace GymManagement.Web.Controllers
 {
@@ -11,21 +11,32 @@ namespace GymManagement.Web.Controllers
     {
         private readonly IDiemDanhService _diemDanhService;
         private readonly INguoiDungService _nguoiDungService;
-        private readonly UserManager<TaiKhoan> _userManager;
+        private readonly IAuthService _authService;
         private readonly ILogger<DiemDanhController> _logger;
 
         public DiemDanhController(
             IDiemDanhService diemDanhService,
             INguoiDungService nguoiDungService,
-            UserManager<TaiKhoan> userManager,
+            IAuthService authService,
             ILogger<DiemDanhController> logger)
         {
             _diemDanhService = diemDanhService;
             _nguoiDungService = nguoiDungService;
-            _userManager = userManager;
+            _authService = authService;
             _logger = logger;
         }
 
+        // Helper method to get current user
+        private async Task<TaiKhoan?> GetCurrentUserAsync()
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+                return null;
+
+            return await _authService.GetUserByIdAsync(userId);
+        }
+
+        [Authorize(Roles = "Admin,Trainer")]
         public async Task<IActionResult> Index()
         {
             try
@@ -64,7 +75,7 @@ namespace GymManagement.Web.Controllers
         {
             try
             {
-                var user = await _userManager.GetUserAsync(User);
+                var user = await GetCurrentUserAsync();
                 if (user?.NguoiDungId == null)
                 {
                     return RedirectToAction("Login", "Auth");
@@ -113,7 +124,7 @@ namespace GymManagement.Web.Controllers
         {
             try
             {
-                var user = await _userManager.GetUserAsync(User);
+                var user = await GetCurrentUserAsync();
                 if (user?.NguoiDungId == null)
                 {
                     return Json(new { success = false, message = "Vui lòng đăng nhập để check-in." });
@@ -141,7 +152,7 @@ namespace GymManagement.Web.Controllers
         {
             try
             {
-                var user = await _userManager.GetUserAsync(User);
+                var user = await GetCurrentUserAsync();
                 if (user?.NguoiDungId == null)
                 {
                     return Json(new { success = false, message = "Vui lòng đăng nhập để check-in." });
@@ -186,7 +197,7 @@ namespace GymManagement.Web.Controllers
                 }
                 else
                 {
-                    var user = await _userManager.GetUserAsync(User);
+                    var user = await GetCurrentUserAsync();
                     if (user?.NguoiDungId == null)
                     {
                         return Json(new { hasCheckedIn = false, message = "Vui lòng đăng nhập." });

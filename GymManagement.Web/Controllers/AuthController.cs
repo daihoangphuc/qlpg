@@ -10,13 +10,16 @@ namespace GymManagement.Web.Controllers
     public class AuthController : Controller
     {
         private readonly IAuthService _authService;
+        private readonly IUserSessionService _userSessionService;
         private readonly ILogger<AuthController> _logger;
 
         public AuthController(
             IAuthService authService,
+            IUserSessionService userSessionService,
             ILogger<AuthController> logger)
         {
             _authService = authService;
+            _userSessionService = userSessionService;
             _logger = logger;
         }
 
@@ -49,17 +52,29 @@ namespace GymManagement.Web.Controllers
 
             if (user != null)
             {
-                var principal = await _authService.CreateClaimsPrincipalAsync(user);
-                await HttpContext.SignInAsync("Cookies", principal);
-
-                _logger.LogInformation("User {Username} logged in.", model.Username);
-
-                if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+                try
                 {
-                    return Redirect(returnUrl);
-                }
+                    var principal = await _authService.CreateClaimsPrincipalAsync(user);
+                    await HttpContext.SignInAsync("Cookies", principal);
 
-                return RedirectToAction("Index", "Home");
+                    // Set user session
+                    await _userSessionService.SetCurrentUserAsync(user);
+
+                    _logger.LogInformation("User {Username} logged in successfully.", model.Username);
+
+                    if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+                    {
+                        return Redirect(returnUrl);
+                    }
+
+                    return RedirectToAction("Index", "Home");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error during login process for user {Username}", model.Username);
+                    ModelState.AddModelError(string.Empty, "Đã xảy ra lỗi trong quá trình đăng nhập. Vui lòng thử lại.");
+                    return View(model);
+                }
             }
 
             ModelState.AddModelError(string.Empty, "Tên đăng nhập hoặc mật khẩu không đúng.");
@@ -99,17 +114,29 @@ namespace GymManagement.Web.Controllers
 
             if (result)
             {
-                _logger.LogInformation("User {Username} created a new account with password.", model.Username);
-
-                // Sign in the user
-                var createdUser = await _authService.GetUserByUsernameAsync(model.Username);
-                if (createdUser != null)
+                try
                 {
-                    var principal = await _authService.CreateClaimsPrincipalAsync(createdUser);
-                    await HttpContext.SignInAsync("Cookies", principal);
-                }
+                    _logger.LogInformation("User {Username} created a new account with password.", model.Username);
 
-                return RedirectToAction("Index", "Home");
+                    // Sign in the user
+                    var createdUser = await _authService.GetUserByUsernameAsync(model.Username);
+                    if (createdUser != null)
+                    {
+                        var principal = await _authService.CreateClaimsPrincipalAsync(createdUser);
+                        await HttpContext.SignInAsync("Cookies", principal);
+
+                        // Set user session
+                        await _userSessionService.SetCurrentUserAsync(createdUser);
+                    }
+
+                    return RedirectToAction("Index", "Home");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error during registration process for user {Username}", model.Username);
+                    ModelState.AddModelError(string.Empty, "Đã xảy ra lỗi trong quá trình đăng ký. Vui lòng thử lại.");
+                    return View(model);
+                }
             }
 
             ModelState.AddModelError(string.Empty, "Không thể tạo tài khoản. Tên đăng nhập hoặc email có thể đã tồn tại.");
@@ -121,10 +148,30 @@ namespace GymManagement.Web.Controllers
         [HttpGet]
         public async Task<IActionResult> Logout()
         {
-            await HttpContext.SignOutAsync("Cookies");
-            _logger.LogInformation("User logged out.");
-            return RedirectToAction("Index", "Home");
+            try
+            {
+                var username = _userSessionService.GetUserName();
+
+                // Clear user session
+                await _userSessionService.ClearCurrentUserAsync();
+
+                // Sign out from authentication
+                await HttpContext.SignOutAsync("Cookies");
+
+                _logger.LogInformation("User {Username} logged out.", username);
+
+                return RedirectToAction("Index", "Home");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during logout process");
+                // Still try to sign out even if there's an error
+                await HttpContext.SignOutAsync("Cookies");
+                return RedirectToAction("Index", "Home");
+            }
         }
+
+
 
         [HttpGet]
         public IActionResult AccessDenied()

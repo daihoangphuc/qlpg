@@ -1,0 +1,310 @@
+@model GymManagement.Web.Data.Models.LopHoc
+@{
+    ViewData["Title"] = "Chi tiết lớp học";
+    Layout = "_Layout";
+}
+
+<div class="p-6">
+    <!-- Header -->
+    <div class="mb-8">
+        <div class="flex items-center gap-4 mb-4">
+            <a href="@Url.Action("Index")" class="text-gray-600 hover:text-gray-800">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                </svg>
+            </a>
+            <h1 class="text-3xl font-bold text-gray-900">👁️ Chi tiết lớp học</h1>
+        </div>
+        <p class="text-gray-600">Thông tin chi tiết về lớp học: <strong>@Model.TenLop</strong></p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Main Class Card -->
+        <div class="lg:col-span-2">
+            <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                <!-- Class Header -->
+                <div class="bg-gradient-to-r from-green-500 to-blue-500 p-8 text-white">
+                    <div class="flex justify-between items-start mb-6">
+                        <h2 class="text-2xl font-bold">@Model.TenLop</h2>
+                        <span class="px-3 py-1 text-sm rounded-full @(Model.TrangThai == "OPEN" ? "bg-green-500" : Model.TrangThai == "CLOSED" ? "bg-red-500" : "bg-yellow-500")">
+                            @switch (Model.TrangThai)
+                            {
+                                case "OPEN": <span>Đang mở</span>; break;
+                                case "CLOSED": <span>Đã đóng</span>; break;
+                                case "FULL": <span>Đã đầy</span>; break;
+                                default: <span>@Model.TrangThai</span>; break;
+                            }
+                        </span>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-4xl font-bold mb-2">@Model.GioBatDau.ToString("HH:mm") - @Model.GioKetThuc.ToString("HH:mm")</div>
+                        <div class="text-lg opacity-90">@Model.ThuTrongTuan</div>
+                        @if (Model.ThoiLuong.HasValue)
+                        {
+                            <div class="text-sm opacity-75 mt-2">Thời lượng: @Model.ThoiLuong phút</div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Class Details -->
+                <div class="p-8">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                        <!-- Basic Info -->
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">📋 Thông tin cơ bản</h3>
+                            <div class="space-y-3">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">ID lớp học:</span>
+                                    <span class="font-medium">#@Model.LopHocId</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Sức chứa:</span>
+                                    <span class="font-medium">@Model.SucChua người</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Thời lượng:</span>
+                                    <span class="font-medium">
+                                        @if (Model.ThoiLuong.HasValue)
+                                        {
+                                            @Model.ThoiLuong <span class="text-sm text-gray-500">phút</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-gray-400">Chưa xác định</span>
+                                        }
+                                    </span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Huấn luyện viên:</span>
+                                    <span class="font-medium">
+                                        @if (Model.Hlv != null)
+                                        {
+                                            <span class="text-blue-600">@Model.Hlv.Ho @Model.Hlv.Ten</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-orange-600">Chưa phân công</span>
+                                        }
+                                    </span>
+                                </div>
+                                @if (Model.GiaTuyChinh.HasValue)
+                                {
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Giá tùy chỉnh:</span>
+                                        <span class="font-medium text-green-600">@Model.GiaTuyChinh.Value.ToString("N0") VNĐ</span>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+
+                        <!-- Statistics -->
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">📊 Thống kê</h3>
+                            <div class="space-y-3">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Đã đăng ký:</span>
+                                    <span class="font-medium text-blue-600">@Model.DangKys.Count(d => d.TrangThai == "ACTIVE") người</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Còn trống:</span>
+                                    <span class="font-medium text-green-600">@(Model.SucChua - Model.DangKys.Count(d => d.TrangThai == "ACTIVE")) chỗ</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Tỷ lệ lấp đầy:</span>
+                                    <span class="font-medium text-purple-600">@((Model.SucChua > 0 ? (double)Model.DangKys.Count(d => d.TrangThai == "ACTIVE") / Model.SucChua * 100 : 0).ToString("F1"))%</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Lịch học đã tạo:</span>
+                                    <span class="font-medium text-orange-600">@Model.LichLops.Count buổi</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Booking:</span>
+                                    <span class="font-medium text-indigo-600">@Model.Bookings.Count lượt</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Description -->
+                    @if (!string.IsNullOrEmpty(Model.MoTa))
+                    {
+                        <div class="mb-8">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">📝 Mô tả lớp học</h3>
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <p class="text-gray-700 leading-relaxed">@Model.MoTa</p>
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Recent Registrations -->
+                    @if (Model.DangKys.Any())
+                    {
+                        <div class="mb-8">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">👥 Đăng ký gần đây</h3>
+                            <div class="bg-gray-50 rounded-lg overflow-hidden">
+                                <div class="max-h-64 overflow-y-auto">
+                                    @foreach (var dangKy in Model.DangKys.Where(d => d.TrangThai == "ACTIVE").Take(10))
+                                    {
+                                        <div class="flex items-center justify-between p-3 border-b border-gray-200 last:border-b-0">
+                                            <div class="flex items-center">
+                                                <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                                                    <span class="text-sm font-semibold text-blue-600">
+                                                        @(dangKy.ThanhVien?.Ho?.FirstOrDefault() ?? 'U')
+                                                    </span>
+                                                </div>
+                                                <div>
+                                                    <p class="font-medium text-gray-900">@dangKy.ThanhVien?.Ho @dangKy.ThanhVien?.Ten</p>
+                                                    <p class="text-sm text-gray-500">Đăng ký: @dangKy.NgayDangKy.ToString("dd/MM/yyyy")</p>
+                                                </div>
+                                            </div>
+                                            <span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">
+                                                Hoạt động
+                                            </span>
+                                        </div>
+                                    }
+                                </div>
+                                @if (Model.DangKys.Count(d => d.TrangThai == "ACTIVE") > 10)
+                                {
+                                    <div class="p-3 text-center bg-gray-100">
+                                        <a href="@Url.Action("Index", "DangKy", new { classId = Model.LopHocId })" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                                            Xem tất cả @Model.DangKys.Count(d => d.TrangThai == "ACTIVE") đăng ký →
+                                        </a>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Action Buttons -->
+                    <div class="flex gap-4">
+                        @if (User.IsInRole("Admin"))
+                        {
+                            <a href="@Url.Action("Edit", new { id = Model.LopHocId })" 
+                               class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md font-medium transition-colors">
+                                ✏️ Chỉnh sửa
+                            </a>
+                            <button onclick="generateSchedule(@Model.LopHocId)" 
+                                    class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md font-medium transition-colors">
+                                📅 Tạo lịch học
+                            </button>
+                        }
+                        @if (User.IsInRole("Member"))
+                        {
+                            <button onclick="registerClass(@Model.LopHocId)" 
+                                    class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md font-medium transition-colors"
+                                    @(Model.TrangThai != "OPEN" || Model.DangKys.Count(d => d.TrangThai == "ACTIVE") >= Model.SucChua ? "disabled" : "")>
+                                ✅ Đăng ký lớp học
+                            </button>
+                        }
+                        <a href="@Url.Action("Index")" 
+                           class="bg-gray-300 hover:bg-gray-400 text-gray-700 px-6 py-2 rounded-md font-medium transition-colors">
+                            ← Quay lại danh sách
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="space-y-6">
+            <!-- Quick Stats -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">📈 Thống kê nhanh</h3>
+                <div class="space-y-4">
+                    <div class="text-center p-4 bg-blue-50 rounded-lg">
+                        <div class="text-2xl font-bold text-blue-600">@Model.DangKys.Count(d => d.TrangThai == "ACTIVE")</div>
+                        <div class="text-sm text-gray-600">Học viên</div>
+                    </div>
+                    <div class="text-center p-4 bg-green-50 rounded-lg">
+                        <div class="text-2xl font-bold text-green-600">@Model.SucChua</div>
+                        <div class="text-sm text-gray-600">Sức chứa</div>
+                    </div>
+                    <div class="text-center p-4 bg-purple-50 rounded-lg">
+                        <div class="text-2xl font-bold text-purple-600">@Model.LichLops.Count</div>
+                        <div class="text-sm text-gray-600">Buổi học</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Schedule Info -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">⏰ Thông tin lịch học</h3>
+                <div class="space-y-3 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Thời gian:</span>
+                        <span class="font-medium">@Model.GioBatDau.ToString("HH:mm") - @Model.GioKetThuc.ToString("HH:mm")</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Ngày trong tuần:</span>
+                        <span class="font-medium">@Model.ThuTrongTuan</span>
+                    </div>
+                    @if (Model.ThoiLuong.HasValue)
+                    {
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Thời lượng:</span>
+                            <span class="font-medium">@Model.ThoiLuong phút</span>
+                        </div>
+                    }
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Trạng thái:</span>
+                        <span class="font-medium @(Model.TrangThai == "OPEN" ? "text-green-600" : Model.TrangThai == "CLOSED" ? "text-red-600" : "text-yellow-600")">
+                            @switch (Model.TrangThai)
+                            {
+                                case "OPEN": <span>Đang mở</span>; break;
+                                case "CLOSED": <span>Đã đóng</span>; break;
+                                case "FULL": <span>Đã đầy</span>; break;
+                                default: <span>@Model.TrangThai</span>; break;
+                            }
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Related Actions -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">🔗 Hành động liên quan</h3>
+                <div class="space-y-3">
+                    @if (User.IsInRole("Admin"))
+                    {
+                        <a href="@Url.Action("Index", "DangKy", new { classId = Model.LopHocId })" 
+                           class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition-colors">
+                            👥 Xem danh sách đăng ký
+                        </a>
+                        <a href="@Url.Action("Index", "Booking", new { classId = Model.LopHocId })" 
+                           class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition-colors">
+                            📅 Xem booking
+                        </a>
+                        <a href="@Url.Action("Index", "DiemDanh", new { classId = Model.LopHocId })" 
+                           class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition-colors">
+                            ✅ Xem điểm danh
+                        </a>
+                    }
+                    <a href="@Url.Action("Index", "LopHoc")" 
+                       class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition-colors">
+                       📋 Xem tất cả lớp học
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function registerClass(classId) {
+            if (confirm('Bạn có chắc chắn muốn đăng ký lớp học này không?')) {
+                // Redirect to registration page
+                window.location.href = '@Url.Action("Create", "DangKy")?classId=' + classId;
+            }
+        }
+
+        function generateSchedule(classId) {
+            // Show modal or redirect to schedule generation page
+            if (confirm('Bạn có muốn tạo lịch học cho lớp này không?')) {
+                // This would typically open a modal with date range selection
+                // For now, we'll just show an alert
+                alert('Chức năng tạo lịch học sẽ được triển khai trong phiên bản tiếp theo.');
+            }
+        }
+    </script>
+}

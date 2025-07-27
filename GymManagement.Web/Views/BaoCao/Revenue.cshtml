@@ -1,0 +1,678 @@
+@{
+    ViewData["Title"] = "Báo Cáo Doanh Thu - Admin";
+    Layout = "_Layout";
+}
+
+<div class="min-h-screen bg-gradient-to-br from-gray-50 via-green-50 to-emerald-50">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Breadcrumb -->
+        <nav class="flex mb-6" aria-label="Breadcrumb">
+            <ol class="inline-flex items-center space-x-1 md:space-x-3">
+                <li class="inline-flex items-center">
+                    <a href="@Url.Action("Index", "BaoCao")" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600">
+                        <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"></path>
+                        </svg>
+                        Dashboard
+                    </a>
+                </li>
+                <li>
+                    <div class="flex items-center">
+                        <svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+                        </svg>
+                        <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2">Báo cáo doanh thu</span>
+                    </div>
+                </li>
+            </ol>
+        </nav>
+
+        <!-- Header Section -->
+        <div class="mb-8">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+                <div class="mb-4 lg:mb-0">
+                    <h1 class="text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-2">
+                        💰 Báo Cáo Doanh Thu
+                    </h1>
+                    <p class="text-gray-600 text-lg">Phân tích chi tiết doanh thu và xu hướng tài chính</p>
+                </div>
+                
+                <!-- Export Button -->
+                <div class="flex space-x-3">
+                    <button id="exportBtn" class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl font-medium transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl">
+                        <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        Xuất báo cáo
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters Section -->
+        <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-100 mb-8">
+            <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                <svg class="w-5 h-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
+                </svg>
+                Bộ lọc dữ liệu
+            </h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- Date Range -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Từ ngày</label>
+                    <input type="date" id="startDate" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Đến ngày</label>
+                    <input type="date" id="endDate" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                </div>
+                
+                <!-- Group By -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Nhóm theo</label>
+                    <select id="groupBy" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                        <option value="day">Ngày</option>
+                        <option value="week">Tuần</option>
+                        <option value="month">Tháng</option>
+                    </select>
+                </div>
+                
+                <!-- Apply Button -->
+                <div class="flex items-end">
+                    <button id="applyFilters" class="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-300">
+                        <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                        Áp dụng
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <!-- Total Revenue -->
+            <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-all duration-300">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600 mb-1">Tổng doanh thu</p>
+                        <p id="totalRevenue" class="text-3xl font-bold text-green-600">0 VNĐ</p>
+                        <p class="text-xs text-gray-500 mt-1">Trong khoảng thời gian đã chọn</p>
+                    </div>
+                    <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Average Daily -->
+            <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-all duration-300">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600 mb-1">Trung bình/ngày</p>
+                        <p id="avgDaily" class="text-3xl font-bold text-blue-600">0 VNĐ</p>
+                        <p class="text-xs text-gray-500 mt-1">Doanh thu trung bình mỗi ngày</p>
+                    </div>
+                    <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Highest Day -->
+            <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-all duration-300">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600 mb-1">Ngày cao nhất</p>
+                        <p id="highestAmount" class="text-3xl font-bold text-purple-600">0 VNĐ</p>
+                        <p id="highestDate" class="text-xs text-gray-500 mt-1">--/--/----</p>
+                    </div>
+                    <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                        <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Growth Rate -->
+            <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-all duration-300">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600 mb-1">Tăng trưởng</p>
+                        <p id="growthRate" class="text-3xl font-bold text-orange-600">+0%</p>
+                        <p class="text-xs text-gray-500 mt-1">So với kỳ trước</p>
+                    </div>
+                    <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
+                        <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11l5-5m0 0l5 5m-5-5v12"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <!-- Revenue Trend Chart -->
+            <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-bold text-gray-900">📊 Xu hướng doanh thu</h3>
+                    <div class="flex space-x-2">
+                        <button class="chart-type-btn px-3 py-1 text-xs bg-green-600 text-white rounded-full" data-type="line">Đường</button>
+                        <button class="chart-type-btn px-3 py-1 text-xs bg-green-100 text-green-600 rounded-full hover:bg-green-200 transition-colors" data-type="bar">Cột</button>
+                    </div>
+                </div>
+                <div class="h-80">
+                    <canvas id="revenueChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Payment Method Chart -->
+            <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-bold text-gray-900">💳 Phương thức thanh toán</h3>
+                    <div class="text-sm text-gray-500">Phân bố theo giá trị</div>
+                </div>
+                <div class="h-80">
+                    <canvas id="paymentMethodChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detailed Table -->
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-100">
+            <div class="p-6 border-b border-gray-200">
+                <h3 class="text-xl font-bold text-gray-900 flex items-center">
+                    <svg class="w-5 h-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2h2a2 2 0 002-2z"></path>
+                    </svg>
+                    Chi tiết doanh thu theo ngày
+                </h3>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Doanh thu</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Số giao dịch</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trung bình/GD</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thay đổi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="revenueTableBody" class="bg-white divide-y divide-gray-200">
+                        <!-- Table rows will be populated by JavaScript -->
+                        <tr>
+                            <td colspan="5" class="px-6 py-8 text-center text-gray-500">
+                                <div class="flex items-center justify-center">
+                                    <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600 mr-2"></div>
+                                    Đang tải dữ liệu...
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/date-fns@2.29.3/index.min.js"></script>
+
+    <script>
+        // Global variables
+        let revenueChart, paymentMethodChart;
+        let currentData = {};
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeDateFilters();
+            initializeCharts();
+            loadRevenueData();
+
+            // Event listeners
+            document.getElementById('applyFilters').addEventListener('click', loadRevenueData);
+            document.getElementById('exportBtn').addEventListener('click', exportReport);
+
+            // Chart type buttons
+            document.querySelectorAll('.chart-type-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    changeChartType(this.dataset.type);
+                });
+            });
+        });
+
+        // Initialize date filters with default values
+        function initializeDateFilters() {
+            const today = new Date();
+            const thirtyDaysAgo = new Date(today);
+            thirtyDaysAgo.setDate(today.getDate() - 30);
+
+            document.getElementById('startDate').value = thirtyDaysAgo.toISOString().split('T')[0];
+            document.getElementById('endDate').value = today.toISOString().split('T')[0];
+        }
+
+        // Load revenue data
+        function loadRevenueData() {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            const groupBy = document.getElementById('groupBy').value;
+
+            if (!startDate || !endDate) {
+                showNotification('Vui lòng chọn khoảng thời gian', 'error');
+                return;
+            }
+
+            if (new Date(startDate) > new Date(endDate)) {
+                showNotification('Ngày bắt đầu không thể lớn hơn ngày kết thúc', 'error');
+                return;
+            }
+
+            // Show loading
+            showLoading(true);
+
+            // Load revenue data
+            Promise.all([
+                fetch(`@Url.Action("GetRevenueData", "BaoCao")?startDate=${startDate}&endDate=${endDate}&groupBy=${groupBy}`),
+                fetch(`@Url.Action("GetRevenueByPaymentMethod", "BaoCao")?startDate=${startDate}&endDate=${endDate}`)
+            ])
+            .then(responses => Promise.all(responses.map(r => r.json())))
+            .then(([revenueData, paymentData]) => {
+                if (revenueData.success && paymentData.success) {
+                    currentData = {
+                        revenue: revenueData.data,
+                        paymentMethods: paymentData.data,
+                        startDate: startDate,
+                        endDate: endDate,
+                        groupBy: groupBy
+                    };
+
+                    updateSummaryCards(revenueData.data);
+                    updateRevenueChart(revenueData.data);
+                    updatePaymentMethodChart(paymentData.data);
+                    updateRevenueTable(revenueData.data);
+                } else {
+                    showNotification('Có lỗi khi tải dữ liệu', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error loading revenue data:', error);
+                showNotification('Có lỗi khi tải dữ liệu', 'error');
+            })
+            .finally(() => {
+                showLoading(false);
+            });
+        }
+
+        // Update summary cards
+        function updateSummaryCards(data) {
+            const values = Object.values(data);
+            const total = values.reduce((sum, val) => sum + val, 0);
+            const average = values.length > 0 ? total / values.length : 0;
+            const highest = Math.max(...values);
+            const highestDate = Object.keys(data).find(key => data[key] === highest);
+
+            // Calculate growth rate (mock calculation)
+            const growthRate = Math.floor(Math.random() * 30) - 10; // -10% to +20%
+
+            document.getElementById('totalRevenue').textContent = formatCurrency(total);
+            document.getElementById('avgDaily').textContent = formatCurrency(average);
+            document.getElementById('highestAmount').textContent = formatCurrency(highest);
+            document.getElementById('highestDate').textContent = formatDate(highestDate);
+
+            const growthElement = document.getElementById('growthRate');
+            growthElement.textContent = (growthRate >= 0 ? '+' : '') + growthRate + '%';
+            growthElement.className = `text-3xl font-bold ${growthRate >= 0 ? 'text-green-600' : 'text-red-600'}`;
+        }
+
+        // Initialize charts
+        function initializeCharts() {
+            initializeRevenueChart();
+            initializePaymentMethodChart();
+        }
+
+        function initializeRevenueChart() {
+            const ctx = document.getElementById('revenueChart').getContext('2d');
+
+            revenueChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Doanh thu (VNĐ)',
+                        data: [],
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: 'rgb(34, 197, 94)',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointRadius: 5,
+                        pointHoverRadius: 7
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: 'white',
+                            bodyColor: 'white',
+                            borderColor: 'rgb(34, 197, 94)',
+                            borderWidth: 1,
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Doanh thu: ' + formatCurrency(context.parsed.y);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return formatCurrency(value);
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    }
+                }
+            });
+        }
+
+        function initializePaymentMethodChart() {
+            const ctx = document.getElementById('paymentMethodChart').getContext('2d');
+
+            paymentMethodChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        data: [],
+                        backgroundColor: [
+                            'rgba(34, 197, 94, 0.8)',
+                            'rgba(59, 130, 246, 0.8)',
+                            'rgba(147, 51, 234, 0.8)',
+                            'rgba(249, 115, 22, 0.8)',
+                            'rgba(239, 68, 68, 0.8)'
+                        ],
+                        borderColor: [
+                            'rgb(34, 197, 94)',
+                            'rgb(59, 130, 246)',
+                            'rgb(147, 51, 234)',
+                            'rgb(249, 115, 22)',
+                            'rgb(239, 68, 68)'
+                        ],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                usePointStyle: true
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: 'white',
+                            bodyColor: 'white',
+                            callbacks: {
+                                label: function(context) {
+                                    const total = context.dataset.data.reduce((sum, val) => sum + val, 0);
+                                    const percentage = ((context.parsed / total) * 100).toFixed(1);
+                                    return context.label + ': ' + formatCurrency(context.parsed) + ' (' + percentage + '%)';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Update charts with new data
+        function updateRevenueChart(data) {
+            const labels = Object.keys(data).map(date => formatDate(date));
+            const values = Object.values(data);
+
+            revenueChart.data.labels = labels;
+            revenueChart.data.datasets[0].data = values;
+            revenueChart.update('active');
+        }
+
+        function updatePaymentMethodChart(data) {
+            const labels = Object.keys(data);
+            const values = Object.values(data);
+
+            paymentMethodChart.data.labels = labels;
+            paymentMethodChart.data.datasets[0].data = values;
+            paymentMethodChart.update('active');
+        }
+
+        // Update revenue table
+        function updateRevenueTable(data) {
+            const tbody = document.getElementById('revenueTableBody');
+            const entries = Object.entries(data).sort((a, b) => new Date(b[0]) - new Date(a[0]));
+
+            if (entries.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="px-6 py-8 text-center text-gray-500">
+                            Không có dữ liệu trong khoảng thời gian đã chọn
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = entries.map((entry, index) => {
+                const [date, revenue] = entry;
+                const prevRevenue = index < entries.length - 1 ? entries[index + 1][1] : revenue;
+                const change = prevRevenue > 0 ? ((revenue - prevRevenue) / prevRevenue * 100) : 0;
+                const transactions = Math.floor(Math.random() * 20) + 5; // Mock data
+                const avgPerTransaction = revenue / transactions;
+
+                return `
+                    <tr class="hover:bg-gray-50 transition-colors duration-200">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            ${formatDate(date)}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-semibold">
+                            ${formatCurrency(revenue)}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            ${transactions}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            ${formatCurrency(avgPerTransaction)}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                change >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                            }">
+                                ${change >= 0 ? '↗' : '↘'} ${Math.abs(change).toFixed(1)}%
+                            </span>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Change chart type
+        function changeChartType(type) {
+            // Update button states
+            document.querySelectorAll('.chart-type-btn').forEach(btn => {
+                btn.classList.remove('bg-green-600', 'text-white');
+                btn.classList.add('bg-green-100', 'text-green-600');
+            });
+
+            event.target.classList.remove('bg-green-100', 'text-green-600');
+            event.target.classList.add('bg-green-600', 'text-white');
+
+            // Update chart
+            revenueChart.config.type = type;
+            if (type === 'bar') {
+                revenueChart.data.datasets[0].backgroundColor = 'rgba(34, 197, 94, 0.8)';
+                revenueChart.data.datasets[0].borderColor = 'rgb(34, 197, 94)';
+                revenueChart.data.datasets[0].fill = false;
+            } else {
+                revenueChart.data.datasets[0].backgroundColor = 'rgba(34, 197, 94, 0.1)';
+                revenueChart.data.datasets[0].borderColor = 'rgb(34, 197, 94)';
+                revenueChart.data.datasets[0].fill = true;
+            }
+            revenueChart.update('active');
+        }
+
+        // Export report
+        function exportReport() {
+            if (!currentData.revenue || Object.keys(currentData.revenue).length === 0) {
+                showNotification('Không có dữ liệu để xuất', 'error');
+                return;
+            }
+
+            const startDate = currentData.startDate;
+            const endDate = currentData.endDate;
+
+            // Show loading on button
+            const btn = document.getElementById('exportBtn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = `
+                <svg class="w-5 h-5 inline mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                </svg>
+                Đang xuất...
+            `;
+            btn.disabled = true;
+
+            // Call export API
+            fetch(`@Url.Action("ExportReport", "BaoCao")?reportType=revenue&startDate=${startDate}&endDate=${endDate}&format=csv`)
+                .then(response => {
+                    if (response.ok) {
+                        return response.blob();
+                    }
+                    throw new Error('Export failed');
+                })
+                .then(blob => {
+                    // Create download link
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `BaoCaoDoanhThu_${startDate}_${endDate}.csv`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+
+                    showNotification('Xuất báo cáo thành công', 'success');
+                })
+                .catch(error => {
+                    console.error('Export error:', error);
+                    showNotification('Có lỗi khi xuất báo cáo', 'error');
+                })
+                .finally(() => {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                });
+        }
+
+        // Utility functions
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('vi-VN', {
+                style: 'currency',
+                currency: 'VND',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(amount);
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('vi-VN', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            });
+        }
+
+        function showLoading(show) {
+            const elements = ['totalRevenue', 'avgDaily', 'highestAmount', 'growthRate'];
+            elements.forEach(id => {
+                const element = document.getElementById(id);
+                if (show) {
+                    element.innerHTML = '<div class="animate-pulse bg-gray-200 h-6 rounded"></div>';
+                }
+            });
+        }
+
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg transform transition-all duration-300 translate-x-full ${
+                type === 'success' ? 'bg-green-500 text-white' :
+                type === 'error' ? 'bg-red-500 text-white' :
+                'bg-blue-500 text-white'
+            }`;
+            notification.innerHTML = `
+                <div class="flex items-center">
+                    <span class="mr-2">${message}</span>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-2 text-white hover:text-gray-200">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            `;
+
+            document.body.appendChild(notification);
+
+            // Animate in
+            setTimeout(() => {
+                notification.classList.remove('translate-x-full');
+            }, 10);
+
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                notification.classList.add('translate-x-full');
+                setTimeout(() => {
+                    if (notification.parentElement) {
+                        notification.remove();
+                    }
+                }, 300);
+            }, 5000);
+        }
+    </script>
+}

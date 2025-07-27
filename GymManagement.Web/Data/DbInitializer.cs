@@ -144,7 +144,9 @@ namespace GymManagement.Web.Data
                     GioKetThuc = new TimeOnly(8, 0),
                     ThuTrongTuan = "Monday,Wednesday,Friday",
                     GiaTuyChinh = 200000,
-                    TrangThai = "OPEN"
+                    TrangThai = "OPEN",
+                    MoTa = "Lớp yoga thư giãn buổi sáng, giúp cải thiện sức khỏe và tinh thần",
+                    ThoiLuong = 60
                 },
                 new LopHoc
                 {
@@ -155,7 +157,9 @@ namespace GymManagement.Web.Data
                     GioKetThuc = new TimeOnly(19, 30),
                     ThuTrongTuan = "Tuesday,Thursday,Saturday",
                     GiaTuyChinh = 300000,
-                    TrangThai = "OPEN"
+                    TrangThai = "OPEN",
+                    MoTa = "Lớp tập gym tăng cơ bắp với huấn luyện viên chuyên nghiệp",
+                    ThoiLuong = 90
                 },
                 new LopHoc
                 {
@@ -166,7 +170,9 @@ namespace GymManagement.Web.Data
                     GioKetThuc = new TimeOnly(20, 0),
                     ThuTrongTuan = "Monday,Tuesday,Wednesday,Thursday,Friday",
                     GiaTuyChinh = 150000,
-                    TrangThai = "OPEN"
+                    TrangThai = "OPEN",
+                    MoTa = "Lớp cardio giảm cân buổi tối, phù hợp cho mọi lứa tuổi",
+                    ThoiLuong = 60
                 }
             };
             await context.LopHocs.AddRangeAsync(lopHocs);

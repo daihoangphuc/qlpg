@@ -34,24 +34,228 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQXV0aFxSZWdpc3Rlci5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/BangLuong/Create.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQmFuZ0x1b25nXENyZWF0ZS5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/BangLuong/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQmFuZ0x1b25nXEluZGV4LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/BangLuong/MySalary.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQmFuZ0x1b25nXE15U2FsYXJ5LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/BaoCao/Attendance.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQmFvQ2FvXEF0dGVuZGFuY2UuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/BaoCao/Classes.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQmFvQ2FvXENsYXNzZXMuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/BaoCao/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQmFvQ2FvXEluZGV4LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/BaoCao/Membership.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQmFvQ2FvXE1lbWJlcnNoaXAuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/BaoCao/Revenue.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQmFvQ2FvXFJldmVudWUuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/Booking/Calendar.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQm9va2luZ1xDYWxlbmRhci5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/Booking/Create.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQm9va2luZ1xDcmVhdGUuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/Booking/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQm9va2luZ1xJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/DangKy/Create.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRGFuZ0t5XENyZWF0ZS5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/DangKy/Details.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRGFuZ0t5XERldGFpbHMuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/DangKy/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRGFuZ0t5XEluZGV4LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/DangKy/RegisterClass.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRGFuZ0t5XFJlZ2lzdGVyQ2xhc3MuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/DangKy/RegisterPackage.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRGFuZ0t5XFJlZ2lzdGVyUGFja2FnZS5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/DiemDanh/AttendanceReport.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRGllbURhbmhcQXR0ZW5kYW5jZVJlcG9ydC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/DiemDanh/CheckIn.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRGllbURhbmhcQ2hlY2tJbi5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/DiemDanh/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRGllbURhbmhcSW5kZXguY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/Error/Error.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRXJyb3JcRXJyb3IuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/GoiTap/Create.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcR29pVGFwXENyZWF0ZS5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/GoiTap/Details.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcR29pVGFwXERldGFpbHMuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/GoiTap/Edit.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcR29pVGFwXEVkaXQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/GoiTap/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcR29pVGFwXEluZGV4LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/Home/Classes.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxDbGFzc2VzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/Home/Dashboard.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxEYXNoYm9hcmQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/Home/Error.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxFcnJvci5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
 [D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/Home/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/Home/MemberDashboard.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxNZW1iZXJEYXNoYm9hcmQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/LopHoc/Create.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTG9wSG9jXENyZWF0ZS5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/LopHoc/Details.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTG9wSG9jXERldGFpbHMuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/LopHoc/Edit.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTG9wSG9jXEVkaXQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/LopHoc/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTG9wSG9jXEluZGV4LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/LopHoc/PublicClasses.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTG9wSG9jXFB1YmxpY0NsYXNzZXMuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/Member/ClassDetails.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTWVtYmVyXENsYXNzRGV0YWlscy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/Member/Classes.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTWVtYmVyXENsYXNzZXMuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/Member/MyRegistrations.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTWVtYmVyXE15UmVnaXN0cmF0aW9ucy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/Member/PackageDetails.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTWVtYmVyXFBhY2thZ2VEZXRhaWxzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/Member/Packages.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTWVtYmVyXFBhY2thZ2VzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/Profile/ChangePassword.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUHJvZmlsZVxDaGFuZ2VQYXNzd29yZC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/Profile/Edit.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUHJvZmlsZVxFZGl0LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/Profile/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUHJvZmlsZVxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/Profile/Security.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUHJvZmlsZVxTZWN1cml0eS5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
 [D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/Shared/Error.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXEVycm9yLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/Shared/_AuthLayout.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9BdXRoTGF5b3V0LmNzaHRtbA==
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/Shared/_MemberLayout.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9NZW1iZXJMYXlvdXQuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/Shared/_LandingLayout.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9MYW5kaW5nTGF5b3V0LmNzaHRtbA==
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/Shared/_TrainerLayout.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9UcmFpbmVyTGF5b3V0LmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
 [D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/Shared/_ValidationScriptsPartial.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9WYWxpZGF0aW9uU2NyaXB0c1BhcnRpYWwuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/Trainer/Dashboard.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVHJhaW5lclxEYXNoYm9hcmQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/Trainer/MyClasses.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVHJhaW5lclxNeUNsYXNzZXMuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/Trainer/Salary.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVHJhaW5lclxTYWxhcnkuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/Trainer/Schedule.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVHJhaW5lclxTY2hlZHVsZS5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/Trainer/Students.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVHJhaW5lclxTdHVkZW50cy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/User/Create.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVXNlclxDcmVhdGUuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/User/Details.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVXNlclxEZXRhaWxzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/User/Edit.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVXNlclxFZGl0LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/User/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVXNlclxJbmRleC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
 [D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/_ViewImports.cshtml]

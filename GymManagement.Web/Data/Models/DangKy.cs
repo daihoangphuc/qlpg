@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace GymManagement.Web.Data.Models
 {
@@ -21,8 +22,20 @@ namespace GymManagement.Web.Data.Models
         
         [StringLength(20)]
         public string TrangThai { get; set; } = "ACTIVE";
-        
+
         public DateTime NgayTao { get; set; }
+
+        public decimal? PhiDangKy { get; set; }
+
+        [StringLength(500)]
+        public string? LyDoHuy { get; set; }
+
+        // Alias properties for backward compatibility
+        [NotMapped]
+        public virtual NguoiDung? ThanhVien => NguoiDung;
+
+        [NotMapped]
+        public DateTime NgayDangKy => NgayTao;
 
         // Navigation properties
         public virtual NguoiDung NguoiDung { get; set; } = null!;

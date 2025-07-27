@@ -1,8 +1,8 @@
 using GymManagement.Web.Data.Models;
 using GymManagement.Web.Services;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace GymManagement.Web.Controllers
@@ -13,23 +13,34 @@ namespace GymManagement.Web.Controllers
         private readonly IBookingService _bookingService;
         private readonly ILopHocService _lopHocService;
         private readonly INguoiDungService _nguoiDungService;
-        private readonly UserManager<TaiKhoan> _userManager;
+        private readonly IAuthService _authService;
         private readonly ILogger<BookingController> _logger;
 
         public BookingController(
             IBookingService bookingService,
             ILopHocService lopHocService,
             INguoiDungService nguoiDungService,
-            UserManager<TaiKhoan> userManager,
+            IAuthService authService,
             ILogger<BookingController> logger)
         {
             _bookingService = bookingService;
             _lopHocService = lopHocService;
             _nguoiDungService = nguoiDungService;
-            _userManager = userManager;
+            _authService = authService;
             _logger = logger;
         }
 
+        // Helper method to get current user
+        private async Task<TaiKhoan?> GetCurrentUserAsync()
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+                return null;
+
+            return await _authService.GetUserByIdAsync(userId);
+        }
+
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Index()
         {
             try
@@ -45,11 +56,12 @@ namespace GymManagement.Web.Controllers
             }
         }
 
+        [Authorize(Roles = "Member")]
         public async Task<IActionResult> MyBookings()
         {
             try
             {
-                var user = await _userManager.GetUserAsync(User);
+                var user = await GetCurrentUserAsync();
                 if (user?.NguoiDungId == null)
                 {
                     return RedirectToAction("Login", "Auth");
@@ -66,6 +78,7 @@ namespace GymManagement.Web.Controllers
             }
         }
 
+        [Authorize(Roles = "Admin,Member")]
         public async Task<IActionResult> Create()
         {
             await LoadSelectLists();
@@ -83,7 +96,7 @@ namespace GymManagement.Web.Controllers
                     // If no member is selected, use current user
                     if (booking.ThanhVienId == null)
                     {
-                        var user = await _userManager.GetUserAsync(User);
+                        var user = await GetCurrentUserAsync();
                         if (user?.NguoiDungId != null)
                         {
                             booking.ThanhVienId = user.NguoiDungId.Value;
@@ -111,7 +124,7 @@ namespace GymManagement.Web.Controllers
         {
             try
             {
-                var user = await _userManager.GetUserAsync(User);
+                var user = await GetCurrentUserAsync();
                 if (user?.NguoiDungId == null)
                 {
                     return Json(new { success = false, message = "Vui lòng đăng nhập để đặt lịch." });
@@ -139,7 +152,7 @@ namespace GymManagement.Web.Controllers
         {
             try
             {
-                var user = await _userManager.GetUserAsync(User);
+                var user = await GetCurrentUserAsync();
                 if (user?.NguoiDungId == null)
                 {
                     return Json(new { success = false, message = "Vui lòng đăng nhập để đặt lịch." });
@@ -189,7 +202,7 @@ namespace GymManagement.Web.Controllers
         {
             try
             {
-                var user = await _userManager.GetUserAsync(User);
+                var user = await GetCurrentUserAsync();
                 if (user?.NguoiDungId == null)
                 {
                     return Json(new { canBook = false, message = "Vui lòng đăng nhập." });
@@ -211,6 +224,7 @@ namespace GymManagement.Web.Controllers
             }
         }
 
+        [Authorize(Roles = "Admin,Trainer")]
         public async Task<IActionResult> TodayBookings()
         {
             try
@@ -226,6 +240,7 @@ namespace GymManagement.Web.Controllers
             }
         }
 
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Calendar()
         {
             try
@@ -247,7 +262,7 @@ namespace GymManagement.Web.Controllers
         {
             try
             {
-                var user = await _userManager.GetUserAsync(User);
+                var user = await GetCurrentUserAsync();
                 if (user?.NguoiDungId == null)
                 {
                     return Json(new List<object>());

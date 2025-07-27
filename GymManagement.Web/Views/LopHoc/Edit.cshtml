@@ -1,0 +1,289 @@
+@model GymManagement.Web.Data.Models.LopHoc
+@{
+    ViewData["Title"] = "Chỉnh sửa lớp học";
+    Layout = "_Layout";
+}
+
+<div class="p-6">
+    <!-- Header -->
+    <div class="mb-8">
+        <div class="flex items-center gap-4 mb-4">
+            <a href="@Url.Action("Index")" class="text-gray-600 hover:text-gray-800">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                </svg>
+            </a>
+            <h1 class="text-3xl font-bold text-gray-900">✏️ Chỉnh sửa lớp học</h1>
+        </div>
+        <p class="text-gray-600">Cập nhật thông tin lớp học: <strong>@Model.TenLop</strong></p>
+    </div>
+
+    <div class="max-w-4xl">
+        <form asp-action="Edit" method="post" class="bg-white rounded-lg shadow-md p-6">
+            @Html.AntiForgeryToken()
+            <input asp-for="LopHocId" type="hidden" />
+            <div asp-validation-summary="ModelOnly" class="text-red-600 mb-4"></div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Left Column -->
+                <div class="space-y-6">
+                    <!-- Class Name -->
+                    <div>
+                        <label asp-for="TenLop" class="block text-sm font-medium text-gray-700 mb-2">
+                            Tên lớp học <span class="text-red-500">*</span>
+                        </label>
+                        <input asp-for="TenLop" 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                               placeholder="Nhập tên lớp học...">
+                        <span asp-validation-for="TenLop" class="text-red-500 text-sm"></span>
+                    </div>
+
+                    <!-- Trainer -->
+                    <div>
+                        <label asp-for="HlvId" class="block text-sm font-medium text-gray-700 mb-2">
+                            Huấn luyện viên
+                        </label>
+                        <select asp-for="HlvId" asp-items="ViewBag.Trainers" 
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <option value="">-- Chọn huấn luyện viên --</option>
+                        </select>
+                        <span asp-validation-for="HlvId" class="text-red-500 text-sm"></span>
+                        <p class="text-xs text-gray-500 mt-1">Có thể để trống và phân công sau</p>
+                    </div>
+
+                    <!-- Capacity -->
+                    <div>
+                        <label asp-for="SucChua" class="block text-sm font-medium text-gray-700 mb-2">
+                            Sức chứa <span class="text-red-500">*</span>
+                        </label>
+                        <input asp-for="SucChua" type="number" min="1" max="100"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                               placeholder="Nhập sức chứa...">
+                        <span asp-validation-for="SucChua" class="text-red-500 text-sm"></span>
+                        @if (Model.DangKys.Count(d => d.TrangThai == "ACTIVE") > 0)
+                        {
+                            <p class="text-xs text-orange-600 mt-1">
+                                ⚠️ Hiện có @Model.DangKys.Count(d => d.TrangThai == "ACTIVE") người đã đăng ký. 
+                                Sức chứa không được nhỏ hơn số người đã đăng ký.
+                            </p>
+                        }
+                    </div>
+
+                    <!-- Time Range -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label asp-for="GioBatDau" class="block text-sm font-medium text-gray-700 mb-2">
+                                Giờ bắt đầu <span class="text-red-500">*</span>
+                            </label>
+                            <input asp-for="GioBatDau" type="time"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <span asp-validation-for="GioBatDau" class="text-red-500 text-sm"></span>
+                        </div>
+                        <div>
+                            <label asp-for="GioKetThuc" class="block text-sm font-medium text-gray-700 mb-2">
+                                Giờ kết thúc <span class="text-red-500">*</span>
+                            </label>
+                            <input asp-for="GioKetThuc" type="time"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <span asp-validation-for="GioKetThuc" class="text-red-500 text-sm"></span>
+                        </div>
+                    </div>
+
+                    <!-- Days of Week -->
+                    <div>
+                        <label asp-for="ThuTrongTuan" class="block text-sm font-medium text-gray-700 mb-2">
+                            Thứ trong tuần <span class="text-red-500">*</span>
+                        </label>
+                        <div class="grid grid-cols-2 gap-2">
+                            @{
+                                var selectedDays = Model.ThuTrongTuan?.Split(',').Select(d => d.Trim()).ToList() ?? new List<string>();
+                            }
+                            <label class="flex items-center">
+                                <input type="checkbox" name="selectedDays" value="Thứ 2" class="mr-2" @(selectedDays.Contains("Thứ 2") ? "checked" : "")>
+                                <span>Thứ 2</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" name="selectedDays" value="Thứ 3" class="mr-2" @(selectedDays.Contains("Thứ 3") ? "checked" : "")>
+                                <span>Thứ 3</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" name="selectedDays" value="Thứ 4" class="mr-2" @(selectedDays.Contains("Thứ 4") ? "checked" : "")>
+                                <span>Thứ 4</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" name="selectedDays" value="Thứ 5" class="mr-2" @(selectedDays.Contains("Thứ 5") ? "checked" : "")>
+                                <span>Thứ 5</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" name="selectedDays" value="Thứ 6" class="mr-2" @(selectedDays.Contains("Thứ 6") ? "checked" : "")>
+                                <span>Thứ 6</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" name="selectedDays" value="Thứ 7" class="mr-2" @(selectedDays.Contains("Thứ 7") ? "checked" : "")>
+                                <span>Thứ 7</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" name="selectedDays" value="Chủ nhật" class="mr-2" @(selectedDays.Contains("Chủ nhật") ? "checked" : "")>
+                                <span>Chủ nhật</span>
+                            </label>
+                        </div>
+                        <input asp-for="ThuTrongTuan" type="hidden" id="thuTrongTuanHidden">
+                        <span asp-validation-for="ThuTrongTuan" class="text-red-500 text-sm"></span>
+                    </div>
+                </div>
+
+                <!-- Right Column -->
+                <div class="space-y-6">
+                    <!-- Duration -->
+                    <div>
+                        <label asp-for="ThoiLuong" class="block text-sm font-medium text-gray-700 mb-2">
+                            Thời lượng (phút)
+                        </label>
+                        <input asp-for="ThoiLuong" type="number" min="15" max="300"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                               placeholder="Nhập thời lượng...">
+                        <span asp-validation-for="ThoiLuong" class="text-red-500 text-sm"></span>
+                        <p class="text-xs text-gray-500 mt-1">Từ 15 đến 300 phút</p>
+                    </div>
+
+                    <!-- Custom Price -->
+                    <div>
+                        <label asp-for="GiaTuyChinh" class="block text-sm font-medium text-gray-700 mb-2">
+                            Giá tùy chỉnh (VNĐ)
+                        </label>
+                        <div class="relative">
+                            <input asp-for="GiaTuyChinh" type="number" min="0" step="1000"
+                                   class="w-full px-3 py-2 pr-12 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                   placeholder="Để trống nếu dùng giá gói tập">
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                <span class="text-gray-500 text-sm">VNĐ</span>
+                            </div>
+                        </div>
+                        <span asp-validation-for="GiaTuyChinh" class="text-red-500 text-sm"></span>
+                        <p class="text-xs text-gray-500 mt-1">Để trống nếu sử dụng giá từ gói tập</p>
+                    </div>
+
+                    <!-- Status -->
+                    <div>
+                        <label asp-for="TrangThai" class="block text-sm font-medium text-gray-700 mb-2">
+                            Trạng thái
+                        </label>
+                        <select asp-for="TrangThai" 
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <option value="OPEN">Đang mở</option>
+                            <option value="CLOSED">Đã đóng</option>
+                            <option value="FULL">Đã đầy</option>
+                        </select>
+                        <span asp-validation-for="TrangThai" class="text-red-500 text-sm"></span>
+                    </div>
+
+                    <!-- Description -->
+                    <div>
+                        <label asp-for="MoTa" class="block text-sm font-medium text-gray-700 mb-2">
+                            Mô tả lớp học
+                        </label>
+                        <textarea asp-for="MoTa" rows="4"
+                                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                  placeholder="Nhập mô tả chi tiết về lớp học..."></textarea>
+                        <span asp-validation-for="MoTa" class="text-red-500 text-sm"></span>
+                        <p class="text-xs text-gray-500 mt-1">Tối đa 500 ký tự</p>
+                    </div>
+
+                    <!-- Current Statistics -->
+                    <div class="p-4 bg-blue-50 rounded-lg">
+                        <h4 class="font-semibold text-gray-900 mb-3">📊 Thống kê hiện tại</h4>
+                        <div class="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                                <span class="text-gray-600">Đã đăng ký:</span>
+                                <span class="font-bold text-blue-600">@Model.DangKys.Count(d => d.TrangThai == "ACTIVE")</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-600">Còn trống:</span>
+                                <span class="font-bold text-green-600">@(Model.SucChua - Model.DangKys.Count(d => d.TrangThai == "ACTIVE"))</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-600">Tỷ lệ lấp đầy:</span>
+                                <span class="font-bold text-purple-600">@((Model.SucChua > 0 ? (double)Model.DangKys.Count(d => d.TrangThai == "ACTIVE") / Model.SucChua * 100 : 0).ToString("F1"))%</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-600">Lịch học:</span>
+                                <span class="font-bold text-orange-600">@Model.LichLops.Count buổi</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Warning for Active Class -->
+            @if (Model.TrangThai == "OPEN" && Model.DangKys.Any(d => d.TrangThai == "ACTIVE"))
+            {
+                <div class="mt-6 p-4 bg-yellow-50 border-l-4 border-yellow-400">
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 text-yellow-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                        </svg>
+                        <div>
+                            <h4 class="font-medium text-yellow-800">Lưu ý quan trọng</h4>
+                            <p class="text-sm text-yellow-700 mt-1">
+                                Lớp học này đang hoạt động và có @Model.DangKys.Count(d => d.TrangThai == "ACTIVE") người đã đăng ký. 
+                                Việc thay đổi thời gian hoặc ngày học có thể ảnh hưởng đến lịch học đã tạo.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Action Buttons -->
+            <div class="flex gap-4 mt-8 pt-6 border-t border-gray-200">
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md font-medium transition-colors">
+                    💾 Cập nhật lớp học
+                </button>
+                <a href="@Url.Action("Details", new { id = Model.LopHocId })" class="bg-gray-300 hover:bg-gray-400 text-gray-700 px-6 py-2 rounded-md font-medium transition-colors">
+                    👁️ Xem chi tiết
+                </a>
+                <a href="@Url.Action("Index")" class="bg-gray-300 hover:bg-gray-400 text-gray-700 px-6 py-2 rounded-md font-medium transition-colors">
+                    ❌ Hủy bỏ
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Handle days selection
+            const dayCheckboxes = document.querySelectorAll('input[name="selectedDays"]');
+            const hiddenInput = document.getElementById('thuTrongTuanHidden');
+            
+            // Initialize hidden input with current value
+            hiddenInput.value = '@Model.ThuTrongTuan';
+            
+            dayCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', updateDaysString);
+            });
+            
+            function updateDaysString() {
+                const selectedDays = Array.from(dayCheckboxes)
+                    .filter(cb => cb.checked)
+                    .map(cb => cb.value);
+                hiddenInput.value = selectedDays.join(', ');
+            }
+            
+            // Validate capacity against current registrations
+            const capacityInput = document.getElementById('SucChua');
+            const currentRegistrations = @Model.DangKys.Count(d => d.TrangThai == "ACTIVE");
+            
+            capacityInput.addEventListener('input', function() {
+                const newCapacity = parseInt(this.value);
+                if (newCapacity < currentRegistrations) {
+                    this.setCustomValidity(`Sức chứa không được nhỏ hơn ${currentRegistrations} (số người đã đăng ký)`);
+                } else {
+                    this.setCustomValidity('');
+                }
+            });
+        });
+    </script>
+}

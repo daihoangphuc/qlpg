@@ -1,6 +1,7 @@
 using GymManagement.Web.Data;
 using GymManagement.Web.Data.Repositories;
 using GymManagement.Web.Services;
+using GymManagement.Web.Middleware;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using GymManagement.Web.Data.Models;
@@ -21,6 +22,15 @@ builder.Host.UseSerilog((context, services, configuration) => configuration
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+
+// Add Antiforgery services
+builder.Services.AddAntiforgery(options =>
+{
+    options.HeaderName = "RequestVerificationToken";
+    options.Cookie.Name = "__RequestVerificationToken";
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+});
 
 // Add Entity Framework with SQL Server
 builder.Services.AddDbContext<GymDbContext>(options =>
@@ -80,6 +90,21 @@ builder.Services.AddScoped<IEmailService, EmailService>();
 // Add Memory Cache
 builder.Services.AddMemoryCache();
 
+// Add Session Support
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(60);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+    options.Cookie.SameSite = SameSiteMode.Lax;
+});
+
+// Add HttpContextAccessor
+builder.Services.AddHttpContextAccessor();
+
+// Add User Session Service
+builder.Services.AddScoped<IUserSessionService, UserSessionService>();
+
 // Add Health Checks
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<GymDbContext>();
@@ -95,7 +120,8 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Home/Error");
+    app.UseExceptionHandler("/Error");
+    app.UseStatusCodePagesWithReExecute("/Error/{0}");
     app.UseHsts();
 }
 else
@@ -104,12 +130,18 @@ else
 }
 
 app.UseForwardedHeaders();
+
+// Global exception handling (should be early in pipeline)
+app.UseGlobalExceptionHandling();
+
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
+app.UseSession();
 
 app.UseAuthentication();
+app.UseUserSession(); // Custom middleware for user session management
 app.UseAuthorization();
 
 // Add Health Check endpoint

@@ -1,0 +1,202 @@
+@model GymManagement.Web.Models.DTOs.UpdateNguoiDungDto
+@{
+    ViewData["Title"] = "Chỉnh sửa người dùng";
+    Layout = "_Layout";
+}
+
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Chỉnh sửa người dùng</h1>
+        <div>
+            <a href="@Url.Action("Details", new { id = Model.NguoiDungId })" class="btn btn-info">
+                <i class="fas fa-eye"></i> Xem chi tiết
+            </a>
+            <a href="@Url.Action("Index")" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Quay lại
+            </a>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-xl-8 col-lg-10">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Thông tin người dùng</h6>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Edit" method="post" enctype="multipart/form-data">
+                        @Html.AntiForgeryToken()
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                        
+                        <!-- Hidden field for ID -->
+                        <input asp-for="NguoiDungId" type="hidden" />
+
+                        <!-- Loại người dùng -->
+                        <div class="form-group">
+                            <label asp-for="LoaiNguoiDung" class="control-label font-weight-bold">Loại người dùng <span class="text-danger">*</span></label>
+                            <select asp-for="LoaiNguoiDung" class="form-control">
+                                <option value="">-- Chọn loại người dùng --</option>
+                                <option value="THANHVIEN">Thành viên</option>
+                                <option value="HLV">Huấn luyện viên</option>
+                                <option value="NHANVIEN">Nhân viên</option>
+                                <option value="VANGLAI">Vãng lai</option>
+                            </select>
+                            <span asp-validation-for="LoaiNguoiDung" class="text-danger"></span>
+                        </div>
+
+                        <div class="row">
+                            <!-- Họ -->
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="Ho" class="control-label font-weight-bold">Họ <span class="text-danger">*</span></label>
+                                    <input asp-for="Ho" class="form-control" placeholder="Nhập họ" />
+                                    <span asp-validation-for="Ho" class="text-danger"></span>
+                                </div>
+                            </div>
+
+                            <!-- Tên -->
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="Ten" class="control-label font-weight-bold">Tên</label>
+                                    <input asp-for="Ten" class="form-control" placeholder="Nhập tên" />
+                                    <span asp-validation-for="Ten" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- Giới tính -->
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="GioiTinh" class="control-label font-weight-bold">Giới tính</label>
+                                    <select asp-for="GioiTinh" class="form-control">
+                                        <option value="">-- Chọn giới tính --</option>
+                                        <option value="Nam">Nam</option>
+                                        <option value="Nữ">Nữ</option>
+                                        <option value="Khác">Khác</option>
+                                    </select>
+                                    <span asp-validation-for="GioiTinh" class="text-danger"></span>
+                                </div>
+                            </div>
+
+                            <!-- Ngày sinh -->
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="NgaySinh" class="control-label font-weight-bold">Ngày sinh</label>
+                                    <input asp-for="NgaySinh" type="date" class="form-control" />
+                                    <span asp-validation-for="NgaySinh" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- Số điện thoại -->
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="SoDienThoai" class="control-label font-weight-bold">Số điện thoại</label>
+                                    <input asp-for="SoDienThoai" class="form-control" placeholder="Nhập số điện thoại" />
+                                    <span asp-validation-for="SoDienThoai" class="text-danger"></span>
+                                </div>
+                            </div>
+
+                            <!-- Email -->
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="Email" class="control-label font-weight-bold">Email</label>
+                                    <input asp-for="Email" type="email" class="form-control" placeholder="Nhập email" />
+                                    <span asp-validation-for="Email" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Trạng thái -->
+                        <div class="form-group">
+                            <label asp-for="TrangThai" class="control-label font-weight-bold">Trạng thái</label>
+                            <select asp-for="TrangThai" class="form-control">
+                                <option value="ACTIVE">Hoạt động</option>
+                                <option value="INACTIVE">Không hoạt động</option>
+                            </select>
+                            <span asp-validation-for="TrangThai" class="text-danger"></span>
+                        </div>
+
+                        <!-- Ảnh đại diện hiện tại -->
+                        @if (!string.IsNullOrEmpty(ViewBag.CurrentAvatar as string))
+                        {
+                            <div class="form-group">
+                                <label class="control-label font-weight-bold">Ảnh đại diện hiện tại</label>
+                                <div class="text-center mb-3">
+                                    <img src="@ViewBag.CurrentAvatar" alt="Current Avatar" class="img-thumbnail" style="max-width: 150px; max-height: 150px;">
+                                </div>
+                            </div>
+                        }
+
+                        <!-- Ảnh đại diện mới -->
+                        <div class="form-group">
+                            <label class="control-label font-weight-bold">Thay đổi ảnh đại diện</label>
+                            <div class="custom-file">
+                                <input type="file" class="custom-file-input" id="avatarFile" name="AvatarFile" accept="image/*">
+                                <label class="custom-file-label" for="avatarFile">Chọn ảnh mới...</label>
+                            </div>
+                            <small class="form-text text-muted">Chọn file ảnh (JPG, PNG, GIF). Tối đa 2MB. Để trống nếu không muốn thay đổi.</small>
+                        </div>
+
+                        <!-- Preview ảnh mới -->
+                        <div class="form-group">
+                            <div id="imagePreview" class="text-center" style="display: none;">
+                                <label class="control-label font-weight-bold">Ảnh mới</label>
+                                <div>
+                                    <img id="previewImg" src="#" alt="Preview" class="img-thumbnail" style="max-width: 150px; max-height: 150px;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Buttons -->
+                        <div class="form-group text-center">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Cập nhật
+                            </button>
+                            <a href="@Url.Action("Details", new { id = Model.NguoiDungId })" class="btn btn-info ml-2">
+                                <i class="fas fa-eye"></i> Xem chi tiết
+                            </a>
+                            <a href="@Url.Action("Index")" class="btn btn-secondary ml-2">
+                                <i class="fas fa-times"></i> Hủy
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    
+    <script>
+        // File input label update
+        $('.custom-file-input').on('change', function() {
+            var fileName = $(this).val().split('\\').pop();
+            $(this).siblings('.custom-file-label').addClass('selected').html(fileName);
+            
+            // Show preview
+            if (this.files && this.files[0]) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    $('#previewImg').attr('src', e.target.result);
+                    $('#imagePreview').show();
+                }
+                reader.readAsDataURL(this.files[0]);
+            }
+        });
+
+        // Show success/error messages
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <text>alert('@TempData["SuccessMessage"]');</text>
+        }
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <text>alert('@TempData["ErrorMessage"]');</text>
+        }
+    </script>
+}

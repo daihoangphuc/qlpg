@@ -82,9 +82,19 @@ namespace GymManagement.Web.Services
             var goiTap = await _goiTapRepository.GetByIdAsync(goiTapId);
             if (goiTap == null) return false;
 
-            // Check if user already has active registration for this package
-            if (await _dangKyRepository.HasActiveRegistrationAsync(nguoiDungId, goiTapId, null))
+            // 🔒 CHÍNH SÁCH: Mỗi thành viên chỉ có thể sở hữu một gói tập tại một thời điểm
+            // Check if user already has ANY active package registration
+            var existingActivePackages = await _dangKyRepository.GetByMemberIdAsync(nguoiDungId);
+            var hasActivePackage = existingActivePackages.Any(d =>
+                d.GoiTapId != null &&
+                d.TrangThai == "ACTIVE" &&
+                d.NgayKetThuc >= DateOnly.FromDateTime(DateTime.Today));
+
+            if (hasActivePackage)
+            {
+                // User already has an active package, cannot register another one
                 return false;
+            }
 
             // Calculate dates
             var ngayBatDau = DateOnly.FromDateTime(DateTime.Today);
@@ -121,9 +131,36 @@ namespace GymManagement.Web.Services
             var lopHoc = await _lopHocRepository.GetByIdAsync(lopHocId);
             if (lopHoc == null || lopHoc.TrangThai != "OPEN") return false;
 
-            // Check if user already has active registration for this class
+            // Check if user already has active registration for this specific class
             if (await _dangKyRepository.HasActiveRegistrationAsync(nguoiDungId, null, lopHocId))
                 return false;
+
+            // 🧘‍♂️ CHÍNH SÁCH: Thành viên có thể đăng ký nhiều lớp học cùng lúc
+            // Kiểm tra trùng lịch thời gian với các lớp đã đăng ký
+            var existingActiveClasses = await _dangKyRepository.GetByMemberIdAsync(nguoiDungId);
+            var activeClassRegistrations = existingActiveClasses.Where(d =>
+                d.LopHocId != null &&
+                d.TrangThai == "ACTIVE" &&
+                d.NgayKetThuc >= DateOnly.FromDateTime(DateTime.Today)).ToList();
+
+            // Check for time conflicts
+            foreach (var existingReg in activeClassRegistrations)
+            {
+                if (existingReg.LopHoc != null && HasTimeConflict(lopHoc, existingReg.LopHoc))
+                {
+                    // Time conflict detected
+                    return false;
+                }
+            }
+
+            // Check class capacity
+            var currentRegistrations = await _dangKyRepository.GetActiveRegistrationsAsync();
+            var classRegistrationCount = currentRegistrations.Count(d => d.LopHocId == lopHocId);
+            if (classRegistrationCount >= lopHoc.SucChua)
+            {
+                // Class is full
+                return false;
+            }
 
             // Create registration
             var dangKy = new DangKy
@@ -228,6 +265,142 @@ namespace GymManagement.Web.Services
             }
 
             await _unitOfWork.SaveChangesAsync();
+        }
+
+        public async Task<IEnumerable<DangKy>> GetActiveMemberRegistrationsAsync(int nguoiDungId)
+        {
+            var allRegistrations = await _dangKyRepository.GetByMemberIdAsync(nguoiDungId);
+            return allRegistrations.Where(d => d.TrangThai == "ACTIVE" && d.NgayKetThuc >= DateOnly.FromDateTime(DateTime.Today));
+        }
+
+        public async Task<IEnumerable<DangKy>> GetActiveRegistrationsByMemberIdAsync(int nguoiDungId)
+        {
+            var allRegistrations = await _dangKyRepository.GetByMemberIdAsync(nguoiDungId);
+            return allRegistrations.Where(d => d.TrangThai == "ACTIVE" && d.NgayKetThuc >= DateOnly.FromDateTime(DateTime.Today));
+        }
+
+        /// <summary>
+        /// Kiểm tra xung đột thời gian giữa hai lớp học
+        /// </summary>
+        private bool HasTimeConflict(LopHoc newClass, LopHoc existingClass)
+        {
+            // Parse days of week for both classes
+            var newClassDays = ParseDaysOfWeek(newClass.ThuTrongTuan);
+            var existingClassDays = ParseDaysOfWeek(existingClass.ThuTrongTuan);
+
+            // Check if there's any common day
+            var commonDays = newClassDays.Intersect(existingClassDays);
+            if (!commonDays.Any())
+            {
+                // No common days, no conflict
+                return false;
+            }
+
+            // Check time overlap on common days
+            var newStart = newClass.GioBatDau;
+            var newEnd = newClass.GioKetThuc;
+            var existingStart = existingClass.GioBatDau;
+            var existingEnd = existingClass.GioKetThuc;
+
+            // Time conflict if:
+            // New class starts before existing ends AND new class ends after existing starts
+            return newStart < existingEnd && newEnd > existingStart;
+        }
+
+        /// <summary>
+        /// Parse days of week string to list of integers (1=Monday, 7=Sunday)
+        /// </summary>
+        private List<int> ParseDaysOfWeek(string thuTrongTuan)
+        {
+            var days = new List<int>();
+            if (string.IsNullOrEmpty(thuTrongTuan)) return days;
+
+            // Handle different formats: "2,4,6" or "Thứ 2, Thứ 4, Thứ 6"
+            var dayStrings = thuTrongTuan.Split(',', StringSplitOptions.RemoveEmptyEntries);
+
+            foreach (var dayStr in dayStrings)
+            {
+                var cleanDay = dayStr.Trim().ToLower();
+
+                // Try to parse as number first
+                if (int.TryParse(cleanDay, out int dayNum) && dayNum >= 1 && dayNum <= 7)
+                {
+                    days.Add(dayNum);
+                }
+                // Parse Vietnamese day names
+                else if (cleanDay.Contains("2") || cleanDay.Contains("hai"))
+                    days.Add(2);
+                else if (cleanDay.Contains("3") || cleanDay.Contains("ba"))
+                    days.Add(3);
+                else if (cleanDay.Contains("4") || cleanDay.Contains("tư"))
+                    days.Add(4);
+                else if (cleanDay.Contains("5") || cleanDay.Contains("năm"))
+                    days.Add(5);
+                else if (cleanDay.Contains("6") || cleanDay.Contains("sáu"))
+                    days.Add(6);
+                else if (cleanDay.Contains("7") || cleanDay.Contains("bảy"))
+                    days.Add(7);
+                else if (cleanDay.Contains("chủ nhật") || cleanDay.Contains("cn"))
+                    days.Add(1);
+            }
+
+            return days.Distinct().ToList();
+        }
+
+        /// <summary>
+        /// Kiểm tra xem member có gói tập đang hoạt động không
+        /// </summary>
+        public async Task<bool> HasActivePackageAsync(int nguoiDungId)
+        {
+            var registrations = await _dangKyRepository.GetByMemberIdAsync(nguoiDungId);
+            return registrations.Any(d =>
+                d.GoiTapId != null &&
+                d.TrangThai == "ACTIVE" &&
+                d.NgayKetThuc >= DateOnly.FromDateTime(DateTime.Today));
+        }
+
+        /// <summary>
+        /// Kiểm tra xem member có thể đăng ký lớp học không (không trùng lịch và lớp chưa đầy)
+        /// </summary>
+        public async Task<bool> CanRegisterClassAsync(int nguoiDungId, int lopHocId)
+        {
+            // Check if class exists and is open
+            var lopHoc = await _lopHocRepository.GetByIdAsync(lopHocId);
+            if (lopHoc == null || lopHoc.TrangThai != "OPEN") return false;
+
+            // Check if user already registered for this class
+            if (await _dangKyRepository.HasActiveRegistrationAsync(nguoiDungId, null, lopHocId))
+                return false;
+
+            // Check class capacity
+            var currentCount = await GetActiveClassRegistrationCountAsync(lopHocId);
+            if (currentCount >= lopHoc.SucChua) return false;
+
+            // Check time conflicts
+            var existingActiveClasses = await _dangKyRepository.GetByMemberIdAsync(nguoiDungId);
+            var activeClassRegistrations = existingActiveClasses.Where(d =>
+                d.LopHocId != null &&
+                d.TrangThai == "ACTIVE" &&
+                d.NgayKetThuc >= DateOnly.FromDateTime(DateTime.Today)).ToList();
+
+            foreach (var existingReg in activeClassRegistrations)
+            {
+                if (existingReg.LopHoc != null && HasTimeConflict(lopHoc, existingReg.LopHoc))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Đếm số lượng đăng ký đang hoạt động cho một lớp học
+        /// </summary>
+        public async Task<int> GetActiveClassRegistrationCountAsync(int lopHocId)
+        {
+            var activeRegistrations = await _dangKyRepository.GetActiveRegistrationsAsync();
+            return activeRegistrations.Count(d => d.LopHocId == lopHocId);
         }
     }
 }

@@ -1,9 +1,9 @@
 using GymManagement.Web.Data.Models;
 using GymManagement.Web.Services;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using System.Security.Claims;
 
 namespace GymManagement.Web.Controllers
 {
@@ -14,7 +14,7 @@ namespace GymManagement.Web.Controllers
         private readonly IGoiTapService _goiTapService;
         private readonly ILopHocService _lopHocService;
         private readonly INguoiDungService _nguoiDungService;
-        private readonly UserManager<TaiKhoan> _userManager;
+        private readonly IAuthService _authService;
         private readonly ILogger<DangKyController> _logger;
 
         public DangKyController(
@@ -22,17 +22,28 @@ namespace GymManagement.Web.Controllers
             IGoiTapService goiTapService,
             ILopHocService lopHocService,
             INguoiDungService nguoiDungService,
-            UserManager<TaiKhoan> userManager,
+            IAuthService authService,
             ILogger<DangKyController> logger)
         {
             _dangKyService = dangKyService;
             _goiTapService = goiTapService;
             _lopHocService = lopHocService;
             _nguoiDungService = nguoiDungService;
-            _userManager = userManager;
+            _authService = authService;
             _logger = logger;
         }
 
+        // Helper method to get current user
+        private async Task<TaiKhoan?> GetCurrentUserAsync()
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+                return null;
+
+            return await _authService.GetUserByIdAsync(userId);
+        }
+
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Index()
         {
             try
@@ -48,26 +59,7 @@ namespace GymManagement.Web.Controllers
             }
         }
 
-        public async Task<IActionResult> MyRegistrations()
-        {
-            try
-            {
-                var user = await _userManager.GetUserAsync(User);
-                if (user?.NguoiDungId == null)
-                {
-                    return RedirectToAction("Login", "Auth");
-                }
-
-                var registrations = await _dangKyService.GetByMemberIdAsync(user.NguoiDungId.Value);
-                return View(registrations);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error occurred while getting user registrations");
-                TempData["ErrorMessage"] = "Có lỗi xảy ra khi tải danh sách đăng ký của bạn.";
-                return View(new List<DangKy>());
-            }
-        }
+        // MyRegistrations action đã được chuyển sang MemberController để tránh trùng lặp
 
         public async Task<IActionResult> RegisterPackage()
         {
@@ -81,7 +73,7 @@ namespace GymManagement.Web.Controllers
         {
             try
             {
-                var user = await _userManager.GetUserAsync(User);
+                var user = await GetCurrentUserAsync();
                 if (user?.NguoiDungId == null)
                 {
                     return RedirectToAction("Login", "Auth");
@@ -91,7 +83,7 @@ namespace GymManagement.Web.Controllers
                 if (result)
                 {
                     TempData["SuccessMessage"] = "Đăng ký gói tập thành công!";
-                    return RedirectToAction(nameof(MyRegistrations));
+                    return RedirectToAction("MyRegistrations", "Member");
                 }
                 else
                 {
@@ -120,7 +112,7 @@ namespace GymManagement.Web.Controllers
         {
             try
             {
-                var user = await _userManager.GetUserAsync(User);
+                var user = await GetCurrentUserAsync();
                 if (user?.NguoiDungId == null)
                 {
                     return RedirectToAction("Login", "Auth");
@@ -130,7 +122,7 @@ namespace GymManagement.Web.Controllers
                 if (result)
                 {
                     TempData["SuccessMessage"] = "Đăng ký lớp học thành công!";
-                    return RedirectToAction(nameof(MyRegistrations));
+                    return RedirectToAction("MyRegistrations", "Member");
                 }
                 else
                 {
@@ -179,6 +171,7 @@ namespace GymManagement.Web.Controllers
             }
         }
 
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Details(int id)
         {
             try

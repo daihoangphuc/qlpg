@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - GYM Manager</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/GymManagement.Web.styles.css" asp-append-version="true" />
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    
+    <!-- Flowbite -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.0/flowbite.min.css" rel="stylesheet" />
+
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation Header -->
+    <nav class="bg-gradient-to-r from-purple-600 to-blue-600 shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <!-- Logo and Brand -->
+                <div class="flex items-center">
+                    <a asp-controller="Home" asp-action="Index" class="flex items-center">
+                        <span class="text-2xl">🏋️</span>
+                        <span class="ml-2 text-xl font-bold text-white">GYM Manager</span>
+                        <span class="ml-2 text-sm bg-purple-800 text-white px-2 py-1 rounded">HLV</span>
+                    </a>
+                </div>
+
+                <!-- Navigation Links -->
+                <div class="hidden md:flex items-center space-x-6">
+                    <a asp-controller="Home" asp-action="Index"
+                       class="@(ViewContext.RouteData.Values["Controller"]?.ToString() == "Home" ? "text-white bg-purple-800" : "text-white hover:text-purple-200") px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                        🏠 Trang chủ
+                    </a>
+                    <a asp-controller="Trainer" asp-action="Dashboard"
+                       class="@(ViewContext.RouteData.Values["Controller"]?.ToString() == "Trainer" && ViewContext.RouteData.Values["Action"]?.ToString() == "Dashboard" ? "text-white bg-purple-800" : "text-white hover:text-purple-200") px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                        📊 Dashboard
+                    </a>
+                    <a asp-controller="Trainer" asp-action="MyClasses"
+                       class="@(ViewContext.RouteData.Values["Controller"]?.ToString() == "Trainer" && ViewContext.RouteData.Values["Action"]?.ToString() == "MyClasses" ? "text-white bg-purple-800" : "text-white hover:text-purple-200") px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                        🎓 Lớp của tôi
+                    </a>
+                    <a asp-controller="Trainer" asp-action="Schedule"
+                       class="@(ViewContext.RouteData.Values["Controller"]?.ToString() == "Trainer" && ViewContext.RouteData.Values["Action"]?.ToString() == "Schedule" ? "text-white bg-purple-800" : "text-white hover:text-purple-200") px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                        📅 Lịch dạy
+                    </a>
+                    <a asp-controller="Trainer" asp-action="Students"
+                       class="@(ViewContext.RouteData.Values["Controller"]?.ToString() == "Trainer" && ViewContext.RouteData.Values["Action"]?.ToString() == "Students" ? "text-white bg-purple-800" : "text-white hover:text-purple-200") px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                        👥 Học viên
+                    </a>
+                    <a asp-controller="Trainer" asp-action="Salary"
+                       class="@(ViewContext.RouteData.Values["Controller"]?.ToString() == "Trainer" && ViewContext.RouteData.Values["Action"]?.ToString() == "Salary" ? "text-white bg-purple-800" : "text-white hover:text-purple-200") px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                        💰 Lương
+                    </a>
+                </div>
+
+                <!-- User Menu -->
+                <div class="flex items-center">
+                    @if (User.Identity?.IsAuthenticated == true)
+                    {
+                        <div class="relative">
+                            <button type="button" class="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500" 
+                                    id="trainer-menu-button" onclick="toggleTrainerMenu()">
+                                <span class="sr-only">Open user menu</span>
+                                <div class="h-8 w-8 rounded-full bg-purple-800 flex items-center justify-center text-white font-medium">
+                                    @(User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value?.Substring(0, 1).ToUpper())
+                                </div>
+                                <span class="ml-2 text-white font-medium">@User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value</span>
+                                <svg class="ml-1 h-4 w-4 text-purple-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </button>
+                            
+                            <!-- Dropdown menu -->
+                            <div id="trainer-menu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
+                                <a asp-controller="Profile" asp-action="Index" 
+                                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    👤 Hồ sơ cá nhân
+                                </a>
+                                <a asp-controller="Trainer" asp-action="MyClasses" 
+                                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    🎓 Lớp của tôi
+                                </a>
+                                <a asp-controller="Trainer" asp-action="Salary" 
+                                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    💰 Lương của tôi
+                                </a>
+                                <div class="border-t border-gray-100"></div>
+                                <a asp-controller="Auth" asp-action="Logout" 
+                                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    🚪 Đăng xuất
+                                </a>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="space-x-4">
+                            <a asp-controller="Auth" asp-action="Login" 
+                               class="text-white hover:text-purple-200 px-3 py-2 rounded-md text-sm font-medium">
+                                Đăng nhập
+                            </a>
+                        </div>
+                    }
+                </div>
+
+                <!-- Mobile menu button -->
+                <div class="md:hidden flex items-center">
+                    <button type="button" class="text-white hover:text-purple-200 focus:outline-none focus:text-purple-200" 
+                            onclick="toggleTrainerMobileMenu()">
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile menu -->
+        <div id="trainer-mobile-menu" class="hidden md:hidden">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-purple-700">
+                <a asp-controller="Home" asp-action="Index" 
+                   class="block px-3 py-2 text-white hover:text-purple-200 rounded-md text-base font-medium">
+                    🏠 Trang chủ
+                </a>
+                <a asp-controller="Trainer" asp-action="Dashboard" 
+                   class="block px-3 py-2 text-white hover:text-purple-200 rounded-md text-base font-medium">
+                    📊 Dashboard
+                </a>
+                <a asp-controller="Trainer" asp-action="MyClasses" 
+                   class="block px-3 py-2 text-white hover:text-purple-200 rounded-md text-base font-medium">
+                    🎓 Lớp của tôi
+                </a>
+                <a asp-controller="Trainer" asp-action="Schedule" 
+                   class="block px-3 py-2 text-white hover:text-purple-200 rounded-md text-base font-medium">
+                    📅 Lịch dạy
+                </a>
+                <a asp-controller="Trainer" asp-action="Students" 
+                   class="block px-3 py-2 text-white hover:text-purple-200 rounded-md text-base font-medium">
+                    👥 Học viên
+                </a>
+                <a asp-controller="Trainer" asp-action="Salary" 
+                   class="block px-3 py-2 text-white hover:text-purple-200 rounded-md text-base font-medium">
+                    💰 Lương
+                </a>
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    <div class="border-t border-purple-600 pt-2">
+                        <a asp-controller="Profile" asp-action="Index" 
+                           class="block px-3 py-2 text-white hover:text-purple-200 rounded-md text-base font-medium">
+                            👤 Hồ sơ cá nhân
+                        </a>
+                        <a asp-controller="Auth" asp-action="Logout" 
+                           class="block px-3 py-2 text-white hover:text-purple-200 rounded-md text-base font-medium">
+                            🚪 Đăng xuất
+                        </a>
+                    </div>
+                }
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="min-h-screen">
+        @RenderBody()
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-200 mt-12">
+        <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+            <div class="text-center text-gray-500 text-sm">
+                © 2024 GYM Manager - Huấn luyện viên. Tất cả quyền được bảo lưu.
+            </div>
+        </div>
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.0/flowbite.min.js"></script>
+    
+    <script>
+        function toggleTrainerMenu() {
+            const menu = document.getElementById('trainer-menu');
+            menu.classList.toggle('hidden');
+        }
+
+        function toggleTrainerMobileMenu() {
+            const menu = document.getElementById('trainer-mobile-menu');
+            menu.classList.toggle('hidden');
+        }
+
+        // Close user menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const userMenuButton = document.getElementById('trainer-menu-button');
+            const userMenu = document.getElementById('trainer-menu');
+            
+            if (userMenuButton && userMenu && !userMenuButton.contains(event.target) && !userMenu.contains(event.target)) {
+                userMenu.classList.add('hidden');
+            }
+        });
+    </script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

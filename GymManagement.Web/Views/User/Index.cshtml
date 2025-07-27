@@ -1,0 +1,187 @@
+@model IEnumerable<GymManagement.Web.Models.DTOs.NguoiDungDto>
+@{
+    ViewData["Title"] = "Quản lý người dùng";
+    Layout = "_Layout";
+    var loaiNguoiDung = ViewBag.LoaiNguoiDung as string;
+    
+    string pageTitle = loaiNguoiDung switch
+    {
+        "THANHVIEN" => "Quản lý thành viên",
+        "HLV" => "Quản lý huấn luyện viên", 
+        "NHANVIEN" => "Quản lý nhân viên",
+        "VANGLAI" => "Quản lý khách vãng lai",
+        _ => "Quản lý người dùng"
+    };
+}
+
+<div class="p-4">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold text-gray-900">@pageTitle</h1>
+        <div class="flex space-x-2">
+            <a href="@Url.Action("Create")" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center">
+                <i class="fas fa-plus mr-2"></i> Thêm mới
+            </a>
+            <div class="relative">
+                <button type="button" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg flex items-center" data-dropdown-toggle="filter-dropdown">
+                    <i class="fas fa-filter mr-2"></i> Lọc theo loại
+                    <i class="fas fa-chevron-down ml-2"></i>
+                </button>
+                <div id="filter-dropdown" class="z-10 hidden bg-white divide-y divide-gray-100 rounded-lg shadow w-44">
+                    <ul class="py-2 text-sm text-gray-700">
+                        <li><a class="block px-4 py-2 hover:bg-gray-100 @(string.IsNullOrEmpty(loaiNguoiDung) ? "bg-blue-50 text-blue-700" : "")" href="@Url.Action("Index")">
+                            <i class="fas fa-users mr-2"></i> Tất cả
+                        </a></li>
+                        <li><hr class="my-1 border-gray-200"></li>
+                        <li><a class="block px-4 py-2 hover:bg-gray-100 @(loaiNguoiDung == "THANHVIEN" ? "bg-blue-50 text-blue-700" : "")" href="@Url.Action("Members")">
+                            <i class="fas fa-user mr-2"></i> Thành viên
+                        </a></li>
+                        <li><a class="block px-4 py-2 hover:bg-gray-100 @(loaiNguoiDung == "HLV" ? "bg-blue-50 text-blue-700" : "")" href="@Url.Action("Trainers")">
+                            <i class="fas fa-dumbbell mr-2"></i> Huấn luyện viên
+                        </a></li>
+                        <li><a class="block px-4 py-2 hover:bg-gray-100 @(loaiNguoiDung == "NHANVIEN" ? "bg-blue-50 text-blue-700" : "")" href="@Url.Action("Staff")">
+                            <i class="fas fa-user-tie mr-2"></i> Nhân viên
+                        </a></li>
+                        <li><a class="block px-4 py-2 hover:bg-gray-100 @(loaiNguoiDung == "VANGLAI" ? "bg-blue-50 text-blue-700" : "")" href="@Url.Action("Guests")">
+                            <i class="fas fa-user-clock mr-2"></i> Vãng lai
+                        </a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Users Table -->
+    <div class="bg-white shadow rounded-lg">
+        <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+            <h3 class="text-lg font-semibold text-gray-900">
+                Danh sách (@Model.Count() người dùng)
+                @if (!string.IsNullOrEmpty(loaiNguoiDung))
+                {
+                    <span class="ml-2 px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">@loaiNguoiDung</span>
+                }
+            </h3>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Họ tên</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Loại</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Số điện thoại</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Giới tính</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày tham gia</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    @foreach (var user in Model)
+                    {
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    @if (!string.IsNullOrEmpty(user.AnhDaiDien))
+                                    {
+                                        <img src="@user.AnhDaiDien" alt="Avatar" class="w-8 h-8 rounded-full mr-3 object-cover">
+                                    }
+                                    else
+                                    {
+                                        <div class="w-8 h-8 rounded-full bg-gray-400 flex items-center justify-center mr-3">
+                                            <i class="fas fa-user text-white text-sm"></i>
+                                        </div>
+                                    }
+                                    <div>
+                                        <div class="text-sm font-medium text-gray-900">@user.HoTen</div>
+                                        @if (user.NgaySinh.HasValue)
+                                        {
+                                            <div class="text-sm text-gray-500">@user.NgaySinh.Value.ToString("dd/MM/yyyy")</div>
+                                        }
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                @{
+                                    var badgeClass = user.LoaiNguoiDung switch
+                                    {
+                                        "THANHVIEN" => "bg-blue-100 text-blue-800",
+                                        "HLV" => "bg-green-100 text-green-800",
+                                        "NHANVIEN" => "bg-indigo-100 text-indigo-800",
+                                        "VANGLAI" => "bg-yellow-100 text-yellow-800",
+                                        _ => "bg-gray-100 text-gray-800"
+                                    };
+                                    var displayName = user.LoaiNguoiDung switch
+                                    {
+                                        "THANHVIEN" => "Thành viên",
+                                        "HLV" => "HLV",
+                                        "NHANVIEN" => "Nhân viên",
+                                        "VANGLAI" => "Vãng lai",
+                                        _ => user.LoaiNguoiDung
+                                        };
+                                    }
+                                    <span class="px-2 py-1 text-xs font-medium rounded-full @badgeClass">@displayName</span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">@(user.Email ?? "Chưa có")</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">@(user.SoDienThoai ?? "Chưa có")</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">@(user.GioiTinh ?? "Chưa có")</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">@user.NgayThamGia.ToString("dd/MM/yyyy")</td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    @if (user.TrangThai == "ACTIVE")
+                                    {
+                                        <span class="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">Hoạt động</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">Không hoạt động</span>
+                                    }
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <div class="flex space-x-2">
+                                        <a href="@Url.Action("Details", new { id = user.NguoiDungId })" class="text-blue-600 hover:text-blue-900" title="Xem chi tiết">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="@Url.Action("Edit", new { id = user.NguoiDungId })" class="text-yellow-600 hover:text-yellow-900" title="Chỉnh sửa">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button type="button" class="text-red-600 hover:text-red-900" onclick="deleteUser(@user.NguoiDungId, '@user.Ho @user.Ten')" title="Xóa">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function deleteUser(userId, userName) {
+            confirmDelete({
+                url: '@Url.Action("Delete")' + '?id=' + userId,
+                itemName: userName,
+                itemType: 'người dùng',
+                onSuccess: function(data) {
+                    location.reload();
+                },
+                onError: function(error) {
+                    showNotification('Có lỗi xảy ra khi xóa người dùng.', 'error');
+                }
+            });
+        }
+
+        // Show messages
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <text>alert('@TempData["SuccessMessage"]');</text>
+        }
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <text>alert('@TempData["ErrorMessage"]');</text>
+        }
+    </script>
+}

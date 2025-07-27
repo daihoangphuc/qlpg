@@ -2,6 +2,7 @@ using GymManagement.Web.Data;
 using GymManagement.Web.Data.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication;
 
 namespace GymManagement.Web.Services
 {
@@ -80,7 +81,7 @@ namespace GymManagement.Web.Services
                 // Check if username or email already exists
                 var existingUser = await _context.TaiKhoans
                     .FirstOrDefaultAsync(u => u.TenDangNhap == user.TenDangNhap || u.Email == user.Email);
-                
+
                 if (existingUser != null)
                     return false;
 
@@ -88,6 +89,23 @@ namespace GymManagement.Web.Services
                 user.Salt = _passwordService.GenerateSalt();
                 user.MatKhauHash = _passwordService.HashPassword(password, user.Salt);
 
+                // Create NguoiDung record first
+                var nguoiDung = new NguoiDung
+                {
+                    LoaiNguoiDung = "THANHVIEN",
+                    Ho = "Chưa cập nhật",
+                    Ten = user.TenDangNhap,
+                    Email = user.Email,
+                    NgayThamGia = DateOnly.FromDateTime(DateTime.Now),
+                    NgayTao = DateTime.UtcNow,
+                    TrangThai = "ACTIVE"
+                };
+
+                _context.NguoiDungs.Add(nguoiDung);
+                await _context.SaveChangesAsync();
+
+                // Link TaiKhoan to NguoiDung
+                user.NguoiDungId = nguoiDung.NguoiDungId;
                 _context.TaiKhoans.Add(user);
                 await _context.SaveChangesAsync();
 
@@ -96,8 +114,10 @@ namespace GymManagement.Web.Services
 
                 return true;
             }
-            catch
+            catch (Exception ex)
             {
+                // Log the exception for debugging
+                Console.WriteLine($"Error creating user: {ex.Message}");
                 return false;
             }
         }
@@ -144,7 +164,7 @@ namespace GymManagement.Web.Services
         public async Task<ClaimsPrincipal> CreateClaimsPrincipalAsync(TaiKhoan user)
         {
             var roles = await GetUserRolesAsync(user.Id);
-            
+
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id),
@@ -161,6 +181,47 @@ namespace GymManagement.Web.Services
             {
                 claims.Add(new Claim("NguoiDungId", user.NguoiDung.NguoiDungId.ToString()));
                 claims.Add(new Claim("HoTen", $"{user.NguoiDung.Ho} {user.NguoiDung.Ten}"));
+            }
+            else
+            {
+                // Try to find or create NguoiDung record for existing users
+                var nguoiDung = await _context.NguoiDungs
+                    .FirstOrDefaultAsync(n => n.Email == user.Email);
+
+                if (nguoiDung == null)
+                {
+                    // Create missing NguoiDung record for existing user
+                    nguoiDung = new NguoiDung
+                    {
+                        LoaiNguoiDung = "THANHVIEN",
+                        Ho = "Chưa cập nhật",
+                        Ten = user.TenDangNhap,
+                        Email = user.Email,
+                        NgayThamGia = DateOnly.FromDateTime(DateTime.Now),
+                        NgayTao = DateTime.UtcNow,
+                        TrangThai = "ACTIVE"
+                    };
+
+                    _context.NguoiDungs.Add(nguoiDung);
+                    await _context.SaveChangesAsync();
+
+                    // Update TaiKhoan to link to NguoiDung
+                    user.NguoiDungId = nguoiDung.NguoiDungId;
+                    _context.TaiKhoans.Update(user);
+                    await _context.SaveChangesAsync();
+                }
+                else
+                {
+                    // Link existing NguoiDung to TaiKhoan
+                    user.NguoiDungId = nguoiDung.NguoiDungId;
+                    _context.TaiKhoans.Update(user);
+                    await _context.SaveChangesAsync();
+                }
+
+                claims.Add(new Claim("NguoiDungId", nguoiDung.NguoiDungId.ToString()));
+                claims.Add(new Claim("HoTen", $"{nguoiDung.Ho} {nguoiDung.Ten}"));
+
+                Console.WriteLine($"INFO: Created/linked NguoiDung for TaiKhoan {user.TenDangNhap} (ID: {user.Id})");
             }
 
             var identity = new ClaimsIdentity(claims, "Custom");

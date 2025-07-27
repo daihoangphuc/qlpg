@@ -191,16 +191,17 @@ namespace GymManagement.Web.Data
                 entity.Property(e => e.DangKyId).ValueGeneratedOnAdd();
                 entity.Property(e => e.TrangThai).HasMaxLength(20).HasDefaultValue("ACTIVE");
                 entity.Property(e => e.NgayTao).HasDefaultValueSql("GETDATE()");
-                
+                entity.Property(e => e.PhiDangKy).HasColumnType("decimal(12,2)");
+
                 entity.HasOne(d => d.NguoiDung)
                     .WithMany(p => p.DangKys)
                     .HasForeignKey(d => d.NguoiDungId)
                     .OnDelete(DeleteBehavior.Cascade);
-                    
+
                 entity.HasOne(d => d.GoiTap)
                     .WithMany(p => p.DangKys)
                     .HasForeignKey(d => d.GoiTapId);
-                    
+
                 entity.HasOne(d => d.LopHoc)
                     .WithMany(p => p.DangKys)
                     .HasForeignKey(d => d.LopHocId);

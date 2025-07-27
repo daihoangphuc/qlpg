@@ -250,5 +250,55 @@ namespace GymManagement.Web.Services
                     throw new ArgumentException("Số điện thoại đã tồn tại");
             }
         }
+
+        public async Task<bool> UpdateAsync(NguoiDungDto nguoiDungDto)
+        {
+            try
+            {
+                var nguoiDung = await _unitOfWork.NguoiDungs.GetByIdAsync(nguoiDungDto.NguoiDungId);
+                if (nguoiDung == null) return false;
+
+                // Update fields
+                nguoiDung.Ho = nguoiDungDto.Ho;
+                nguoiDung.Ten = nguoiDungDto.Ten;
+                nguoiDung.Email = nguoiDungDto.Email;
+                nguoiDung.SoDienThoai = nguoiDungDto.SoDienThoai;
+                nguoiDung.GioiTinh = nguoiDungDto.GioiTinh;
+                nguoiDung.NgaySinh = nguoiDungDto.NgaySinh;
+                nguoiDung.AnhDaiDien = nguoiDungDto.AnhDaiDien;
+
+                await _unitOfWork.NguoiDungs.UpdateAsync(nguoiDung);
+                await _unitOfWork.SaveChangesAsync();
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public async Task<bool> ChangePasswordAsync(int userId, string currentPassword, string newPassword)
+        {
+            try
+            {
+                // Get NguoiDung with TaiKhoan
+                var nguoiDung = await _unitOfWork.NguoiDungs.GetWithTaiKhoanAsync(userId);
+                if (nguoiDung?.TaiKhoan == null) return false;
+
+                // For now, simple comparison - you should implement proper password hashing
+                // Verify current password hash
+                if (nguoiDung.TaiKhoan.MatKhauHash != currentPassword) return false;
+
+                // Update password (should be hashed in real implementation)
+                nguoiDung.TaiKhoan.MatKhauHash = newPassword;
+
+                await _unitOfWork.SaveChangesAsync();
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
     }
 }

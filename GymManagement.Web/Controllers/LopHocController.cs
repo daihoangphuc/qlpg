@@ -23,6 +23,7 @@ namespace GymManagement.Web.Controllers
             _logger = logger;
         }
 
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Index()
         {
             try
@@ -38,6 +39,7 @@ namespace GymManagement.Web.Controllers
             }
         }
 
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Details(int id)
         {
             try
@@ -112,7 +114,7 @@ namespace GymManagement.Web.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin,Manager")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Edit(int id, LopHoc lopHoc)
         {
             if (id != lopHoc.LopHocId)
@@ -170,19 +172,17 @@ namespace GymManagement.Web.Controllers
                 var result = await _lopHocService.DeleteAsync(id);
                 if (result)
                 {
-                    TempData["SuccessMessage"] = "Xóa lớp học thành công!";
+                    return Json(new { success = true, message = "Xóa lớp học thành công!" });
                 }
                 else
                 {
-                    TempData["ErrorMessage"] = "Không thể xóa lớp học.";
+                    return Json(new { success = false, message = "Không thể xóa lớp học." });
                 }
-                return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occurred while deleting class ID: {Id}", id);
-                TempData["ErrorMessage"] = "Có lỗi xảy ra khi xóa lớp học.";
-                return RedirectToAction(nameof(Index));
+                return Json(new { success = false, message = "Có lỗi xảy ra khi xóa lớp học." });
             }
         }
 
@@ -227,7 +227,7 @@ namespace GymManagement.Web.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin,Manager")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GenerateSchedule(int classId, DateTime startDate, DateTime endDate)
         {
             try

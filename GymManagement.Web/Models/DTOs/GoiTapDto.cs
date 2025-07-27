@@ -75,14 +75,7 @@ namespace GymManagement.Web.Models.DTOs
         [StringLength(500, ErrorMessage = "Mô tả không được vượt quá 500 ký tự")]
         public string? MoTa { get; set; }
 
-        [Display(Name = "Loại gói")]
-        public string? LoaiGoi { get; set; }
 
-        [Display(Name = "Trạng thái")]
-        public string TrangThai { get; set; } = "ACTIVE";
-
-        [Display(Name = "Ưu đãi đặc biệt")]
-        public string? UuDaiDacBiet { get; set; }
     }
 
     public class UpdateGoiTapDto

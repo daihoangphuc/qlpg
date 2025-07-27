@@ -19,11 +19,14 @@ namespace GymManagement.Web.Data.Models
         
         [Column(TypeName = "decimal(12,2)")]
         public decimal TienHoaHong { get; set; } = 0;
-        
+
         [NotMapped]
         public decimal TongThanhToan => LuongCoBan + TienHoaHong;
-        
+
         public DateOnly? NgayThanhToan { get; set; }
+
+        [StringLength(500)]
+        public string? GhiChu { get; set; }
 
         // Navigation properties
         public virtual NguoiDung? Hlv { get; set; }

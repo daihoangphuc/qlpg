@@ -36,6 +36,12 @@ namespace GymManagement.Web.Services
             return classes ?? new List<LopHoc>();
         }
 
+        public void ClearCache()
+        {
+            _cache.Remove("all_classes");
+            _cache.Remove("active_classes");
+        }
+
         public async Task<LopHoc?> GetByIdAsync(int id)
         {
             return await _lopHocRepository.GetByIdAsync(id);

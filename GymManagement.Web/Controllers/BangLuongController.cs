@@ -1,8 +1,8 @@
 using GymManagement.Web.Data.Models;
 using GymManagement.Web.Services;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace GymManagement.Web.Controllers
 {
@@ -11,19 +11,29 @@ namespace GymManagement.Web.Controllers
     {
         private readonly IBangLuongService _bangLuongService;
         private readonly INguoiDungService _nguoiDungService;
-        private readonly UserManager<TaiKhoan> _userManager;
+        private readonly IAuthService _authService;
         private readonly ILogger<BangLuongController> _logger;
 
         public BangLuongController(
             IBangLuongService bangLuongService,
             INguoiDungService nguoiDungService,
-            UserManager<TaiKhoan> userManager,
+            IAuthService authService,
             ILogger<BangLuongController> logger)
         {
             _bangLuongService = bangLuongService;
             _nguoiDungService = nguoiDungService;
-            _userManager = userManager;
+            _authService = authService;
             _logger = logger;
+        }
+
+        // Helper method to get current user
+        private async Task<TaiKhoan?> GetCurrentUserAsync()
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+                return null;
+
+            return await _authService.GetUserByIdAsync(userId);
         }
 
         [Authorize(Roles = "Admin")]
@@ -47,7 +57,7 @@ namespace GymManagement.Web.Controllers
         {
             try
             {
-                var user = await _userManager.GetUserAsync(User);
+                var user = await GetCurrentUserAsync();
                 if (user?.NguoiDungId == null)
                 {
                     return RedirectToAction("Login", "Auth");

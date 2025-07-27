@@ -1,7 +1,7 @@
 @model RegisterViewModel
 @{
     ViewData["Title"] = "Đăng ký";
-    Layout = "~/Views/Shared/_AuthLayout.cshtml";
+    Layout = "_MemberLayout";
 }
 
 <div class="w-full bg-white rounded-xl shadow-lg border border-gray-100">
@@ -21,6 +21,7 @@
         }
 
         <form class="space-y-6" asp-action="Register" method="post">
+            @Html.AntiForgeryToken()
             <!-- Grid layout for larger screens -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>

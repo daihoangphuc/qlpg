@@ -1,7 +1,7 @@
 @model LoginViewModel
 @{
     ViewData["Title"] = "Đăng nhập";
-    Layout = "~/Views/Shared/_AuthLayout.cshtml";
+    Layout = "_MemberLayout";
 }
 
 <div class="w-full bg-white rounded-xl shadow-lg border border-gray-100">
@@ -21,6 +21,7 @@
         }
 
         <form class="space-y-6" asp-action="Login" method="post">
+            @Html.AntiForgeryToken()
             <input type="hidden" asp-for="@ViewData["ReturnUrl"]" />
 
             <div class="space-y-6">

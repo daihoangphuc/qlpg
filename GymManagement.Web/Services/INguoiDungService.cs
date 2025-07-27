@@ -11,7 +11,9 @@ namespace GymManagement.Web.Services
             int pageNumber, int pageSize, string? searchTerm = null, string? loaiNguoiDung = null);
         Task<NguoiDungDto> CreateAsync(CreateNguoiDungDto createDto);
         Task<NguoiDungDto> UpdateAsync(UpdateNguoiDungDto updateDto);
+        Task<bool> UpdateAsync(NguoiDungDto nguoiDungDto);
         Task<bool> DeleteAsync(int id);
+        Task<bool> ChangePasswordAsync(int userId, string currentPassword, string newPassword);
 
         // Business methods
         Task<IEnumerable<NguoiDungDto>> GetByLoaiNguoiDungAsync(string loaiNguoiDung);

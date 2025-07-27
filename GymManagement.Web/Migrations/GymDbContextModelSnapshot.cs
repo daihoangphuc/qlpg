@@ -30,6 +30,10 @@ namespace GymManagement.Web.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("BangLuongId"));
 
+                    b.Property<string>("GhiChu")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
                     b.Property<int?>("HlvId")
                         .HasColumnType("int");
 
@@ -64,6 +68,10 @@ namespace GymManagement.Web.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("BookingId"));
 
+                    b.Property<string>("GhiChu")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
                     b.Property<int?>("LichLopId")
                         .HasColumnType("int");
 
@@ -72,6 +80,12 @@ namespace GymManagement.Web.Migrations
 
                     b.Property<DateOnly>("Ngay")
                         .HasColumnType("date");
+
+                    b.Property<DateOnly>("NgayDat")
+                        .HasColumnType("date");
+
+                    b.Property<DateTime>("NgayTao")
+                        .HasColumnType("datetime2");
 
                     b.Property<int?>("ThanhVienId")
                         .HasColumnType("int");
@@ -200,6 +214,10 @@ namespace GymManagement.Web.Migrations
                     b.Property<int?>("LopHocId")
                         .HasColumnType("int");
 
+                    b.Property<string>("LyDoHuy")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
                     b.Property<DateOnly>("NgayBatDau")
                         .HasColumnType("date");
 
@@ -213,6 +231,9 @@ namespace GymManagement.Web.Migrations
 
                     b.Property<int>("NguoiDungId")
                         .HasColumnType("int");
+
+                    b.Property<decimal?>("PhiDangKy")
+                        .HasColumnType("decimal(12,2)");
 
                     b.Property<string>("TrangThai")
                         .IsRequired()
@@ -244,8 +265,15 @@ namespace GymManagement.Web.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
 
+                    b.Property<string>("GhiChu")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
                     b.Property<bool?>("KetQuaNhanDang")
                         .HasColumnType("bit");
+
+                    b.Property<int?>("LichLopId")
+                        .HasColumnType("int");
 
                     b.Property<int?>("ThanhVienId")
                         .HasColumnType("int");
@@ -255,7 +283,17 @@ namespace GymManagement.Web.Migrations
                         .HasColumnType("datetime2")
                         .HasDefaultValueSql("GETDATE()");
 
+                    b.Property<DateTime>("ThoiGianCheckIn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("TrangThai")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
                     b.HasKey("DiemDanhId");
+
+                    b.HasIndex("LichLopId");
 
                     b.HasIndex("ThanhVienId");
 
@@ -390,6 +428,9 @@ namespace GymManagement.Web.Migrations
                     b.Property<DateOnly>("Ngay")
                         .HasColumnType("date");
 
+                    b.Property<int>("SoLuongDaDat")
+                        .HasColumnType("int");
+
                     b.Property<string>("TrangThai")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
@@ -459,6 +500,10 @@ namespace GymManagement.Web.Migrations
                     b.Property<int?>("HlvId")
                         .HasColumnType("int");
 
+                    b.Property<string>("MoTa")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
                     b.Property<int>("SucChua")
                         .HasColumnType("int");
 
@@ -466,6 +511,9 @@ namespace GymManagement.Web.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<int?>("ThoiLuong")
+                        .HasColumnType("int");
 
                     b.Property<string>("ThuTrongTuan")
                         .IsRequired()
@@ -923,9 +971,15 @@ namespace GymManagement.Web.Migrations
 
             modelBuilder.Entity("GymManagement.Web.Data.Models.DiemDanh", b =>
                 {
+                    b.HasOne("GymManagement.Web.Data.Models.LichLop", "LichLop")
+                        .WithMany()
+                        .HasForeignKey("LichLopId");
+
                     b.HasOne("GymManagement.Web.Data.Models.NguoiDung", "ThanhVien")
                         .WithMany("DiemDanhs")
                         .HasForeignKey("ThanhVienId");
+
+                    b.Navigation("LichLop");
 
                     b.Navigation("ThanhVien");
                 });
