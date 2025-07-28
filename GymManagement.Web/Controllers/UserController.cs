@@ -2,85 +2,146 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using GymManagement.Web.Services;
 using GymManagement.Web.Models.DTOs;
+using GymManagement.Web.Data.Models;
 
 namespace GymManagement.Web.Controllers
 {
     [Authorize(Roles = "Admin")]
-    public class UserController : Controller
+    public class UserController : BaseController
     {
         private readonly INguoiDungService _nguoiDungService;
-        private readonly ILogger<UserController> _logger;
         private readonly IWebHostEnvironment _webHostEnvironment;
+        private readonly IAuthService _authService;
 
-        public UserController(INguoiDungService nguoiDungService, ILogger<UserController> logger, IWebHostEnvironment webHostEnvironment)
+        public UserController(
+            INguoiDungService nguoiDungService, 
+            ILogger<UserController> logger, 
+            IWebHostEnvironment webHostEnvironment,
+            IUserSessionService userSessionService,
+            IAuthService authService)
+            : base(userSessionService, logger)
         {
             _nguoiDungService = nguoiDungService;
-            _logger = logger;
             _webHostEnvironment = webHostEnvironment;
+            _authService = authService;
         }
 
-        // GET: User
-        public async Task<IActionResult> Index(string? loaiNguoiDung = null)
+        /// <summary>
+        /// Hiển thị danh sách người dùng với pagination và filter
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> Index(
+            string? loaiNguoiDung = null, 
+            string? searchTerm = null,
+            int page = 1, 
+            int pageSize = 5)
         {
             try
             {
-                IEnumerable<NguoiDungDto> nguoiDungs;
+                _logger.LogInformation("Admin accessing user list page {Page} with filter {Filter}", 
+                    page, loaiNguoiDung);
                 
+                // Validate pagination parameters
+                if (page < 1) page = 1;
+                if (pageSize < 5 || pageSize > 50) pageSize = 5;
+
+                // Get all users based on filter
+                var allUsers = await _nguoiDungService.GetAllAsync();
+                
+                // Apply filters
                 if (!string.IsNullOrEmpty(loaiNguoiDung))
                 {
-                    nguoiDungs = await _nguoiDungService.GetByLoaiNguoiDungAsync(loaiNguoiDung);
+                    allUsers = allUsers.Where(u => u.LoaiNguoiDung == loaiNguoiDung);
                 }
-                else
+                
+                if (!string.IsNullOrEmpty(searchTerm))
                 {
-                    nguoiDungs = await _nguoiDungService.GetAllAsync();
+                    searchTerm = searchTerm.ToLower();
+                    allUsers = allUsers.Where(u => 
+                        u.HoTen.ToLower().Contains(searchTerm) ||
+                        (u.Email?.ToLower().Contains(searchTerm) ?? false) ||
+                        (u.SoDienThoai?.Contains(searchTerm) ?? false));
                 }
+                
+                // Calculate pagination
+                var totalItems = allUsers.Count();
+                var totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
+                
+                // Ensure page is within valid range
+                if (page > totalPages && totalPages > 0) page = totalPages;
+                
+                var skip = (page - 1) * pageSize;
+                var users = allUsers.Skip(skip).Take(pageSize).ToList();
 
+                // Set ViewBag data
+                ViewBag.CurrentPage = page;
+                ViewBag.TotalPages = totalPages;
+                ViewBag.PageSize = pageSize;
+                ViewBag.TotalItems = totalItems;
+                ViewBag.HasPreviousPage = page > 1;
+                ViewBag.HasNextPage = page < totalPages;
                 ViewBag.LoaiNguoiDung = loaiNguoiDung;
-                return View(nguoiDungs);
+                ViewBag.SearchTerm = searchTerm;
+
+                _logger.LogInformation("Returning {Count} users for page {Page}", users.Count, page);
+                return View(users);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while getting users");
-                TempData["ErrorMessage"] = "Có lỗi xảy ra khi tải danh sách người dùng.";
+                _logger.LogError(ex, "Error occurred while getting users for page {Page}", page);
+                TempData["ErrorMessage"] = "Có lỗi xảy ra khi tải danh sách người dùng. Vui lòng thử lại sau.";
                 return View(new List<NguoiDungDto>());
             }
         }
 
-        // GET: User/Members - Shortcut for THANHVIEN
-        public async Task<IActionResult> Members()
+        /// <summary>
+        /// Shortcut routes for user types
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> Members(int page = 1, int pageSize = 10)
         {
-            return await Index("THANHVIEN");
+            return await Index("THANHVIEN", null, page, pageSize);
         }
 
-        // GET: User/Trainers - Shortcut for HLV  
-        public async Task<IActionResult> Trainers()
+        [HttpGet]
+        public async Task<IActionResult> Trainers(int page = 1, int pageSize = 10)
         {
-            return await Index("HLV");
+            return await Index("HLV", null, page, pageSize);
         }
 
-        // GET: User/Staff - Shortcut for NHANVIEN
-        public async Task<IActionResult> Staff()
+        [HttpGet]
+        public async Task<IActionResult> Staff(int page = 1, int pageSize = 10)
         {
-            return await Index("NHANVIEN");
+            return await Index("NHANVIEN", null, page, pageSize);
         }
 
-        // GET: User/Guests - Shortcut for VANGLAI
-        public async Task<IActionResult> Guests()
+        [HttpGet]
+        public async Task<IActionResult> Guests(int page = 1, int pageSize = 10)
         {
-            return await Index("VANGLAI");
+            return await Index("VANGLAI", null, page, pageSize);
         }
 
-        // GET: User/Details/5
+        /// <summary>
+        /// Hiển thị chi tiết người dùng
+        /// </summary>
+        [HttpGet]
         public async Task<IActionResult> Details(int id)
         {
             try
             {
+                _logger.LogInformation("Admin viewing user details for ID: {Id}", id);
+                
                 var nguoiDung = await _nguoiDungService.GetByIdAsync(id);
                 if (nguoiDung == null)
                 {
-                    return NotFound();
+                    _logger.LogWarning("User not found with ID: {Id}", id);
+                    TempData["ErrorMessage"] = "Không tìm thấy người dùng.";
+                    return RedirectToAction(nameof(Index));
                 }
 
+                // Get related data
+                ViewBag.CanDelete = await _nguoiDungService.CanDeleteUserAsync(id);
+                
                 return View(nguoiDung);
             }
             catch (Exception ex)
@@ -91,44 +152,176 @@ namespace GymManagement.Web.Controllers
             }
         }
 
-        // GET: User/Create
+        /// <summary>
+        /// Hiển thị form tạo người dùng mới
+        /// </summary>
+        [HttpGet]
         public IActionResult Create()
         {
+            _logger.LogInformation("Admin accessing create user form");
             return View(new CreateNguoiDungDto());
         }
 
-        // POST: User/Create
+        /// <summary>
+        /// Xử lý tạo người dùng mới
+        /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(CreateNguoiDungDto createDto)
+        public async Task<IActionResult> Create(CreateNguoiDungDto createDto, IFormFile? avatarFile)
         {
             try
             {
-                if (ModelState.IsValid)
+                _logger.LogInformation("Admin creating new user with type: {Type}", createDto.LoaiNguoiDung);
+                
+                if (!ModelState.IsValid)
                 {
-                    var nguoiDung = await _nguoiDungService.CreateAsync(createDto);
-                    TempData["SuccessMessage"] = "Tạo người dùng thành công!";
-                    return RedirectToAction(nameof(Details), new { id = nguoiDung.NguoiDungId });
+                    return View(createDto);
                 }
 
+                // Create NguoiDung first
+                var nguoiDung = await _nguoiDungService.CreateAsync(createDto);
+                
+                // Process avatar after user creation (need user ID)
+                if (avatarFile != null && avatarFile.Length > 0)
+                {
+                    var avatarPath = await ProcessAvatarUpload(avatarFile, nguoiDung.NguoiDungId);
+                    if (!string.IsNullOrEmpty(avatarPath))
+                    {
+                        await _nguoiDungService.UpdateAvatarAsync(nguoiDung.NguoiDungId, avatarPath);
+                    }
+                }
+
+                // Create TaiKhoan if username and password are provided
+                if (!string.IsNullOrEmpty(createDto.Username) && !string.IsNullOrEmpty(createDto.Password))
+                {
+                    var taiKhoan = new TaiKhoan
+                    {
+                        TenDangNhap = createDto.Username,
+                        Email = createDto.Email ?? "",
+                        NguoiDungId = nguoiDung.NguoiDungId,
+                        KichHoat = createDto.TrangThai, // Use status from form
+                        EmailXacNhan = true
+                    };
+
+                    var accountCreated = await _authService.CreateUserAsync(taiKhoan, createDto.Password);
+                    if (accountCreated)
+                    {
+                        // Assign role based on user type
+                        string roleName = createDto.LoaiNguoiDung switch
+                        {
+                            "NHANVIEN" => "Admin",
+                            "HLV" => "Trainer", 
+                            "THANHVIEN" => "Member",
+                            "VANGLAI" => "Member",
+                            _ => "Member"
+                        };
+                        
+                        await _authService.AssignRoleAsync(taiKhoan.Id, roleName);
+                        _logger.LogInformation("Successfully created account for user {Username} with role {Role}", createDto.Username, roleName);
+                    }
+                    else
+                    {
+                        _logger.LogWarning("Failed to create account for user {Username}, but NguoiDung was created", createDto.Username);
+                    }
+                }
+                
+                _logger.LogInformation("Successfully created user with ID: {Id}", nguoiDung.NguoiDungId);
+                TempData["SuccessMessage"] = "Tạo người dùng thành công!";
+                return RedirectToAction(nameof(Details), new { id = nguoiDung.NguoiDungId });
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex, "Business rule violation while creating user");
+                ModelState.AddModelError("", ex.Message);
                 return View(createDto);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occurred while creating user");
-                ModelState.AddModelError("", ex.Message);
+                ModelState.AddModelError("", "Có lỗi xảy ra khi tạo người dùng. Vui lòng thử lại.");
                 return View(createDto);
             }
         }
 
-        // GET: User/Edit/5
+        /// <summary>
+        /// Tạo tài khoản đăng nhập cho người dùng đã tồn tại
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateAccount(int nguoiDungId, string username, string password)
+        {
+            try
+            {
+                _logger.LogInformation("Admin creating account for existing user ID: {Id}", nguoiDungId);
+
+                // Get existing NguoiDung
+                var nguoiDung = await _nguoiDungService.GetByIdAsync(nguoiDungId);
+                if (nguoiDung == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy người dùng." });
+                }
+
+                // Check if account already exists
+                var existingAccount = await _authService.GetUserByUsernameAsync(username);
+                if (existingAccount != null)
+                {
+                    return Json(new { success = false, message = "Tên đăng nhập đã tồn tại." });
+                }
+
+                // Create TaiKhoan
+                var taiKhoan = new TaiKhoan
+                {
+                    TenDangNhap = username,
+                    Email = nguoiDung.Email ?? "",
+                    NguoiDungId = nguoiDung.NguoiDungId,
+                    KichHoat = nguoiDung.TrangThai == "ACTIVE",
+                    EmailXacNhan = true
+                };
+
+                var accountCreated = await _authService.CreateUserAsync(taiKhoan, password);
+                if (accountCreated)
+                {
+                    // Assign role based on user type
+                    string roleName = nguoiDung.LoaiNguoiDung switch
+                    {
+                        "NHANVIEN" => "Admin",
+                        "HLV" => "Trainer", 
+                        "THANHVIEN" => "Member",
+                        "VANGLAI" => "Member",
+                        _ => "Member"
+                    };
+                    
+                    await _authService.AssignRoleAsync(taiKhoan.Id, roleName);
+                    _logger.LogInformation("Successfully created account for user {Username} with role {Role}", username, roleName);
+                    
+                    return Json(new { success = true, message = "Tạo tài khoản thành công! Người dùng có thể đăng nhập với tên đăng nhập: " + username });
+                }
+                else
+                {
+                    return Json(new { success = false, message = "Không thể tạo tài khoản. Vui lòng thử lại." });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating account for user ID: {Id}", nguoiDungId);
+                return Json(new { success = false, message = "Có lỗi xảy ra khi tạo tài khoản." });
+            }
+        }
+
+        /// <summary>
+        /// Hiển thị form chỉnh sửa người dùng
+        /// </summary>
+        [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
             try
             {
+                _logger.LogInformation("Admin accessing edit form for user ID: {Id}", id);
+                
                 var nguoiDung = await _nguoiDungService.GetByIdAsync(id);
                 if (nguoiDung == null)
                 {
+                    _logger.LogWarning("User not found for edit with ID: {Id}", id);
                     return NotFound();
                 }
 
@@ -142,7 +335,9 @@ namespace GymManagement.Web.Controllers
                     NgaySinh = nguoiDung.NgaySinh,
                     SoDienThoai = nguoiDung.SoDienThoai,
                     Email = nguoiDung.Email,
-                    TrangThai = nguoiDung.TrangThai
+                    TrangThai = nguoiDung.TrangThai,
+                    NgayThamGia = nguoiDung.NgayThamGia,
+                    NgayTao = nguoiDung.NgayTao
                 };
 
                 ViewBag.CurrentAvatar = nguoiDung.AnhDaiDien;
@@ -156,75 +351,94 @@ namespace GymManagement.Web.Controllers
             }
         }
 
-        // POST: User/Edit/5
+        /// <summary>
+        /// Xử lý cập nhật thông tin người dùng
+        /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, UpdateNguoiDungDto updateDto, IFormFile? AvatarFile)
+        public async Task<IActionResult> Edit(int id, UpdateNguoiDungDto updateDto, IFormFile? avatarFile)
         {
             if (id != updateDto.NguoiDungId)
             {
-                return NotFound();
+                return BadRequest();
             }
 
             try
             {
-                if (ModelState.IsValid)
+                _logger.LogInformation("Admin updating user ID: {Id}", id);
+                
+                if (!ModelState.IsValid)
                 {
-                    // Xử lý upload avatar nếu có
-                    if (AvatarFile != null && AvatarFile.Length > 0)
-                    {
-                        var avatarPath = await ProcessAvatarUpload(AvatarFile, updateDto.NguoiDungId);
-                        if (!string.IsNullOrEmpty(avatarPath))
-                        {
-                            // Cập nhật avatar path vào DTO
-                            var currentUser = await _nguoiDungService.GetByIdAsync(updateDto.NguoiDungId);
-                            if (currentUser != null)
-                            {
-                                currentUser.AnhDaiDien = avatarPath;
-                                await _nguoiDungService.UpdateAsync(currentUser);
-                            }
-                        }
-                        else
-                        {
-                            ModelState.AddModelError("", "Có lỗi xảy ra khi tải lên ảnh đại diện.");
-                            var currentUser = await _nguoiDungService.GetByIdAsync(id);
-                            ViewBag.CurrentAvatar = currentUser?.AnhDaiDien;
-                            return View(updateDto);
-                        }
-                    }
-
-                    var nguoiDung = await _nguoiDungService.UpdateAsync(updateDto);
-                    TempData["SuccessMessage"] = "Cập nhật người dùng thành công!";
-                    return RedirectToAction(nameof(Details), new { id = nguoiDung.NguoiDungId });
+                    var currentUser = await _nguoiDungService.GetByIdAsync(id);
+                    ViewBag.CurrentAvatar = currentUser?.AnhDaiDien;
+                    return View(updateDto);
                 }
 
-                // Reload current avatar for view
-                var currentUserForView = await _nguoiDungService.GetByIdAsync(id);
-                ViewBag.CurrentAvatar = currentUserForView?.AnhDaiDien;
+                // Process avatar if provided
+                if (avatarFile != null && avatarFile.Length > 0)
+                {
+                    var avatarPath = await ProcessAvatarUpload(avatarFile, updateDto.NguoiDungId);
+                    if (!string.IsNullOrEmpty(avatarPath))
+                    {
+                        // Update avatar separately first
+                        await _nguoiDungService.UpdateAvatarAsync(id, avatarPath);
+                    }
+                    else
+                    {
+                        ModelState.AddModelError("", "Có lỗi xảy ra khi tải lên ảnh đại diện.");
+                        var user = await _nguoiDungService.GetByIdAsync(id);
+                        ViewBag.CurrentAvatar = user?.AnhDaiDien;
+                        return View(updateDto);
+                    }
+                }
+
+                var nguoiDung = await _nguoiDungService.UpdateAsync(updateDto);
+                
+                _logger.LogInformation("Successfully updated user ID: {Id}", id);
+                TempData["SuccessMessage"] = "Cập nhật người dùng thành công!";
+                return RedirectToAction(nameof(Details), new { id = nguoiDung.NguoiDungId });
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex, "Business rule violation while updating user ID: {Id}", id);
+                ModelState.AddModelError("", ex.Message);
+                var currentUser = await _nguoiDungService.GetByIdAsync(id);
+                ViewBag.CurrentAvatar = currentUser?.AnhDaiDien;
                 return View(updateDto);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occurred while updating user ID: {Id}", id);
-                ModelState.AddModelError("", ex.Message);
-
-                // Reload current avatar for view
+                ModelState.AddModelError("", "Có lỗi xảy ra khi cập nhật người dùng. Vui lòng thử lại.");
                 var currentUser = await _nguoiDungService.GetByIdAsync(id);
                 ViewBag.CurrentAvatar = currentUser?.AnhDaiDien;
                 return View(updateDto);
             }
         }
 
-        // POST: User/Delete/5
+        /// <summary>
+        /// Xóa người dùng (AJAX)
+        /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
             try
             {
+                _logger.LogInformation("Admin attempting to delete user ID: {Id}", id);
+                
+                // Check if can delete
+                var (canDelete, message) = await _nguoiDungService.CanDeleteUserAsync(id);
+                if (!canDelete)
+                {
+                    _logger.LogWarning("Cannot delete user ID: {Id}. Reason: {Reason}", id, message);
+                    return Json(new { success = false, message });
+                }
+
                 var result = await _nguoiDungService.DeleteAsync(id);
                 if (result)
                 {
+                    _logger.LogInformation("Successfully deleted user ID: {Id}", id);
                     return Json(new { success = true, message = "Xóa người dùng thành công!" });
                 }
                 else
@@ -235,17 +449,65 @@ namespace GymManagement.Web.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occurred while deleting user ID: {Id}", id);
-                return Json(new { success = false, message = ex.Message });
+                return Json(new { success = false, message = "Có lỗi xảy ra khi xóa người dùng." });
             }
         }
 
-        // Xử lý upload avatar (tương tự ProfileController)
+        /// <summary>
+        /// API: Lấy thống kê người dùng
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> GetUserStats()
+        {
+            try
+            {
+                var allUsers = await _nguoiDungService.GetAllAsync();
+                
+                var stats = new
+                {
+                    total = allUsers.Count(),
+                    byType = allUsers.GroupBy(u => u.LoaiNguoiDung)
+                        .Select(g => new { type = g.Key, count = g.Count() }),
+                    byStatus = allUsers.GroupBy(u => u.TrangThai)
+                        .Select(g => new { status = g.Key, count = g.Count() }),
+                    newThisMonth = allUsers.Count(u => 
+                        u.NgayThamGia >= DateOnly.FromDateTime(DateTime.Today.AddDays(-30)))
+                };
+
+                return Json(new { success = true, data = stats });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting user statistics");
+                return Json(new { success = false, message = "Không thể tải thống kê người dùng." });
+            }
+        }
+
+        /// <summary>
+        /// API: Kiểm tra email/username tồn tại
+        /// </summary>
+        [HttpPost]
+        public async Task<IActionResult> CheckEmailExists(string email, int? excludeUserId = null)
+        {
+            try
+            {
+                var exists = await _nguoiDungService.IsEmailExistsAsync(email, excludeUserId);
+                return Json(new { exists });
+            }
+            catch
+            {
+                return Json(new { exists = false });
+            }
+        }
+
+        #region Private Methods
+
         private async Task<string?> ProcessAvatarUpload(IFormFile avatarFile, int userId)
         {
             try
             {
-                // Kiểm tra file type
-                var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
+                // Validate file type
+                var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
                 var fileExtension = Path.GetExtension(avatarFile.FileName).ToLowerInvariant();
 
                 if (!allowedExtensions.Contains(fileExtension))
@@ -254,35 +516,45 @@ namespace GymManagement.Web.Controllers
                     return null;
                 }
 
-                // Kiểm tra file size (max 5MB)
+                // Validate file size (max 5MB)
                 if (avatarFile.Length > 5 * 1024 * 1024)
                 {
                     _logger.LogWarning("Avatar file too large: {Size} bytes", avatarFile.Length);
                     return null;
                 }
 
-                // Tạo thư mục uploads nếu chưa có
+                // Create upload directory
                 var uploadsPath = Path.Combine(_webHostEnvironment.WebRootPath, "uploads", "avatars");
                 if (!Directory.Exists(uploadsPath))
                 {
                     Directory.CreateDirectory(uploadsPath);
+                    _logger.LogInformation("Created uploads directory: {Path}", uploadsPath);
                 }
 
-                // Tạo tên file unique
+                // Generate unique filename
                 var fileName = $"avatar_{userId}_{DateTime.Now:yyyyMMddHHmmss}{fileExtension}";
                 var filePath = Path.Combine(uploadsPath, fileName);
 
-                // Xóa avatar cũ nếu có
-                await DeleteOldAvatar(userId);
+                // Delete old avatar if exists
+                if (userId > 0)
+                {
+                    await DeleteOldAvatar(userId);
+                }
 
-                // Lưu file mới
+                // Save new file
                 using (var stream = new FileStream(filePath, FileMode.Create))
                 {
                     await avatarFile.CopyToAsync(stream);
                 }
 
-                // Trả về relative path để lưu vào database
-                return $"/uploads/avatars/{fileName}";
+                _logger.LogInformation("Successfully uploaded avatar for user {UserId}: {FileName} at {Path}", 
+                    userId, fileName, filePath);
+                
+                // Return relative path for database storage
+                var relativePath = $"/uploads/avatars/{fileName}";
+                _logger.LogInformation("Avatar URL path: {RelativePath}", relativePath);
+                
+                return relativePath;
             }
             catch (Exception ex)
             {
@@ -291,7 +563,6 @@ namespace GymManagement.Web.Controllers
             }
         }
 
-        // Xóa avatar cũ
         private async Task DeleteOldAvatar(int userId)
         {
             try
@@ -299,18 +570,24 @@ namespace GymManagement.Web.Controllers
                 var user = await _nguoiDungService.GetByIdAsync(userId);
                 if (user?.AnhDaiDien != null && user.AnhDaiDien.StartsWith("/uploads/avatars/"))
                 {
-                    var oldFilePath = Path.Combine(_webHostEnvironment.WebRootPath, user.AnhDaiDien.TrimStart('/'));
+                    var oldFilePath = Path.Combine(_webHostEnvironment.WebRootPath, 
+                        user.AnhDaiDien.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
+                    
                     if (System.IO.File.Exists(oldFilePath))
                     {
                         System.IO.File.Delete(oldFilePath);
+                        _logger.LogInformation("Deleted old avatar for user {UserId}: {Path}", 
+                            userId, oldFilePath);
                     }
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occurred while deleting old avatar for user {UserId}", userId);
-                // Không throw exception vì đây không phải critical error
+                // Don't throw - this is not critical
             }
         }
+
+        #endregion
     }
 }

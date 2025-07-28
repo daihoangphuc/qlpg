@@ -62,6 +62,32 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.SlidingExpiration = true;
 });
 
+// Add Authorization Policies
+builder.Services.AddAuthorization(options =>
+{
+    // Class Management Policies
+    options.AddPolicy("CanManageClasses", policy =>
+        policy.RequireRole("Admin"));
+
+    options.AddPolicy("CanViewClasses", policy =>
+        policy.RequireRole("Admin", "Trainer", "Member"));
+
+    options.AddPolicy("CanViewOwnClasses", policy =>
+        policy.RequireRole("Trainer", "Member"));
+
+    // Registration Policies
+    options.AddPolicy("CanRegisterClasses", policy =>
+        policy.RequireRole("Member"));
+
+    // Attendance Policies
+    options.AddPolicy("CanManageAttendance", policy =>
+        policy.RequireRole("Admin", "Trainer"));
+
+    // Reporting Policies
+    options.AddPolicy("CanViewReports", policy =>
+        policy.RequireRole("Admin"));
+});
+
 // Add Repository pattern
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<INguoiDungRepository, NguoiDungRepository>();
@@ -86,6 +112,7 @@ builder.Services.AddScoped<IBangLuongService, BangLuongService>();
 builder.Services.AddScoped<IBaoCaoService, BaoCaoService>();
 builder.Services.AddScoped<IThongBaoService, ThongBaoService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IAdvancedAnalyticsService, AdvancedAnalyticsService>();
 
 // Add Memory Cache
 builder.Services.AddMemoryCache();

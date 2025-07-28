@@ -16,6 +16,7 @@ namespace GymManagement.Web.Services
         Task<bool> RegisterClassAsync(int nguoiDungId, int lopHocId, DateTime ngayBatDau, DateTime ngayKetThuc);
         Task<bool> ExtendRegistrationAsync(int dangKyId, int additionalMonths);
         Task<bool> CancelRegistrationAsync(int dangKyId, string reason);
+        Task<bool> CancelRegistrationAsync(int dangKyId, int nguoiDungId, string? lyDoHuy = null);
         Task<decimal> CalculateRegistrationFeeAsync(int goiTapId, int thoiHanThang, int? khuyenMaiId = null);
         Task ProcessExpiredRegistrationsAsync();
         Task<IEnumerable<DangKy>> GetActiveMemberRegistrationsAsync(int nguoiDungId);
@@ -25,5 +26,8 @@ namespace GymManagement.Web.Services
         Task<bool> HasActivePackageAsync(int nguoiDungId);
         Task<bool> CanRegisterClassAsync(int nguoiDungId, int lopHocId);
         Task<int> GetActiveClassRegistrationCountAsync(int lopHocId);
+
+        // Fixed schedule class registration
+        Task<bool> RegisterFixedClassAsync(int nguoiDungId, int lopHocId);
     }
 }

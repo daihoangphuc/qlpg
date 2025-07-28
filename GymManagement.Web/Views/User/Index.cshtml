@@ -3,6 +3,7 @@
     ViewData["Title"] = "Quản lý người dùng";
     Layout = "_Layout";
     var loaiNguoiDung = ViewBag.LoaiNguoiDung as string;
+    var searchTerm = ViewBag.SearchTerm as string;
     
     string pageTitle = loaiNguoiDung switch
     {
@@ -14,138 +15,248 @@
     };
 }
 
-<div class="p-4">
-    <!-- Header -->
-    <div class="flex justify-between items-center mb-6">
-        <h1 class="text-2xl font-bold text-gray-900">@pageTitle</h1>
-        <div class="flex space-x-2">
-            <a href="@Url.Action("Create")" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center">
-                <i class="fas fa-plus mr-2"></i> Thêm mới
-            </a>
-            <div class="relative">
-                <button type="button" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg flex items-center" data-dropdown-toggle="filter-dropdown">
-                    <i class="fas fa-filter mr-2"></i> Lọc theo loại
-                    <i class="fas fa-chevron-down ml-2"></i>
-                </button>
-                <div id="filter-dropdown" class="z-10 hidden bg-white divide-y divide-gray-100 rounded-lg shadow w-44">
-                    <ul class="py-2 text-sm text-gray-700">
-                        <li><a class="block px-4 py-2 hover:bg-gray-100 @(string.IsNullOrEmpty(loaiNguoiDung) ? "bg-blue-50 text-blue-700" : "")" href="@Url.Action("Index")">
-                            <i class="fas fa-users mr-2"></i> Tất cả
-                        </a></li>
-                        <li><hr class="my-1 border-gray-200"></li>
-                        <li><a class="block px-4 py-2 hover:bg-gray-100 @(loaiNguoiDung == "THANHVIEN" ? "bg-blue-50 text-blue-700" : "")" href="@Url.Action("Members")">
-                            <i class="fas fa-user mr-2"></i> Thành viên
-                        </a></li>
-                        <li><a class="block px-4 py-2 hover:bg-gray-100 @(loaiNguoiDung == "HLV" ? "bg-blue-50 text-blue-700" : "")" href="@Url.Action("Trainers")">
-                            <i class="fas fa-dumbbell mr-2"></i> Huấn luyện viên
-                        </a></li>
-                        <li><a class="block px-4 py-2 hover:bg-gray-100 @(loaiNguoiDung == "NHANVIEN" ? "bg-blue-50 text-blue-700" : "")" href="@Url.Action("Staff")">
-                            <i class="fas fa-user-tie mr-2"></i> Nhân viên
-                        </a></li>
-                        <li><a class="block px-4 py-2 hover:bg-gray-100 @(loaiNguoiDung == "VANGLAI" ? "bg-blue-50 text-blue-700" : "")" href="@Url.Action("Guests")">
-                            <i class="fas fa-user-clock mr-2"></i> Vãng lai
-                        </a></li>
-                    </ul>
+<div class="min-h-screen bg-gray-50">
+    <!-- Header Section -->
+    <div class="bg-white border-b border-gray-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between py-6">
+                <div class="flex items-center space-x-4">
+                    <h1 class="text-3xl font-bold text-gray-900">@pageTitle</h1>
+                    <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                        @Model.Count() người dùng
+                    </span>
+                </div>
+                <div class="flex space-x-3">
+                    <a href="@Url.Action("Create")" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                    </svg>
+                        Thêm người dùng
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        @Html.AntiForgeryToken()
+        
+        <!-- Filters Card -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
+            <div class="p-6">
+                <div class="flex flex-col lg:flex-row lg:items-end gap-4">
+                <div class="flex-1">
+                        <label for="searchInput" class="block text-sm font-medium text-gray-700 mb-2">Tìm kiếm</label>
+                        <input type="text" id="searchInput" 
+                               placeholder="Tìm theo tên, email, số điện thoại..." 
+                               value="@searchTerm" 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label for="loaiFilter" class="block text-sm font-medium text-gray-700 mb-2">Loại người dùng</label>
+                        <select name="loaiNguoiDung" id="loaiFilter" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <option value="">Tất cả loại</option>
+                            @if(loaiNguoiDung == "THANHVIEN")
+                        {
+                                <option value="THANHVIEN" selected>👤 Thành viên</option>
+                        }
+                        else
+                        {
+                                <option value="THANHVIEN">👤 Thành viên</option>
+                        }
+                            @if(loaiNguoiDung == "HLV")
+                        {
+                                <option value="HLV" selected>💪 Huấn luyện viên</option>
+                        }
+                        else
+                        {
+                                <option value="HLV">💪 Huấn luyện viên</option>
+                        }
+                            @if(loaiNguoiDung == "NHANVIEN")
+                        {
+                                <option value="NHANVIEN" selected>👔 Nhân viên</option>
+                        }
+                        else
+                        {
+                                <option value="NHANVIEN">👔 Nhân viên</option>
+                        }
+                            @if(loaiNguoiDung == "VANGLAI")
+                        {
+                                <option value="VANGLAI" selected>🚶 Vãng lai</option>
+                        }
+                        else
+                        {
+                                <option value="VANGLAI">🚶 Vãng lai</option>
+                        }
+                    </select>
+                </div>
+                <div>
+                        <label for="statusFilter" class="block text-sm font-medium text-gray-700 mb-2">Trạng thái</label>
+                        <select id="statusFilter" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <option value="">Tất cả</option>
+                            <option value="ACTIVE">✅ Hoạt động</option>
+                            <option value="INACTIVE">❌ Ngừng hoạt động</option>
+                        </select>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button onclick="applyFilters()" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.414A1 1 0 013 6.707V4z"></path>
+                        </svg>
+                        Lọc
+                    </button>
+                        <button onclick="clearFilters()" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4l16 16m0-16L4 20"></path>
+                            </svg>
+                            Xóa bộ lọc
+                        </button>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Users Table -->
-    <div class="bg-white shadow rounded-lg">
-        <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-            <h3 class="text-lg font-semibold text-gray-900">
-                Danh sách (@Model.Count() người dùng)
-                @if (!string.IsNullOrEmpty(loaiNguoiDung))
-                {
-                    <span class="ml-2 px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">@loaiNguoiDung</span>
-                }
-            </h3>
-        </div>
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Họ tên</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Loại</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Số điện thoại</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Giới tính</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày tham gia</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thao tác</th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                    @foreach (var user in Model)
-                    {
-                        <tr class="hover:bg-gray-50">
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="flex items-center">
-                                    @if (!string.IsNullOrEmpty(user.AnhDaiDien))
-                                    {
-                                        <img src="@user.AnhDaiDien" alt="Avatar" class="w-8 h-8 rounded-full mr-3 object-cover">
-                                    }
-                                    else
-                                    {
-                                        <div class="w-8 h-8 rounded-full bg-gray-400 flex items-center justify-center mr-3">
-                                            <i class="fas fa-user text-white text-sm"></i>
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+            @if (Model.Any())
+        {
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Người dùng
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Thông tin liên hệ
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Loại & Trạng thái
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Ngày tham gia
+                            </th>
+                                <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Thao tác
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                            @foreach (var nguoiDung in Model)
+                        {
+                                <tr class="hover:bg-gray-50 transition-colors duration-200">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                            <div class="h-12 w-12 flex-shrink-0">
+                                                @if (!string.IsNullOrEmpty(nguoiDung.AnhDaiDien))
+                                                {
+                                                    <img class="h-12 w-12 rounded-full object-cover border-2 border-gray-200" 
+                                                         src="@nguoiDung.AnhDaiDien" 
+                                                         alt="@nguoiDung.HoTen">
+                                                }
+                                            else
+                                            {
+                                                    <div class="h-12 w-12 rounded-full bg-gradient-to-br from-indigo-400 to-indigo-600 flex items-center justify-center text-white font-semibold text-lg">
+                                                        @(nguoiDung.Ho?.Substring(0, 1) ?? "")@(nguoiDung.Ten?.Substring(0, 1) ?? "")
+                                                    </div>
+                                                }
+                                            </div>
+                                            <div class="ml-4">
+                                                <div class="text-sm font-medium text-gray-900">@nguoiDung.HoTen</div>
+                                                <div class="text-sm text-gray-500">#@nguoiDung.NguoiDungId.ToString("D4")</div>
+                                            </div>
                                         </div>
-                                    }
-                                    <div>
-                                        <div class="text-sm font-medium text-gray-900">@user.HoTen</div>
-                                        @if (user.NgaySinh.HasValue)
-                                        {
-                                            <div class="text-sm text-gray-500">@user.NgaySinh.Value.ToString("dd/MM/yyyy")</div>
-                                        }
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="text-sm text-gray-900">
+                                            @if (!string.IsNullOrEmpty(nguoiDung.Email))
+                                            {
+                                                <div class="flex items-center mb-1">
+                                                    <svg class="w-4 h-4 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                                                    </svg>
+                                                    <span class="text-sm text-gray-600">@nguoiDung.Email</span>
+                                                </div>
+                                            }
+                                            @if (!string.IsNullOrEmpty(nguoiDung.SoDienThoai))
+                                            {
+                                                <div class="flex items-center">
+                                                    <svg class="w-4 h-4 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+                                                    </svg>
+                                                    <span class="text-sm text-gray-600">@nguoiDung.SoDienThoai</span>
+                                                </div>
+                                            }
                                     </div>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                @{
-                                    var badgeClass = user.LoaiNguoiDung switch
-                                    {
-                                        "THANHVIEN" => "bg-blue-100 text-blue-800",
-                                        "HLV" => "bg-green-100 text-green-800",
-                                        "NHANVIEN" => "bg-indigo-100 text-indigo-800",
-                                        "VANGLAI" => "bg-yellow-100 text-yellow-800",
-                                        _ => "bg-gray-100 text-gray-800"
-                                    };
-                                    var displayName = user.LoaiNguoiDung switch
-                                    {
-                                        "THANHVIEN" => "Thành viên",
-                                        "HLV" => "HLV",
-                                        "NHANVIEN" => "Nhân viên",
-                                        "VANGLAI" => "Vãng lai",
-                                        _ => user.LoaiNguoiDung
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="space-y-2">
+                                    @{
+                                                var (badgeClass, displayName, icon) = nguoiDung.LoaiNguoiDung switch
+                                        {
+                                            "THANHVIEN" => ("bg-blue-100 text-blue-800", "Thành viên", "👤"),
+                                                    "HLV" => ("bg-purple-100 text-purple-800", "Huấn luyện viên", "💪"),
+                                                    "NHANVIEN" => ("bg-green-100 text-green-800", "Nhân viên", "👔"),
+                                            "VANGLAI" => ("bg-yellow-100 text-yellow-800", "Vãng lai", "🚶"),
+                                                    _ => ("bg-gray-100 text-gray-800", nguoiDung.LoaiNguoiDung, "👤")
                                         };
                                     }
-                                    <span class="px-2 py-1 text-xs font-medium rounded-full @badgeClass">@displayName</span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">@(user.Email ?? "Chưa có")</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">@(user.SoDienThoai ?? "Chưa có")</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">@(user.GioiTinh ?? "Chưa có")</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">@user.NgayThamGia.ToString("dd/MM/yyyy")</td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    @if (user.TrangThai == "ACTIVE")
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium @badgeClass">
+                                        <span class="mr-1">@icon</span>
+                                        @displayName
+                                    </span>
+                                            <br>
+                                            @if (nguoiDung.TrangThai == "ACTIVE")
                                     {
-                                        <span class="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">Hoạt động</span>
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                    <span class="w-1.5 h-1.5 mr-1.5 rounded-full bg-green-400"></span>
+                                            Hoạt động
+                                        </span>
                                     }
                                     else
                                     {
-                                        <span class="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">Không hoạt động</span>
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                                    <span class="w-1.5 h-1.5 mr-1.5 rounded-full bg-red-400"></span>
+                                                    Ngừng hoạt động
+                                        </span>
                                     }
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <div class="flex flex-col">
+                                            <span>@nguoiDung.NgayThamGia.ToString("dd/MM/yyyy")</span>
+                                            <span class="text-xs text-gray-400">
+                                                @{
+                                                    var daysSinceJoined = DateOnly.FromDateTime(DateTime.Today).DayNumber - nguoiDung.NgayThamGia.DayNumber;
+                                                }
+                                                @daysSinceJoined ngày trước
+                                            </span>
+                                        </div>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                    <div class="flex space-x-2">
-                                        <a href="@Url.Action("Details", new { id = user.NguoiDungId })" class="text-blue-600 hover:text-blue-900" title="Xem chi tiết">
-                                            <i class="fas fa-eye"></i>
+                                    <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                                        <div class="flex items-center justify-center space-x-2">
+                                            <a href="@Url.Action("Details", new { id = nguoiDung.NguoiDungId })" 
+                                               class="text-indigo-600 hover:text-indigo-900 hover:bg-indigo-50 p-2 rounded-lg transition-colors duration-200"
+                                               title="Chi tiết">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                            </svg>
                                         </a>
-                                        <a href="@Url.Action("Edit", new { id = user.NguoiDungId })" class="text-yellow-600 hover:text-yellow-900" title="Chỉnh sửa">
-                                            <i class="fas fa-edit"></i>
+                                            <a href="@Url.Action("Edit", new { id = nguoiDung.NguoiDungId })" 
+                                               class="text-yellow-600 hover:text-yellow-900 hover:bg-yellow-50 p-2 rounded-lg transition-colors duration-200"
+                                               title="Chỉnh sửa">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                            </svg>
                                         </a>
-                                        <button type="button" class="text-red-600 hover:text-red-900" onclick="deleteUser(@user.NguoiDungId, '@user.Ho @user.Ten')" title="Xóa">
-                                            <i class="fas fa-trash"></i>
+                                            <button onclick="deleteUser(@nguoiDung.NguoiDungId, '@nguoiDung.HoTen')" 
+                                                    class="text-red-600 hover:text-red-900 hover:bg-red-50 p-2 rounded-lg transition-colors duration-200"
+                                                    title="Xóa">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                            </svg>
                                         </button>
                                     </div>
                                 </td>
@@ -154,34 +265,211 @@
                     </tbody>
                 </table>
             </div>
+
+            <!-- Pagination -->
+            @if (ViewBag.TotalPages > 1)
+            {
+                <div class="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
+                    <div class="flex items-center justify-between">
+                        <div class="flex-1 flex justify-between sm:hidden">
+                            @if (ViewBag.HasPreviousPage)
+                            {
+                                <a href="@Url.Action("Index", new { loaiNguoiDung = ViewBag.LoaiNguoiDung, searchTerm = ViewBag.SearchTerm, page = ViewBag.CurrentPage - 1 })"
+                                   class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                                    Trước
+                                </a>
+                            }
+                            else
+                            {
+                                <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-400 bg-gray-100 cursor-not-allowed">
+                                    Trước
+                                </span>
+                            }
+                            @if (ViewBag.HasNextPage)
+                            {
+                                <a href="@Url.Action("Index", new { loaiNguoiDung = ViewBag.LoaiNguoiDung, searchTerm = ViewBag.SearchTerm, page = ViewBag.CurrentPage + 1 })"
+                                   class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                                    Sau
+                                </a>
+                            }
+                            else
+                            {
+                                <span class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-400 bg-gray-100 cursor-not-allowed">
+                                    Sau
+                                </span>
+                            }
+                        </div>
+                        <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                            <div>
+                                <p class="text-sm text-gray-700">
+                                    Hiển thị
+                                    <span class="font-medium">@((ViewBag.CurrentPage - 1) * ViewBag.PageSize + 1)</span>
+                                    đến
+                                    <span class="font-medium">@Math.Min(ViewBag.CurrentPage * ViewBag.PageSize, ViewBag.TotalItems)</span>
+                                    trong tổng số
+                                    <span class="font-medium">@ViewBag.TotalItems</span>
+                                    người dùng
+                                </p>
+                            </div>
+                            <div>
+                                <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                                    @if (ViewBag.HasPreviousPage)
+                                    {
+                                        <a href="@Url.Action("Index", new { loaiNguoiDung = ViewBag.LoaiNguoiDung, searchTerm = ViewBag.SearchTerm, page = ViewBag.CurrentPage - 1 })"
+                                           class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                            <span class="sr-only">Trang trước</span>
+                                            <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                            </svg>
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <span class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-gray-100 text-sm font-medium text-gray-400 cursor-not-allowed">
+                                            <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                            </svg>
+                                        </span>
+                                    }
+
+                                    @for (int i = Math.Max(1, ViewBag.CurrentPage - 2); i <= Math.Min(ViewBag.TotalPages, ViewBag.CurrentPage + 2); i++)
+                                    {
+                                        if (i == ViewBag.CurrentPage)
+                                        {
+                                            <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-blue-50 text-sm font-medium text-blue-600">
+                                                @i
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <a href="@Url.Action("Index", new { loaiNguoiDung = ViewBag.LoaiNguoiDung, searchTerm = ViewBag.SearchTerm, page = i })"
+                                               class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                                @i
+                                            </a>
+                                        }
+                                    }
+
+                                    @if (ViewBag.HasNextPage)
+                                    {
+                                        <a href="@Url.Action("Index", new { loaiNguoiDung = ViewBag.LoaiNguoiDung, searchTerm = ViewBag.SearchTerm, page = ViewBag.CurrentPage + 1 })"
+                                           class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                            <span class="sr-only">Trang sau</span>
+                                            <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                                            </svg>
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <span class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-gray-100 text-sm font-medium text-gray-400 cursor-not-allowed">
+                                            <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                                            </svg>
+                                        </span>
+                                    }
+                                </nav>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+            }
+            else
+            {
+                <div class="text-center py-12">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.196-2.196M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.196-2.196M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                            </svg>
+                    <h3 class="mt-2 text-sm font-medium text-gray-900">Không có người dùng</h3>
+                    <p class="mt-1 text-sm text-gray-500">Bắt đầu bằng cách tạo một người dùng mới.</p>
+                    <div class="mt-6">
+                        <a href="@Url.Action("Create")" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                            </svg>
+                            Thêm người dùng
+                                        </a>
+                    </div>
+                </div>
+            }
         </div>
     </div>
 </div>
 
 @section Scripts {
+    <script src="https://cdn.tailwindcss.com"></script>
     <script>
+        function applyFilters() {
+            const searchTerm = document.getElementById('searchInput').value;
+            const loaiNguoiDung = document.getElementById('loaiFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value;
+            
+            const params = new URLSearchParams();
+            if (searchTerm) params.append('searchTerm', searchTerm);
+            if (loaiNguoiDung) params.append('loaiNguoiDung', loaiNguoiDung);
+            if (statusFilter) params.append('status', statusFilter);
+            params.append('page', '1'); // Reset to first page when filtering
+            
+            window.location.href = '@Url.Action("Index")' + '?' + params.toString();
+        }
+
+        function clearFilters() {
+            window.location.href = '@Url.Action("Index")';
+        }
+
         function deleteUser(userId, userName) {
-            confirmDelete({
-                url: '@Url.Action("Delete")' + '?id=' + userId,
-                itemName: userName,
-                itemType: 'người dùng',
-                onSuccess: function(data) {
-                    location.reload();
-                },
-                onError: function(error) {
-                    showNotification('Có lỗi xảy ra khi xóa người dùng.', 'error');
+            if (!confirm(`Bạn có chắc chắn muốn xóa người dùng "${userName}"?\n\nThao tác này không thể hoàn tác.`)) {
+                return;
+            }
+
+            // Get antiforgery token
+            const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+            
+            const formData = new FormData();
+            formData.append('id', userId);
+            if (token) {
+                formData.append('__RequestVerificationToken', token);
+            }
+
+            fetch(`@Url.Action("Delete")`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('success', data.message);
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
+                } else {
+                    showNotification('error', data.message || 'Không thể xóa người dùng.');
                 }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('error', 'Có lỗi xảy ra khi xóa người dùng.');
             });
         }
 
-        // Show messages
-        @if (TempData["SuccessMessage"] != null)
-        {
-            <text>alert('@TempData["SuccessMessage"]');</text>
-        }
-        @if (TempData["ErrorMessage"] != null)
-        {
-            <text>alert('@TempData["ErrorMessage"]');</text>
-        }
+        function showNotification(type, message) {
+            // Tạo notification element
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 z-50 p-4 rounded-md shadow-lg ${type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            // Tự động ẩn sau 3 giây
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+                }
+                
+        // Search on Enter key
+        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                applyFilters();
+                }
+        });
     </script>
 }

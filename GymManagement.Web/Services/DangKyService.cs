@@ -12,19 +12,22 @@ namespace GymManagement.Web.Services
         private readonly IGoiTapRepository _goiTapRepository;
         private readonly ILopHocRepository _lopHocRepository;
         private readonly IThongBaoService _thongBaoService;
+        private readonly ILogger<DangKyService> _logger;
 
         public DangKyService(
             IUnitOfWork unitOfWork,
             IDangKyRepository dangKyRepository,
             IGoiTapRepository goiTapRepository,
             ILopHocRepository lopHocRepository,
-            IThongBaoService thongBaoService)
+            IThongBaoService thongBaoService,
+            ILogger<DangKyService> logger)
         {
             _unitOfWork = unitOfWork;
             _dangKyRepository = dangKyRepository;
             _goiTapRepository = goiTapRepository;
             _lopHocRepository = lopHocRepository;
             _thongBaoService = thongBaoService;
+            _logger = logger;
         }
 
         public async Task<IEnumerable<DangKy>> GetAllAsync()
@@ -153,38 +156,68 @@ namespace GymManagement.Web.Services
                 }
             }
 
-            // Check class capacity
-            var currentRegistrations = await _dangKyRepository.GetActiveRegistrationsAsync();
-            var classRegistrationCount = currentRegistrations.Count(d => d.LopHocId == lopHocId);
+            // Check class capacity with real-time validation
+            var classRegistrationCount = await GetActiveRegistrationCountAsync(lopHocId);
             if (classRegistrationCount >= lopHoc.SucChua)
             {
                 // Class is full
                 return false;
             }
 
-            // Create registration
-            var dangKy = new DangKy
+            // Double-check capacity in a transaction to prevent race conditions
+            using var transaction = await _unitOfWork.Context.Database.BeginTransactionAsync();
+            try
             {
-                NguoiDungId = nguoiDungId,
-                LopHocId = lopHocId,
-                NgayBatDau = DateOnly.FromDateTime(ngayBatDau),
-                NgayKetThuc = DateOnly.FromDateTime(ngayKetThuc),
-                TrangThai = "ACTIVE",
-                NgayTao = DateTime.Now
-            };
+                // Re-check capacity within transaction
+                var currentCount = await GetActiveRegistrationCountAsync(lopHocId);
+                if (currentCount >= lopHoc.SucChua)
+                {
+                    await transaction.RollbackAsync();
+                    return false;
+                }
 
-            await _dangKyRepository.AddAsync(dangKy);
-            await _unitOfWork.SaveChangesAsync();
+                // Create registration within transaction
+                var dangKy = new DangKy
+                {
+                    NguoiDungId = nguoiDungId,
+                    LopHocId = lopHocId,
+                    NgayBatDau = DateOnly.FromDateTime(ngayBatDau),
+                    NgayKetThuc = DateOnly.FromDateTime(ngayKetThuc),
+                    TrangThai = "ACTIVE",
+                    NgayTao = DateTime.Now
+                };
 
-            // Send notification
-            await _thongBaoService.CreateNotificationAsync(
-                nguoiDungId,
-                "Đăng ký lớp học thành công",
-                $"Bạn đã đăng ký thành công lớp {lopHoc.TenLop}. Thời hạn: {ngayBatDau:dd/MM/yyyy} - {ngayKetThuc:dd/MM/yyyy}",
-                "APP"
-            );
+                await _dangKyRepository.AddAsync(dangKy);
+                await _unitOfWork.SaveChangesAsync();
+                await transaction.CommitAsync();
 
-            return true;
+                // Send notification after successful registration
+                await _thongBaoService.CreateNotificationAsync(
+                    nguoiDungId,
+                    "Đăng ký lớp học thành công",
+                    $"Bạn đã đăng ký thành công lớp {lopHoc.TenLop}. Thời gian: {lopHoc.GioBatDau:HH:mm}-{lopHoc.GioKetThuc:HH:mm}",
+                    "APP"
+                );
+
+                return true;
+            }
+            catch (Exception)
+            {
+                await transaction.RollbackAsync();
+                throw; // Re-throw to be handled by calling method
+            }
+        }
+
+        /// <summary>
+        /// Get active registration count for a specific class (real-time)
+        /// </summary>
+        private async Task<int> GetActiveRegistrationCountAsync(int lopHocId)
+        {
+            return await _unitOfWork.Context.DangKys
+                .Where(d => d.LopHocId == lopHocId &&
+                           d.TrangThai == "ACTIVE" &&
+                           d.NgayKetThuc >= DateOnly.FromDateTime(DateTime.Today))
+                .CountAsync();
         }
 
         public async Task<bool> ExtendRegistrationAsync(int dangKyId, int additionalMonths)
@@ -315,7 +348,7 @@ namespace GymManagement.Web.Services
             var days = new List<int>();
             if (string.IsNullOrEmpty(thuTrongTuan)) return days;
 
-            // Handle different formats: "2,4,6" or "Thứ 2, Thứ 4, Thứ 6"
+            // Handle different formats: "2,4,6" or "Thứ 2, Thứ 4, Thứ 6" or "Monday,Tuesday,Wednesday"
             var dayStrings = thuTrongTuan.Split(',', StringSplitOptions.RemoveEmptyEntries);
 
             foreach (var dayStr in dayStrings)
@@ -327,6 +360,21 @@ namespace GymManagement.Web.Services
                 {
                     days.Add(dayNum);
                 }
+                // Parse English day names
+                else if (cleanDay.Contains("monday"))
+                    days.Add(2);
+                else if (cleanDay.Contains("tuesday"))
+                    days.Add(3);
+                else if (cleanDay.Contains("wednesday"))
+                    days.Add(4);
+                else if (cleanDay.Contains("thursday"))
+                    days.Add(5);
+                else if (cleanDay.Contains("friday"))
+                    days.Add(6);
+                else if (cleanDay.Contains("saturday"))
+                    days.Add(7);
+                else if (cleanDay.Contains("sunday"))
+                    days.Add(1);
                 // Parse Vietnamese day names
                 else if (cleanDay.Contains("2") || cleanDay.Contains("hai"))
                     days.Add(2);
@@ -401,6 +449,125 @@ namespace GymManagement.Web.Services
         {
             var activeRegistrations = await _dangKyRepository.GetActiveRegistrationsAsync();
             return activeRegistrations.Count(d => d.LopHocId == lopHocId);
+        }
+
+        /// <summary>
+        /// Đăng ký lớp học theo mô hình cố định (member tham gia từ đầu khóa)
+        /// </summary>
+        public async Task<bool> RegisterFixedClassAsync(int nguoiDungId, int lopHocId)
+        {
+            // Check if class exists and has fixed schedule
+            var lopHoc = await _lopHocRepository.GetByIdAsync(lopHocId);
+            if (lopHoc == null || lopHoc.TrangThai != "OPEN") return false;
+
+            // Kiểm tra lớp học có lịch trình cố định không
+            if (!lopHoc.NgayBatDauKhoa.HasValue || !lopHoc.NgayKetThucKhoa.HasValue)
+                return false;
+
+            // Kiểm tra còn thời gian đăng ký không (phải đăng ký trước ngày bắt đầu)
+            if (lopHoc.NgayBatDauKhoa.Value <= DateOnly.FromDateTime(DateTime.Today))
+                return false;
+
+            // Check if user already registered for this class
+            if (await _dangKyRepository.HasActiveRegistrationAsync(nguoiDungId, null, lopHocId))
+                return false;
+
+            // Check class capacity
+            var currentCount = await GetActiveRegistrationCountAsync(lopHocId);
+            if (currentCount >= lopHoc.SucChua) return false;
+
+            // Check time conflicts with other active class registrations
+            var existingActiveClasses = await _dangKyRepository.GetByMemberIdAsync(nguoiDungId);
+            var activeClassRegistrations = existingActiveClasses.Where(d =>
+                d.LopHocId != null &&
+                d.TrangThai == "ACTIVE" &&
+                d.NgayKetThuc >= DateOnly.FromDateTime(DateTime.Today)).ToList();
+
+            foreach (var existingReg in activeClassRegistrations)
+            {
+                if (existingReg.LopHoc != null && HasTimeConflict(lopHoc, existingReg.LopHoc))
+                {
+                    return false;
+                }
+            }
+
+            // Create registration with fixed schedule dates
+            using var transaction = await _unitOfWork.Context.Database.BeginTransactionAsync();
+            try
+            {
+                // Re-check capacity within transaction
+                var currentCountInTransaction = await GetActiveRegistrationCountAsync(lopHocId);
+                if (currentCountInTransaction >= lopHoc.SucChua)
+                {
+                    await transaction.RollbackAsync();
+                    return false;
+                }
+
+                var dangKy = new DangKy
+                {
+                    NguoiDungId = nguoiDungId,
+                    LopHocId = lopHocId,
+                    NgayBatDau = lopHoc.NgayBatDauKhoa.Value,
+                    NgayKetThuc = lopHoc.NgayKetThucKhoa.Value,
+                    TrangThai = "ACTIVE",
+                    NgayTao = DateTime.Now,
+                    LoaiDangKy = "CLASS",
+                    TrangThaiChiTiet = "ENROLLED"
+                };
+
+                await _dangKyRepository.AddAsync(dangKy);
+                await _unitOfWork.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                // Send notification
+                await _thongBaoService.CreateNotificationAsync(
+                    nguoiDungId,
+                    "Đăng ký lớp học thành công",
+                    $"Bạn đã đăng ký thành công lớp {lopHoc.TenLop}. Khóa học: {lopHoc.NgayBatDauKhoa:dd/MM/yyyy} - {lopHoc.NgayKetThucKhoa:dd/MM/yyyy}",
+                    "APP"
+                );
+
+                return true;
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Hủy đăng ký cho member
+        /// </summary>
+        public async Task<bool> CancelRegistrationAsync(int dangKyId, int nguoiDungId, string? lyDoHuy = null)
+        {
+            var dangKy = await _dangKyRepository.GetByIdAsync(dangKyId);
+            if (dangKy == null || dangKy.NguoiDungId != nguoiDungId || dangKy.TrangThai != "ACTIVE")
+                return false;
+
+            // Kiểm tra có thể hủy không
+            if (!dangKy.CanCancel) return false;
+
+            dangKy.TrangThai = "CANCELLED";
+            dangKy.TrangThaiChiTiet = "CANCELLED";
+            dangKy.LyDoHuy = lyDoHuy ?? "Hủy bởi thành viên";
+
+            await _dangKyRepository.UpdateAsync(dangKy);
+            await _unitOfWork.SaveChangesAsync();
+
+            // Send notification
+            var message = dangKy.IsClassRegistration ?
+                $"Bạn đã hủy đăng ký lớp {dangKy.LopHoc?.TenLop}" :
+                $"Bạn đã hủy đăng ký gói {dangKy.GoiTap?.TenGoi}";
+
+            await _thongBaoService.CreateNotificationAsync(
+                nguoiDungId,
+                "Hủy đăng ký thành công",
+                message,
+                "APP"
+            );
+
+            return true;
         }
     }
 }

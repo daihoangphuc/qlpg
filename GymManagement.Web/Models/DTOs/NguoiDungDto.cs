@@ -143,6 +143,10 @@ namespace GymManagement.Web.Models.DTOs
         [EmailAddress(ErrorMessage = "Email không hợp lệ")]
         public string? Email { get; set; }
         
+        [Display(Name = "Địa chỉ")]
+        [StringLength(200, ErrorMessage = "Địa chỉ không được vượt quá 200 ký tự")]
+        public string? DiaChi { get; set; }
+        
         [Display(Name = "Trạng thái")]
         public string TrangThai { get; set; } = "ACTIVE";
 

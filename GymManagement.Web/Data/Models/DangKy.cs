@@ -30,12 +30,32 @@ namespace GymManagement.Web.Data.Models
         [StringLength(500)]
         public string? LyDoHuy { get; set; }
 
+        [StringLength(20)]
+        public string LoaiDangKy { get; set; } = "PACKAGE"; // PACKAGE hoặc CLASS
+
+        [StringLength(50)]
+        public string? TrangThaiChiTiet { get; set; }
+
         // Alias properties for backward compatibility
         [NotMapped]
         public virtual NguoiDung? ThanhVien => NguoiDung;
 
         [NotMapped]
         public DateTime NgayDangKy => NgayTao;
+
+        // Computed properties
+        [NotMapped]
+        public bool IsClassRegistration => LopHocId.HasValue;
+
+        [NotMapped]
+        public bool IsPackageRegistration => GoiTapId.HasValue;
+
+        [NotMapped]
+        public bool CanCancel => TrangThai == "ACTIVE" &&
+            (IsPackageRegistration || (IsClassRegistration && NgayBatDau > DateOnly.FromDateTime(DateTime.Today.AddDays(1))));
+
+        [NotMapped]
+        public string DisplayType => IsClassRegistration ? "Lớp học" : "Gói tập";
 
         // Navigation properties
         public virtual NguoiDung NguoiDung { get; set; } = null!;

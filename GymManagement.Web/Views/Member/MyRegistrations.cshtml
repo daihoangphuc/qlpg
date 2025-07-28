@@ -222,6 +222,19 @@
                                                 Chi tiết lớp
                                             </a>
                                         }
+
+                                        @* Nút hủy đăng ký cho member *@
+                                        @if (registration.TrangThai == "ACTIVE" && registration.CanCancel)
+                                        {
+                                            <button type="button"
+                                                    onclick="showCancelModal(@registration.DangKyId, '@(registration.IsClassRegistration ? registration.LopHoc?.TenLop : registration.GoiTap?.TenGoi)')"
+                                                    class="inline-flex items-center px-3 py-1.5 border border-red-300 text-sm font-medium rounded-md text-red-700 bg-red-50 hover:bg-red-100 transition-colors duration-200">
+                                                <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                                </svg>
+                                                Hủy đăng ký
+                                            </button>
+                                        }
                                     </div>
                                 </div>
                             </div>
@@ -275,5 +288,108 @@
                 }
             });
         }
+
+        // Cancel registration modal functions
+        let currentCancelId = null;
+        let currentCancelName = '';
+
+        function showCancelModal(dangKyId, name) {
+            currentCancelId = dangKyId;
+            currentCancelName = name;
+            document.getElementById('cancelModal').classList.remove('hidden');
+            document.getElementById('cancelItemName').textContent = name;
+        }
+
+        function hideCancelModal() {
+            document.getElementById('cancelModal').classList.add('hidden');
+            currentCancelId = null;
+            currentCancelName = '';
+            document.getElementById('cancelReason').value = '';
+        }
+
+        function confirmCancel() {
+            if (!currentCancelId) return;
+
+            const reason = document.getElementById('cancelReason').value.trim();
+
+            // Create form and submit
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '@Url.Action("CancelRegistration", "DangKy")';
+
+            // Add anti-forgery token
+            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+            const tokenInput = document.createElement('input');
+            tokenInput.type = 'hidden';
+            tokenInput.name = '__RequestVerificationToken';
+            tokenInput.value = token;
+            form.appendChild(tokenInput);
+
+            // Add dangKyId
+            const idInput = document.createElement('input');
+            idInput.type = 'hidden';
+            idInput.name = 'dangKyId';
+            idInput.value = currentCancelId;
+            form.appendChild(idInput);
+
+            // Add reason if provided
+            if (reason) {
+                const reasonInput = document.createElement('input');
+                reasonInput.type = 'hidden';
+                reasonInput.name = 'lyDoHuy';
+                reasonInput.value = reason;
+                form.appendChild(reasonInput);
+            }
+
+            document.body.appendChild(form);
+            form.submit();
+        }
     </script>
 }
+
+<!-- Cancel Registration Modal -->
+<div id="cancelModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-medium text-gray-900">Xác nhận hủy đăng ký</h3>
+                <button type="button" onclick="hideCancelModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="mb-4">
+                <p class="text-sm text-gray-600 mb-3">
+                    Bạn có chắc chắn muốn hủy đăng ký <strong id="cancelItemName"></strong>?
+                </p>
+                <div>
+                    <label for="cancelReason" class="block text-sm font-medium text-gray-700 mb-2">
+                        Lý do hủy (tùy chọn):
+                    </label>
+                    <textarea id="cancelReason"
+                              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                              rows="3"
+                              placeholder="Nhập lý do hủy đăng ký..."></textarea>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="flex justify-end space-x-3">
+                <button type="button"
+                        onclick="hideCancelModal()"
+                        class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors">
+                    Hủy bỏ
+                </button>
+                <button type="button"
+                        onclick="confirmCancel()"
+                        class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors">
+                    Xác nhận hủy
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

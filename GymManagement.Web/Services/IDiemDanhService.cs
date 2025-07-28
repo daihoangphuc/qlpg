@@ -18,5 +18,19 @@ namespace GymManagement.Web.Services
         Task<int> GetTodayAttendanceCountAsync();
         Task<int> GetMemberAttendanceCountAsync(int thanhVienId, DateTime startDate, DateTime endDate);
         Task<IEnumerable<DiemDanh>> GetAttendanceReportAsync(DateTime startDate, DateTime endDate);
+
+        // Methods for Trainer attendance management
+        Task<IEnumerable<DiemDanh>> GetAttendanceByClassScheduleAsync(int lichLopId);
+        Task<bool> TakeClassAttendanceAsync(int lichLopId, List<ClassAttendanceRecord> attendanceRecords);
+        Task<IEnumerable<NguoiDung>> GetStudentsInClassScheduleAsync(int lichLopId);
+        Task<bool> CanTrainerTakeAttendanceAsync(int trainerId, int lichLopId);
+    }
+
+    // DTO for class attendance
+    public class ClassAttendanceRecord
+    {
+        public int ThanhVienId { get; set; }
+        public string TrangThai { get; set; } = "Present"; // Present, Absent, Late
+        public string? GhiChu { get; set; }
     }
 }

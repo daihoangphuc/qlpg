@@ -5,6 +5,10 @@
       "PackagePath": "staticwebassets\\GymManagement.Web.bundle.scp.css"
     },
     {
+      "Id": "D:\\DATN\\HANG_REMOTE\\qlpg\\GymManagement.Web\\wwwroot\\css\\class-management.css",
+      "PackagePath": "staticwebassets\\css\\class-management.css"
+    },
+    {
       "Id": "D:\\DATN\\HANG_REMOTE\\qlpg\\GymManagement.Web\\wwwroot\\css\\input.css",
       "PackagePath": "staticwebassets\\css\\input.css"
     },
@@ -23,6 +27,14 @@
     {
       "Id": "D:\\DATN\\HANG_REMOTE\\qlpg\\GymManagement.Web\\wwwroot\\favicon.ico",
       "PackagePath": "staticwebassets\\favicon.ico"
+    },
+    {
+      "Id": "D:\\DATN\\HANG_REMOTE\\qlpg\\GymManagement.Web\\wwwroot\\js\\class-management.js",
+      "PackagePath": "staticwebassets\\js\\class-management.js"
+    },
+    {
+      "Id": "D:\\DATN\\HANG_REMOTE\\qlpg\\GymManagement.Web\\wwwroot\\js\\real-time-updates.js",
+      "PackagePath": "staticwebassets\\js\\real-time-updates.js"
     },
     {
       "Id": "D:\\DATN\\HANG_REMOTE\\qlpg\\GymManagement.Web\\wwwroot\\js\\site.js",
@@ -257,6 +269,18 @@
       "PackagePath": "staticwebassets\\lib\\jquery\\dist\\jquery.min.map"
     },
     {
+      "Id": "D:\\DATN\\HANG_REMOTE\\qlpg\\GymManagement.Web\\wwwroot\\uploads\\avatars\\avatar_0_20250728155022.png",
+      "PackagePath": "staticwebassets\\uploads\\avatars\\avatar_0_20250728155022.png"
+    },
+    {
+      "Id": "D:\\DATN\\HANG_REMOTE\\qlpg\\GymManagement.Web\\wwwroot\\uploads\\avatars\\avatar_11_20250728203354.png",
+      "PackagePath": "staticwebassets\\uploads\\avatars\\avatar_11_20250728203354.png"
+    },
+    {
+      "Id": "D:\\DATN\\HANG_REMOTE\\qlpg\\GymManagement.Web\\wwwroot\\uploads\\avatars\\avatar_2_20250727150603.jpg",
+      "PackagePath": "staticwebassets\\uploads\\avatars\\avatar_2_20250727150603.jpg"
+    },
+    {
       "Id": "D:\\DATN\\HANG_REMOTE\\qlpg\\GymManagement.Web\\wwwroot\\uploads\\avatars\\avatar_5_20250725104203.jpg",
       "PackagePath": "staticwebassets\\uploads\\avatars\\avatar_5_20250725104203.jpg"
     },
@@ -267,6 +291,18 @@
     {
       "Id": "D:\\DATN\\HANG_REMOTE\\qlpg\\GymManagement.Web\\wwwroot\\uploads\\avatars\\avatar_5_20250725193045.png",
       "PackagePath": "staticwebassets\\uploads\\avatars\\avatar_5_20250725193045.png"
+    },
+    {
+      "Id": "D:\\DATN\\HANG_REMOTE\\qlpg\\GymManagement.Web\\wwwroot\\uploads\\avatars\\avatar_7_20250728160033.png",
+      "PackagePath": "staticwebassets\\uploads\\avatars\\avatar_7_20250728160033.png"
+    },
+    {
+      "Id": "D:\\DATN\\HANG_REMOTE\\qlpg\\GymManagement.Web\\wwwroot\\uploads\\avatars\\avatar_8_20250728200514.jpg",
+      "PackagePath": "staticwebassets\\uploads\\avatars\\avatar_8_20250728200514.jpg"
+    },
+    {
+      "Id": "D:\\DATN\\HANG_REMOTE\\qlpg\\GymManagement.Web\\wwwroot\\uploads\\avatars\\avatar_9_20250728202743.png",
+      "PackagePath": "staticwebassets\\uploads\\avatars\\avatar_9_20250728202743.png"
     },
     {
       "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.GymManagement.Web.Microsoft.AspNetCore.StaticWebAssets.props",

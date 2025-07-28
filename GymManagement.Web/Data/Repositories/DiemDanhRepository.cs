@@ -80,10 +80,22 @@ namespace GymManagement.Web.Data.Repositories
         {
             return await _context.DiemDanhs
                 .Include(d => d.ThanhVien)
-                .Where(d => d.KetQuaNhanDang == true && 
-                           d.ThoiGian >= startDate && 
+                .Where(d => d.KetQuaNhanDang == true &&
+                           d.ThoiGian >= startDate &&
                            d.ThoiGian <= endDate)
                 .OrderByDescending(d => d.ThoiGian)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<DiemDanh>> GetByClassScheduleAsync(int lichLopId)
+        {
+            return await _context.DiemDanhs
+                .Include(d => d.ThanhVien)
+                .Include(d => d.LichLop)
+                    .ThenInclude(l => l!.LopHoc)
+                .Where(d => d.LichLopId == lichLopId)
+                .OrderBy(d => d.ThanhVien!.Ho)
+                .ThenBy(d => d.ThanhVien!.Ten)
                 .ToListAsync();
         }
     }

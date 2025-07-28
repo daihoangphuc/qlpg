@@ -28,5 +28,9 @@ namespace GymManagement.Web.Services
         Task<bool> IsSoDienThoaiExistsAsync(string soDienThoai, int? excludeId = null);
         Task<bool> DeactivateUserAsync(int id);
         Task<bool> ActivateUserAsync(int id);
+        
+        // Additional methods
+        Task<(bool CanDelete, string Message)> CanDeleteUserAsync(int userId);
+        Task<bool> UpdateAvatarAsync(int userId, string avatarPath);
     }
 }

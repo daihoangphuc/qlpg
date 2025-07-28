@@ -135,6 +135,34 @@ namespace GymManagement.Web.Controllers
             }
         }
 
+        // Xem lớp học cố định
+        public async Task<IActionResult> FixedClasses()
+        {
+            try
+            {
+                // Lấy tất cả lớp học có lịch trình cố định
+                var allClasses = await _lopHocService.GetActiveClassesAsync();
+                var fixedClasses = allClasses.Where(c => c.IsFixedSchedule).ToList();
+
+                // Lấy thông tin số lượng đăng ký hiện tại cho mỗi lớp
+                var registrationCounts = new Dictionary<int, int>();
+                foreach (var lopHoc in fixedClasses)
+                {
+                    var count = await _dangKyService.GetActiveClassRegistrationCountAsync(lopHoc.LopHocId);
+                    registrationCounts[lopHoc.LopHocId] = count;
+                }
+
+                ViewBag.CurrentRegistrations = registrationCounts;
+                return View(fixedClasses);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while loading fixed classes");
+                TempData["ErrorMessage"] = "Có lỗi xảy ra khi tải danh sách lớp học cố định.";
+                return View(new List<LopHoc>());
+            }
+        }
+
         // Xem tất cả lớp học (chỉ hiển thị những lớp chưa đăng ký)
         public async Task<IActionResult> Classes()
         {
@@ -298,31 +326,53 @@ namespace GymManagement.Web.Controllers
         // Đăng ký lớp học
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Member")] // Ensure only members can register
         public async Task<IActionResult> RegisterClass(int classId, DateTime startDate, DateTime endDate)
         {
             try
             {
-                var nguoiDungIdClaim = User.FindFirst("NguoiDungId")?.Value;
-                if (string.IsNullOrEmpty(nguoiDungIdClaim))
+                // Input validation
+                if (classId <= 0)
                 {
-                    return Json(new { success = false, message = "Không tìm thấy thông tin người dùng." });
+                    return Json(new { success = false, message = "ID lớp học không hợp lệ." });
                 }
 
-                var memberId = int.Parse(nguoiDungIdClaim);
+                if (startDate < DateTime.Today)
+                {
+                    return Json(new { success = false, message = "Ngày bắt đầu không thể là ngày trong quá khứ." });
+                }
+
+                if (endDate <= startDate)
+                {
+                    return Json(new { success = false, message = "Ngày kết thúc phải sau ngày bắt đầu." });
+                }
+
+                var nguoiDungIdClaim = User.FindFirst("NguoiDungId")?.Value;
+                if (string.IsNullOrEmpty(nguoiDungIdClaim) || !int.TryParse(nguoiDungIdClaim, out int memberId))
+                {
+                    return Json(new { success = false, message = "Không tìm thấy thông tin người dùng hợp lệ." });
+                }
+
                 var result = await _dangKyService.RegisterClassAsync(memberId, classId, startDate, endDate);
-                
+
                 if (result)
                 {
                     return Json(new { success = true, message = "Đăng ký lớp học thành công!" });
                 }
                 else
                 {
-                    return Json(new { success = false, message = "Không thể đăng ký lớp học. Bạn có thể đã đăng ký lớp này rồi." });
+                    return Json(new { success = false, message = "Không thể đăng ký lớp học. Lớp có thể đã đầy hoặc bạn đã đăng ký rồi." });
                 }
+            }
+            catch (FormatException ex)
+            {
+                _logger.LogError(ex, "Invalid format in RegisterClass for memberId");
+                return Json(new { success = false, message = "Dữ liệu không hợp lệ." });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while registering class");
+                _logger.LogError(ex, "Error occurred while registering class for memberId: {MemberId}, classId: {ClassId}",
+                    User.FindFirst("NguoiDungId")?.Value, classId);
                 return Json(new { success = false, message = "Có lỗi xảy ra khi đăng ký lớp học." });
             }
         }

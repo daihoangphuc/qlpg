@@ -12,5 +12,6 @@ namespace GymManagement.Web.Data.Repositories
         Task<int> CountAttendanceByDateAsync(DateTime date);
         Task<int> CountAttendanceByMemberAsync(int thanhVienId, DateTime startDate, DateTime endDate);
         Task<IEnumerable<DiemDanh>> GetSuccessfulAttendanceAsync(DateTime startDate, DateTime endDate);
+        Task<IEnumerable<DiemDanh>> GetByClassScheduleAsync(int lichLopId);
     }
 }

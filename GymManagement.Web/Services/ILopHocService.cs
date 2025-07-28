@@ -17,5 +17,9 @@ namespace GymManagement.Web.Services
         Task GenerateScheduleAsync(int lopHocId, DateTime startDate, DateTime endDate);
         Task<IEnumerable<LichLop>> GetClassScheduleAsync(int lopHocId, DateTime startDate, DateTime endDate);
         Task<bool> CancelClassAsync(int lichLopId, string reason);
+        
+        // New methods
+        Task<(bool CanDelete, string Message)> CanDeleteClassAsync(int lopHocId);
+        void ClearCache();
     }
 }

@@ -18,6 +18,7 @@
 
     <!-- Custom CSS -->
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/class-management.css" asp-append-version="true" />
 
     @await RenderSectionAsync("Styles", required: false)
 </head>
@@ -56,30 +57,43 @@
 
                     <!-- User Management Dropdown -->
                     <li>
-                        <button type="button" class="flex items-center w-full p-2 text-base text-gray-900 transition duration-75 rounded-lg group hover:bg-gray-100" aria-controls="dropdown-users" data-collapse-toggle="dropdown-users">
+                        <button type="button" class="flex items-center w-full p-2 text-base text-gray-900 transition duration-75 rounded-lg group hover:bg-gray-100 @(ViewContext.RouteData.Values["Controller"]?.ToString() == "User" ? "bg-gray-100" : "")" aria-controls="dropdown-users" data-collapse-toggle="dropdown-users">
                             <svg class="flex-shrink-0 w-5 h-5 text-gray-500 transition duration-75 group-hover:text-gray-900" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 18">
                                 <path d="M14 2a3.963 3.963 0 0 0-1.4.267 6.439 6.439 0 0 1-1.331 6.638A4 4 0 1 0 14 2Zm1 9h-1.264A6.957 6.957 0 0 1 15 15v2a2.97 2.97 0 0 1-.184 1H19a1 1 0 0 0 1-1v-1a5.006 5.006 0 0 0-5-5ZM6.5 9a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9ZM8 10H5a5.006 5.006 0 0 0-5 5v2a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1v-2a5.006 5.006 0 0 0-5-5Z"/>
                             </svg>
                             <span class="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap">👥 Quản lý người dùng</span>
-                            <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
+                            <svg class="w-3 h-3 transition-transform dropdown-arrow" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
                                 <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4"/>
                             </svg>
                         </button>
-                        <ul id="dropdown-users" class="hidden py-2 space-y-2">
+                        <ul id="dropdown-users" class="@(ViewContext.RouteData.Values["Controller"]?.ToString() == "User" ? "" : "hidden") py-2 space-y-2">
                             <li>
-                                <a asp-controller="User" asp-action="Index" class="flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100">Tất cả người dùng</a>
+                                <a asp-controller="User" asp-action="Index" class="flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 @(ViewContext.RouteData.Values["Controller"]?.ToString() == "User" && ViewContext.RouteData.Values["Action"]?.ToString() == "Index" && ViewBag.LoaiNguoiDung == null ? "bg-gray-100" : "")">
+                                    <svg class="w-4 h-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                    </svg>
+                                    Tất cả người dùng
+                                </a>
                             </li>
                             <li>
-                                <a asp-controller="User" asp-action="Members" class="flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100">👤 Thành viên</a>
+                                <a asp-controller="User" asp-action="Members" class="flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 @(ViewContext.RouteData.Values["Controller"]?.ToString() == "User" && ViewContext.RouteData.Values["Action"]?.ToString() == "Members" ? "bg-gray-100" : "")">
+                                    <span class="mr-2">👤</span> Thành viên
+                                </a>
                             </li>
                             <li>
-                                <a asp-controller="User" asp-action="Trainers" class="flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100">💪 Huấn luyện viên</a>
+                                <a asp-controller="User" asp-action="Trainers" class="flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 @(ViewContext.RouteData.Values["Controller"]?.ToString() == "User" && ViewContext.RouteData.Values["Action"]?.ToString() == "Trainers" ? "bg-gray-100" : "")">
+                                    <span class="mr-2">💪</span> Huấn luyện viên
+                                </a>
                             </li>
                             <li>
-                                <a asp-controller="User" asp-action="Staff" class="flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100">👔 Nhân viên</a>
+                                <a asp-controller="User" asp-action="Staff" class="flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 @(ViewContext.RouteData.Values["Controller"]?.ToString() == "User" && ViewContext.RouteData.Values["Action"]?.ToString() == "Staff" ? "bg-gray-100" : "")">
+                                    <span class="mr-2">👔</span> Nhân viên
+                                </a>
                             </li>
                             <li>
-                                <a asp-controller="User" asp-action="Guests" class="flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100">🚶 Vãng lai</a>
+                                <a asp-controller="User" asp-action="Guests" class="flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 @(ViewContext.RouteData.Values["Controller"]?.ToString() == "User" && ViewContext.RouteData.Values["Action"]?.ToString() == "Guests" ? "bg-gray-100" : "")">
+                                    <span class="mr-2">🚶</span> Vãng lai
+                                </a>
                             </li>
                         </ul>
                     </li>
@@ -122,63 +136,7 @@
                     </li>
                 }
 
-                <!-- Trainer Menu -->
-                @if (User.IsInRole("Trainer"))
-                {
-                    <li>
-                        <a asp-controller="Trainer" asp-action="Dashboard" class="flex items-center p-2 text-gray-900 rounded-lg hover:bg-gray-100 group @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Trainer" && ViewContext.RouteData.Values["Action"]?.ToString() == "Dashboard" ? "bg-gray-100 " : "")">
-                            <svg class="flex-shrink-0 w-5 h-5 text-gray-500 transition duration-75 group-hover:text-gray-900 " aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 22 21">
-                                <path d="M16.975 11H10V4.025a1 1 0 0 0-1.066-.998 8.5 8.5 0 1 0 9.039 9.039.999.999 0 0 0-1-1.066h.002Z"/>
-                                <path d="M12.5 0c-.157 0-.311.01-.565.027A1 1 0 0 0 11 1.02V10h8.975a1 1 0 0 0 1-.935c.013-.188.028-.374.028-.565A8.51 8.51 0 0 0 12.5 0Z"/>
-                            </svg>
-                            <span class="flex-1 ms-3 whitespace-nowrap">📊 Dashboard HLV</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a asp-controller="Trainer" asp-action="MyClasses" class="flex items-center p-2 text-gray-900 rounded-lg hover:bg-gray-100 group @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Trainer" && ViewContext.RouteData.Values["Action"]?.ToString() == "MyClasses" ? "bg-gray-100 " : "")">
-                            <svg class="flex-shrink-0 w-5 h-5 text-gray-500 transition duration-75 group-hover:text-gray-900 " aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M5 5V.13a2.96 2.96 0 0 0-1.293.749L.879 3.707A2.96 2.96 0 0 0 .13 5H5Z"/>
-                                <path d="M6.737 11.061a2.961 2.961 0 0 1 .81-1.515l6.117-6.116A4.839 4.839 0 0 1 16 2.141V2a1.97 1.97 0 0 0-1.933-2H7v5a2 2 0 0 1-2 2H0v11a1.969 1.969 0 0 0 1.933 2h12.134A1.97 1.97 0 0 0 16 18v-3.093l-1.546 1.546c-.413.413-.94.695-1.513.81l-3.4.679a2.947 2.947 0 0 1-1.85-.227 2.96 2.96 0 0 1-1.635-3.257l.681-3.397Z"/>
-                                <path d="M8.961 16a.93.93 0 0 0 .189-.019l3.4-.679a.961.961 0 0 0 .49-.263l6.118-6.117a2.884 2.884 0 0 0-4.079-4.078l-6.117 6.117a.96.96 0 0 0-.263.491l-.679 3.4A.961.961 0 0 0 8.961 16Zm7.477-9.8a.958.958 0 0 1 .68-.281.961.961 0 0 1 .682 1.644l-.315.315-1.36-1.36.313-.318Zm-5.911 5.911 4.236-4.236 1.359 1.359-4.236 4.237-1.7.339.341-1.699Z"/>
-                            </svg>
-                            <span class="flex-1 ms-3 whitespace-nowrap">🎓 Lớp của tôi</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a asp-controller="Trainer" asp-action="Schedule" class="flex items-center p-2 text-gray-900 rounded-lg hover:bg-gray-100 group @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Trainer" && ViewContext.RouteData.Values["Action"]?.ToString() == "Schedule" ? "bg-gray-100 " : "")">
-                            <svg class="flex-shrink-0 w-5 h-5 text-gray-500 transition duration-75 group-hover:text-gray-900 " aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M20 4a2 2 0 0 0-2-2h-2V1a1 1 0 0 0-2 0v1h-3V1a1 1 0 0 0-2 0v1H6V1a1 1 0 0 0-2 0v1H2a2 2 0 0 0-2 2v2h20V4ZM0 18a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8H0v10Zm5-8h10a1 1 0 0 1 0 2H5a1 1 0 0 1 0-2Z"/>
-                            </svg>
-                            <span class="flex-1 ms-3 whitespace-nowrap">📅 Lịch dạy</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a asp-controller="Trainer" asp-action="Students" class="flex items-center p-2 text-gray-900 rounded-lg hover:bg-gray-100 group @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Trainer" && ViewContext.RouteData.Values["Action"]?.ToString() == "Students" ? "bg-gray-100 " : "")">
-                            <svg class="flex-shrink-0 w-5 h-5 text-gray-500 transition duration-75 group-hover:text-gray-900 " aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 18">
-                                <path d="M14 2a3.963 3.963 0 0 0-1.4.267 6.439 6.439 0 0 1-1.331 6.638A4 4 0 1 0 14 2Zm1 9h-1.264A6.957 6.957 0 0 1 15 15v2a2.97 2.97 0 0 1-.184 1H19a1 1 0 0 0 1-1v-1a5.006 5.006 0 0 0-5-5ZM6.5 9a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9ZM8 10H5a5.006 5.006 0 0 0-5 5v2a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1v-2a5.006 5.006 0 0 0-5-5Z"/>
-                            </svg>
-                            <span class="flex-1 ms-3 whitespace-nowrap">👥 Học viên</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a asp-controller="Trainer" asp-action="Salary" class="flex items-center p-2 text-gray-900 rounded-lg hover:bg-gray-100 group @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Trainer" && ViewContext.RouteData.Values["Action"]?.ToString() == "Salary" ? "bg-gray-100 " : "")">
-                            <svg class="flex-shrink-0 w-5 h-5 text-gray-500 transition duration-75 group-hover:text-gray-900 " aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M11.074 4 8.442.408A.95.95 0 0 0 7.014.254L2.926 2.408A.95.95 0 0 0 2.33 3.1L1.324 8.58a.95.95 0 0 0 .254 1.042l4.592 4.592a.95.95 0 0 0 1.042.254l5.48-1.006a.95.95 0 0 0 .692-.696l2.154-4.088a.95.95 0 0 0-.254-1.042L11.074 4Z"/>
-                                <path d="M6.5 5.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"/>
-                            </svg>
-                            <span class="flex-1 ms-3 whitespace-nowrap">💰 Lương của tôi</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a asp-controller="DiemDanh" asp-action="Index" class="flex items-center p-2 text-gray-900 rounded-lg hover:bg-gray-100 group @(ViewContext.RouteData.Values["Controller"]?.ToString() == "DiemDanh" ? "bg-gray-100 " : "")">
-                            <svg class="flex-shrink-0 w-5 h-5 text-gray-500 transition duration-75 group-hover:text-gray-900 " aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M10 0C4.612 0 0 4.336 0 9.667 0 17 10 20 10 20s10-3 10-10.333C20 4.336 15.388 0 10 0Zm0 14.5a4.833 4.833 0 1 1 0-9.667 4.833 4.833 0 0 1 0 9.667Z"/>
-                                <path d="M10 6.5a3.167 3.167 0 1 0 0 6.334 3.167 3.167 0 0 0 0-6.334Z"/>
-                            </svg>
-                            <span class="flex-1 ms-3 whitespace-nowrap">✅ Điểm danh</span>
-                        </a>
-                    </li>
-                }
+
 
                 <!-- Admin Menu -->
                 @if (User.IsInRole("Admin"))
@@ -217,6 +175,15 @@
                                 <path d="M12.5 0c-.157 0-.311.01-.565.027A1 1 0 0 0 11 1.02V10h8.975a1 1 0 0 0 1-.935c.013-.188.028-.374.028-.565A8.51 8.51 0 0 0 12.5 0Z"/>
                             </svg>
                             <span class="flex-1 ms-3 whitespace-nowrap">📊 Báo cáo</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a asp-controller="Analytics" asp-action="Dashboard" class="flex items-center p-2 text-gray-900 rounded-lg hover:bg-gray-100 group @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Analytics" ? "bg-gray-100 " : "")">
+                            <svg class="flex-shrink-0 w-5 h-5 text-gray-500 transition duration-75 group-hover:text-gray-900 " aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 22 21">
+                                <path d="M16.975 11H10V4.025a1 1 0 0 0-1.066-.998 8.5 8.5 0 1 0 9.039 9.039.999.999 0 0 0-1-1.066h.002Z"/>
+                                <path d="M12.5 0c-.157 0-.311.01-.565.027A1 1 0 0 0 11 1.02V10h8.975a1 1 0 0 0 1-.935c.013-.188.028-.374.028-.565A8.51 8.51 0 0 0 12.5 0Z"/>
+                            </svg>
+                            <span class="flex-1 ms-3 whitespace-nowrap">📈 Analytics</span>
                         </a>
                     </li>
                 }
@@ -367,10 +334,57 @@
             }
 
         });
+
+        // Dropdown menu functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            // Handle all dropdown toggles
+            const dropdownButtons = document.querySelectorAll('[data-collapse-toggle]');
+            
+            dropdownButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const targetId = this.getAttribute('data-collapse-toggle');
+                    const targetElement = document.getElementById(targetId);
+                    const arrow = this.querySelector('.dropdown-arrow');
+                    
+                    if (targetElement) {
+                        targetElement.classList.toggle('hidden');
+                        
+                        // Rotate arrow
+                        if (arrow) {
+                            arrow.classList.toggle('rotate-180');
+                        }
+                    }
+                });
+            });
+
+            // Close dropdowns when clicking outside
+            document.addEventListener('click', function(event) {
+                if (!event.target.closest('[data-collapse-toggle]') && !event.target.closest('[id^="dropdown-"]')) {
+                    dropdownButtons.forEach(button => {
+                        const targetId = button.getAttribute('data-collapse-toggle');
+                        const targetElement = document.getElementById(targetId);
+                        const arrow = button.querySelector('.dropdown-arrow');
+                        
+                        if (targetElement && !targetElement.classList.contains('hidden')) {
+                            targetElement.classList.add('hidden');
+                            if (arrow) {
+                                arrow.classList.remove('rotate-180');
+                            }
+                        }
+                    });
+                }
+            });
+        });
     </script>
 
     <!-- Flowbite JS -->
     <script src="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.js"></script>
+
+    <!-- Class Management JS -->
+    <script src="~/js/class-management.js"></script>
+
+    <!-- Real-time Updates JS -->
+    <script src="~/js/real-time-updates.js"></script>
 
     @await RenderSectionAsync("Scripts", required: false)
 </body>

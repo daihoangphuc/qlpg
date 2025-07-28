@@ -300,5 +300,73 @@ namespace GymManagement.Web.Services
                 return false;
             }
         }
+
+        public async Task<(bool CanDelete, string Message)> CanDeleteUserAsync(int userId)
+        {
+            try
+            {
+                var nguoiDung = await _unitOfWork.NguoiDungs.GetByIdAsync(userId);
+                if (nguoiDung == null)
+                {
+                    return (false, "Không tìm thấy người dùng.");
+                }
+
+                // Check if user has active registrations
+                var activeRegistrations = nguoiDung.DangKys?.Count(d => d.TrangThai == "ACTIVE") ?? 0;
+                if (activeRegistrations > 0)
+                {
+                    return (false, $"Không thể xóa người dùng này vì đang có {activeRegistrations} đăng ký hoạt động.");
+                }
+
+                // Check if user has future bookings
+                var futureBookings = nguoiDung.Bookings?.Count(b => b.Ngay >= DateOnly.FromDateTime(DateTime.Today)) ?? 0;
+                if (futureBookings > 0)
+                {
+                    return (false, $"Không thể xóa người dùng này vì đang có {futureBookings} lịch đặt trong tương lai.");
+                }
+
+                // Check if user is a trainer with assigned classes
+                if (nguoiDung.LoaiNguoiDung == "HLV")
+                {
+                    var assignedClasses = nguoiDung.LopHocs?.Count(l => l.TrangThai == "OPEN") ?? 0;
+                    if (assignedClasses > 0)
+                    {
+                        return (false, $"Không thể xóa huấn luyện viên này vì đang phụ trách {assignedClasses} lớp học.");
+                    }
+                }
+
+                // Check if user has linked account
+                if (nguoiDung.TaiKhoan != null)
+                {
+                    return (false, "Không thể xóa người dùng có tài khoản đăng nhập. Vui lòng vô hiệu hóa tài khoản thay vì xóa.");
+                }
+
+                return (true, "Người dùng có thể xóa được.");
+            }
+            catch (Exception ex)
+            {
+                return (false, $"Có lỗi xảy ra khi kiểm tra: {ex.Message}");
+            }
+        }
+
+        public async Task<bool> UpdateAvatarAsync(int userId, string avatarPath)
+        {
+            try
+            {
+                var nguoiDung = await _unitOfWork.NguoiDungs.GetByIdAsync(userId);
+                if (nguoiDung == null)
+                    return false;
+
+                nguoiDung.AnhDaiDien = avatarPath;
+                await _unitOfWork.NguoiDungs.UpdateAsync(nguoiDung);
+                await _unitOfWork.SaveChangesAsync();
+                
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
     }
 }

@@ -37,6 +37,26 @@ namespace GymManagement.Web.Data.Models
 
         public int? ThoiLuong { get; set; } // Thời lượng tính bằng phút
 
+        // Thêm thông tin khóa học cố định
+        public DateOnly? NgayBatDauKhoa { get; set; }
+
+        public DateOnly? NgayKetThucKhoa { get; set; }
+
+        [StringLength(20)]
+        public string LoaiDangKy { get; set; } = "CLASS"; // CLASS hoặc FLEXIBLE
+
+        // Computed properties
+        [NotMapped]
+        public bool IsFixedSchedule => NgayBatDauKhoa.HasValue && NgayKetThucKhoa.HasValue;
+
+        [NotMapped]
+        public int SoNgayHoc => IsFixedSchedule ?
+            (NgayKetThucKhoa!.Value.DayNumber - NgayBatDauKhoa!.Value.DayNumber + 1) : 0;
+
+        [NotMapped]
+        public bool IsEnrollmentOpen => TrangThai == "OPEN" &&
+            (!NgayBatDauKhoa.HasValue || NgayBatDauKhoa.Value > DateOnly.FromDateTime(DateTime.Today));
+
         // Navigation properties
         public virtual NguoiDung? Hlv { get; set; }
         public virtual ICollection<LichLop> LichLops { get; set; } = new List<LichLop>();

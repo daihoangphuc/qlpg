@@ -240,8 +240,28 @@ namespace GymManagement.Web.Controllers
                 }
 
                 // Lấy danh sách học viên (thông qua đăng ký)
-                // Tạm thời return empty list, sẽ implement sau khi có DangKyService
-                var students = new List<object>();
+                var lopHoc = await _lopHocService.GetByIdAsync(classId);
+                if (lopHoc?.DangKys == null)
+                {
+                    return Json(new { success = true, data = new List<object>() });
+                }
+
+                var students = lopHoc.DangKys
+                    .Where(d => d.TrangThai == "ACTIVE" &&
+                               d.NgayKetThuc >= DateOnly.FromDateTime(DateTime.Today) &&
+                               d.NguoiDung != null)
+                    .Select(d => new
+                    {
+                        id = d.NguoiDung!.NguoiDungId,
+                        name = $"{d.NguoiDung.Ho} {d.NguoiDung.Ten}".Trim(),
+                        email = d.NguoiDung.Email,
+                        phone = d.NguoiDung.SoDienThoai,
+                        registrationDate = d.NgayBatDau.ToString("dd/MM/yyyy"),
+                        expiryDate = d.NgayKetThuc.ToString("dd/MM/yyyy"),
+                        status = d.TrangThai
+                    })
+                    .OrderBy(s => s.name)
+                    .ToList();
 
                 return Json(new { success = true, data = students });
             }
@@ -333,6 +353,183 @@ namespace GymManagement.Web.Controllers
             {
                 _logger.LogError(ex, "Error occurred while getting salary details for month {Month}", month);
                 return Json(new { success = false, message = "Có lỗi xảy ra khi tải chi tiết lương." });
+            }
+        }
+
+        // Attendance Management for Trainers
+        public async Task<IActionResult> Attendance(int? classId, DateTime? date)
+        {
+            try
+            {
+                var user = await GetCurrentUserAsync();
+                if (user?.NguoiDungId == null)
+                {
+                    _logger.LogWarning("Trainer user not found or NguoiDungId is null");
+                    return RedirectToAction("Login", "Auth");
+                }
+
+                var trainerId = user.NguoiDungId.Value;
+
+                // Get trainer's classes
+                var myClasses = await _lopHocService.GetClassesByTrainerAsync(trainerId);
+                ViewBag.MyClasses = myClasses;
+
+                // If specific class and date provided, get the schedule
+                if (classId.HasValue && date.HasValue)
+                {
+                    var schedules = await _lopHocService.GetClassScheduleAsync(classId.Value, date.Value, date.Value);
+                    var todaySchedule = schedules.FirstOrDefault(s => s.Ngay == DateOnly.FromDateTime(date.Value));
+
+                    if (todaySchedule != null)
+                    {
+                        // Verify trainer owns this class
+                        var canTakeAttendance = await _diemDanhService.CanTrainerTakeAttendanceAsync(trainerId, todaySchedule.LichLopId);
+                        if (!canTakeAttendance)
+                        {
+                            TempData["ErrorMessage"] = "Bạn không có quyền điểm danh cho lớp học này.";
+                            return View();
+                        }
+
+                        ViewBag.SelectedSchedule = todaySchedule;
+                        ViewBag.SelectedClassId = classId.Value;
+                        ViewBag.SelectedDate = date.Value;
+
+                        // Get students and existing attendance
+                        var students = await _diemDanhService.GetStudentsInClassScheduleAsync(todaySchedule.LichLopId);
+                        var existingAttendance = await _diemDanhService.GetAttendanceByClassScheduleAsync(todaySchedule.LichLopId);
+
+                        ViewBag.Students = students;
+                        ViewBag.ExistingAttendance = existingAttendance.ToDictionary(a => a.ThanhVienId ?? 0, a => a);
+                    }
+                }
+
+                return View();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while loading attendance page for trainer {UserId}", User.Identity?.Name);
+                TempData["ErrorMessage"] = "Có lỗi xảy ra khi tải trang điểm danh.";
+                return View();
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> TakeAttendance(int lichLopId, List<ClassAttendanceRecord> attendanceRecords)
+        {
+            try
+            {
+                // Input validation
+                if (lichLopId <= 0)
+                {
+                    return Json(new { success = false, message = "ID lịch lớp không hợp lệ." });
+                }
+
+                if (attendanceRecords == null || !attendanceRecords.Any())
+                {
+                    return Json(new { success = false, message = "Danh sách điểm danh không được để trống." });
+                }
+
+                // Validate attendance records
+                var validStatuses = new[] { "Present", "Absent", "Late" };
+                foreach (var record in attendanceRecords)
+                {
+                    if (record.ThanhVienId <= 0)
+                    {
+                        return Json(new { success = false, message = "ID thành viên không hợp lệ." });
+                    }
+
+                    if (string.IsNullOrEmpty(record.TrangThai) || !validStatuses.Contains(record.TrangThai))
+                    {
+                        return Json(new { success = false, message = "Trạng thái điểm danh không hợp lệ." });
+                    }
+
+                    // Validate note length if provided
+                    if (!string.IsNullOrEmpty(record.GhiChu) && record.GhiChu.Length > 500)
+                    {
+                        return Json(new { success = false, message = "Ghi chú không được vượt quá 500 ký tự." });
+                    }
+                }
+
+                var user = await GetCurrentUserAsync();
+                if (user?.NguoiDungId == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy thông tin trainer." });
+                }
+
+                var trainerId = user.NguoiDungId.Value;
+
+                // Verify trainer can take attendance for this class
+                var canTakeAttendance = await _diemDanhService.CanTrainerTakeAttendanceAsync(trainerId, lichLopId);
+                if (!canTakeAttendance)
+                {
+                    return Json(new { success = false, message = "Bạn không có quyền điểm danh cho lớp học này." });
+                }
+
+                // Take attendance
+                var result = await _diemDanhService.TakeClassAttendanceAsync(lichLopId, attendanceRecords);
+
+                if (result)
+                {
+                    return Json(new { success = true, message = "Điểm danh thành công!" });
+                }
+                else
+                {
+                    return Json(new { success = false, message = "Có lỗi xảy ra khi điểm danh." });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while taking attendance for schedule {LichLopId}", lichLopId);
+                return Json(new { success = false, message = "Có lỗi xảy ra khi điểm danh." });
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetClassSchedules(int classId, DateTime date)
+        {
+            try
+            {
+                // Validate date parameter to prevent security risks
+                var minDate = DateTime.Now.AddMonths(-1);
+                var maxDate = DateTime.Now.AddMonths(1);
+
+                if (date < minDate || date > maxDate)
+                {
+                    return Json(new { success = false, message = "Ngày không hợp lệ. Chỉ có thể xem lịch trong khoảng 1 tháng trước và sau." });
+                }
+
+                var user = await GetCurrentUserAsync();
+                if (user?.NguoiDungId == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy thông tin trainer." });
+                }
+
+                var trainerId = user.NguoiDungId.Value;
+
+                // Verify trainer owns this class
+                var myClasses = await _lopHocService.GetClassesByTrainerAsync(trainerId);
+                if (!myClasses.Any(c => c.LopHocId == classId))
+                {
+                    return Json(new { success = false, message = "Bạn không có quyền truy cập lớp học này." });
+                }
+
+                var schedules = await _lopHocService.GetClassScheduleAsync(classId, date, date);
+                var result = schedules.Select(s => new
+                {
+                    lichLopId = s.LichLopId,
+                    ngay = s.Ngay.ToString("dd/MM/yyyy"),
+                    gioBatDau = s.GioBatDau.ToString("HH:mm"),
+                    gioKetThuc = s.GioKetThuc.ToString("HH:mm"),
+                    trangThai = s.TrangThai,
+                    soLuongDaDat = s.SoLuongDaDat
+                });
+
+                return Json(new { success = true, data = result });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while getting class schedules for class {ClassId} on {Date}", classId, date);
+                return Json(new { success = false, message = "Có lỗi xảy ra khi tải lịch học." });
             }
         }
     }

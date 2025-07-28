@@ -80,6 +80,27 @@ namespace GymManagement.Web.Data.Repositories
 
         public virtual Task UpdateAsync(T entity)
         {
+            // Detach any existing tracked entity with the same key
+            var keyProperty = _context.Model.FindEntityType(typeof(T))?.FindPrimaryKey()?.Properties.FirstOrDefault();
+            if (keyProperty != null)
+            {
+                var keyValue = keyProperty.PropertyInfo?.GetValue(entity);
+                if (keyValue != null)
+                {
+                    var existingEntity = _context.Entry(entity);
+                    if (existingEntity.State == EntityState.Detached)
+                    {
+                        var trackedEntity = _context.ChangeTracker.Entries<T>()
+                            .FirstOrDefault(e => keyProperty.PropertyInfo?.GetValue(e.Entity)?.Equals(keyValue) == true);
+
+                        if (trackedEntity != null)
+                        {
+                            trackedEntity.State = EntityState.Detached;
+                        }
+                    }
+                }
+            }
+
             _dbSet.Update(entity);
             return Task.CompletedTask;
         }

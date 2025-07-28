@@ -18,6 +18,18 @@ build_property.GenerateRazorMetadataSourceChecksumAttributes =
 build_property.MSBuildProjectDirectory = D:\DATN\HANG_REMOTE\qlpg\GymManagement.Web
 build_property._RazorSourceGeneratorDebug = 
 
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/Analytics/CustomReport.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQW5hbHl0aWNzXEN1c3RvbVJlcG9ydC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/Analytics/Dashboard.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQW5hbHl0aWNzXERhc2hib2FyZC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/Analytics/TrainerDashboard.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQW5hbHl0aWNzXFRyYWluZXJEYXNoYm9hcmQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
 [D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/Auth/AccessDenied.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQXV0aFxBY2Nlc3NEZW5pZWQuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
@@ -154,6 +166,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTG9wSG9jXENyZWF0ZS5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/LopHoc/Delete.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTG9wSG9jXERlbGV0ZS5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
 [D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/LopHoc/Details.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTG9wSG9jXERldGFpbHMuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
@@ -176,6 +192,10 @@ build_metadata.AdditionalFiles.CssScope =
 
 [D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/Member/Classes.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTWVtYmVyXENsYXNzZXMuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/Member/FixedClasses.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTWVtYmVyXEZpeGVkQ2xhc3Nlcy5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
 [D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/Member/MyRegistrations.cshtml]
@@ -220,6 +240,10 @@ build_metadata.AdditionalFiles.CssScope =
 
 [D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/Shared/_ValidationScriptsPartial.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9WYWxpZGF0aW9uU2NyaXB0c1BhcnRpYWwuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/Trainer/Attendance.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVHJhaW5lclxBdHRlbmRhbmNlLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
 [D:/DATN/HANG_REMOTE/qlpg/GymManagement.Web/Views/Trainer/Dashboard.cshtml]

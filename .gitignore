@@ -1,25 +1,51 @@
-obj/
+# .gitignore cho dự án ASP.NET Core + Frontend (Node.js) + Visual Studio + .cursor + các IDE phổ biến
+
+# Build results
 bin/
-*.user
-*.suo
-*.vs/
-*.vscode/
-*.dbmdl
-*.log
+obj/
+TestResults/
+packages/
 *.pdb
 *.cache
 *.tmp
 *.bak
-*.swp
-*.ncrunch*
+*.log
+
+# User-specific files
+*.user
+*.suo
+
+# VS Code & Visual Studio
+.vs/
+.vscode/
+.idea/
 _ReSharper*/
-TestResults/
-packages/
+*.ncrunch*
+
+# Database & local data
+*.dbmdl
+
+# Node.js
 node_modules/
-.cursorignore
+
+# Static files/libs
 wwwroot/lib/
+uploads/
+
+# Logs
+Logs/
+
+# .cursor (AI code tool)
+.cursor/
+.cursorignore
+
+# Environment & config
 .env
 appsettings.*.json
-.idea/
+
+# OS generated
 .DS_Store
 Thumbs.db
+
+# Others
+*.swp

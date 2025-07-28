@@ -139,6 +139,77 @@ namespace GymManagement.Web.Controllers
             return View();
         }
 
+        /// <summary>
+        /// Đăng ký lớp học theo mô hình cố định (member tham gia từ đầu khóa)
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Member")]
+        public async Task<IActionResult> RegisterFixedClass(int classId)
+        {
+            try
+            {
+                var user = await GetCurrentUserAsync();
+                if (user?.NguoiDungId == null)
+                {
+                    return RedirectToAction("Login", "Auth");
+                }
+
+                var result = await _dangKyService.RegisterFixedClassAsync(user.NguoiDungId.Value, classId);
+                if (result)
+                {
+                    TempData["SuccessMessage"] = "Đăng ký lớp học thành công! Bạn sẽ tham gia từ đầu khóa học.";
+                    return RedirectToAction("MyRegistrations", "Member");
+                }
+                else
+                {
+                    TempData["ErrorMessage"] = "Không thể đăng ký lớp học. Lớp có thể đã đầy, đã bắt đầu, hoặc bạn đã đăng ký rồi.";
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while registering fixed class");
+                TempData["ErrorMessage"] = "Có lỗi xảy ra khi đăng ký lớp học.";
+            }
+
+            return RedirectToAction("Index", "Member");
+        }
+
+        /// <summary>
+        /// Hủy đăng ký cho member
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Member")]
+        public async Task<IActionResult> CancelRegistration(int dangKyId, string? lyDoHuy)
+        {
+            try
+            {
+                var user = await GetCurrentUserAsync();
+                if (user?.NguoiDungId == null)
+                {
+                    return RedirectToAction("Login", "Auth");
+                }
+
+                var result = await _dangKyService.CancelRegistrationAsync(dangKyId, user.NguoiDungId.Value, lyDoHuy);
+                if (result)
+                {
+                    TempData["SuccessMessage"] = "Hủy đăng ký thành công!";
+                }
+                else
+                {
+                    TempData["ErrorMessage"] = "Không thể hủy đăng ký. Có thể đã quá thời hạn hủy hoặc đăng ký không tồn tại.";
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while cancelling registration");
+                TempData["ErrorMessage"] = "Có lỗi xảy ra khi hủy đăng ký.";
+            }
+
+            return RedirectToAction("MyRegistrations", "Member");
+        }
+
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Create()
         {
