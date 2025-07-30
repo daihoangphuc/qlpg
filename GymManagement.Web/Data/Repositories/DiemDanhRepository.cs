@@ -42,10 +42,35 @@ namespace GymManagement.Web.Data.Repositories
         public async Task<DiemDanh?> GetLatestAttendanceAsync(int thanhVienId)
         {
             return await _context.DiemDanhs
-                .Include(d => d.ThanhVien)
                 .Where(d => d.ThanhVienId == thanhVienId)
-                .OrderByDescending(d => d.ThoiGian)
+                .OrderByDescending(d => d.ThoiGianCheckIn)
                 .FirstOrDefaultAsync();
+        }
+
+        public async Task<IEnumerable<DiemDanh>> GetByNguoiDungIdAsync(int nguoiDungId)
+        {
+            return await _context.DiemDanhs
+                .Where(d => d.ThanhVienId == nguoiDungId)
+                .OrderByDescending(d => d.ThoiGianCheckIn)
+                .ToListAsync();
+        }
+
+        public async Task<int> GetAttendanceCountByDateRangeAsync(int thanhVienId, DateTime fromDate, DateTime toDate)
+        {
+            return await _context.DiemDanhs
+                .Where(d => d.ThanhVienId == thanhVienId && 
+                           d.ThoiGianCheckIn >= fromDate && 
+                           d.ThoiGianCheckIn <= toDate)
+                .CountAsync();
+        }
+
+        public async Task<IEnumerable<NguoiDung>> GetStudentsInClassScheduleAsync(int lichLopId)
+        {
+            return await _context.DiemDanhs
+                .Where(d => d.LichLopId == lichLopId)
+                .Select(d => d.ThanhVien!)
+                .Distinct()
+                .ToListAsync();
         }
 
         public async Task<bool> HasAttendanceToday(int thanhVienId)

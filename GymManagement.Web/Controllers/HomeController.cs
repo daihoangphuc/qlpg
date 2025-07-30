@@ -21,6 +21,9 @@ public class HomeController : BaseController
     private readonly GymDbContext _context;
     private readonly IDangKyService _dangKyService;
     private readonly IDiemDanhService _diemDanhService;
+    private readonly IBookingService _bookingService;
+    private readonly IThanhToanService _thanhToanService;
+    private readonly IThongBaoService _thongBaoService;
 
     public HomeController(
         IUserSessionService userSessionService,
@@ -31,7 +34,10 @@ public class HomeController : BaseController
         IAuthService authService,
         GymDbContext context,
         IDangKyService dangKyService,
-        IDiemDanhService diemDanhService) : base(userSessionService, logger)
+        IDiemDanhService diemDanhService,
+        IBookingService bookingService,
+        IThanhToanService thanhToanService,
+        IThongBaoService thongBaoService) : base(userSessionService, logger)
     {
         _baoCaoService = baoCaoService;
         _goiTapService = goiTapService;
@@ -40,6 +46,9 @@ public class HomeController : BaseController
         _context = context;
         _dangKyService = dangKyService;
         _diemDanhService = diemDanhService;
+        _bookingService = bookingService;
+        _thanhToanService = thanhToanService;
+        _thongBaoService = thongBaoService;
     }
 
     public async Task<IActionResult> Index()
@@ -286,26 +295,116 @@ public class HomeController : BaseController
             ViewBag.UserName = User.Identity?.Name;
             ViewBag.TaiKhoanId = taiKhoanId;
 
-            // Load dashboard data
-            var registrations = await _dangKyService.GetByMemberIdAsync(memberId);
-            var activeRegistrations = registrations.Where(d => d.TrangThai == "ACTIVE" && d.NgayKetThuc >= DateOnly.FromDateTime(DateTime.Today));
+            // Load comprehensive dashboard data
+            var dashboardModel = new MemberDashboardViewModel();
 
-            // Calculate stats
+            // 1. Active Registrations
+            var allRegistrations = await _dangKyService.GetByMemberIdAsync(memberId);
+            dashboardModel.ActiveRegistrations = allRegistrations
+                .Where(d => d.TrangThai == "ACTIVE" && d.NgayKetThuc >= DateOnly.FromDateTime(DateTime.Today))
+                .ToList();
+
+            // 2. Upcoming Bookings (next 7 days)
+            var upcomingDate = DateOnly.FromDateTime(DateTime.Today.AddDays(7));
+            var allBookings = await _bookingService.GetByMemberIdAsync(memberId);
+            dashboardModel.UpcomingBookings = allBookings
+                .Where(b => b.Ngay >= DateOnly.FromDateTime(DateTime.Today) && 
+                           b.Ngay <= upcomingDate &&
+                           b.TrangThai == "BOOKED")
+                .OrderBy(b => b.Ngay)
+                .ThenBy(b => b.LichLop?.GioBatDau)
+                .Take(5)
+                .ToList();
+
+            // 3. Check-in Status Today
+            dashboardModel.TodayCheckInStatus = await _diemDanhService.HasCheckedInTodayAsync(memberId);
+            dashboardModel.LatestCheckIn = await _diemDanhService.GetLatestAttendanceAsync(memberId);
+
+            // 4. Unread Notifications
+            dashboardModel.UnreadNotifications = (await _thongBaoService.GetUnreadByUserIdAsync(memberId))
+                .Take(5)
+                .ToList();
+
+            // 5. Attendance Statistics
             var currentMonth = DateTime.Now.Month;
             var currentYear = DateTime.Now.Year;
-            var attendanceCount = await _diemDanhService.GetMemberAttendanceCountAsync(memberId,
-                new DateTime(currentYear, currentMonth, 1),
-                new DateTime(currentYear, currentMonth, DateTime.DaysInMonth(currentYear, currentMonth)));
+            var startOfWeek = DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek);
+            var startOfMonth = new DateTime(currentYear, currentMonth, 1);
+            var endOfMonth = new DateTime(currentYear, currentMonth, DateTime.DaysInMonth(currentYear, currentMonth));
 
-            // Create dashboard model
-            var dashboardModel = new MemberDashboardViewModel
+            dashboardModel.AttendanceStats.ThisWeekCount = await _diemDanhService.GetMemberAttendanceCountAsync(
+                memberId, startOfWeek, DateTime.Today.AddDays(1));
+            dashboardModel.AttendanceStats.ThisMonthCount = await _diemDanhService.GetMemberAttendanceCountAsync(
+                memberId, startOfMonth, endOfMonth);
+            dashboardModel.AttendanceStats.TotalCount = await _diemDanhService.GetMemberAttendanceCountAsync(
+                memberId, DateTime.MinValue, DateTime.MaxValue);
+
+            // Calculate attendance rate (this month)
+            var daysInMonth = DateTime.DaysInMonth(currentYear, currentMonth);
+            var daysPassedInMonth = Math.Min(DateTime.Today.Day, daysInMonth);
+            dashboardModel.AttendanceStats.AttendanceRate = daysPassedInMonth > 0 ? 
+                (double)dashboardModel.AttendanceStats.ThisMonthCount / daysPassedInMonth * 100 : 0;
+
+            // Weekly attendance data for chart
+            for (int i = 6; i >= 0; i--)
             {
-                TotalActiveRegistrations = activeRegistrations.Count(),
-                MonthlyAttendanceCount = attendanceCount,
-                TotalClassesJoined = activeRegistrations.Count(r => r.LopHocId != null),
-                CurrentPackage = activeRegistrations.FirstOrDefault(r => r.GoiTapId != null)?.GoiTap?.TenGoi ?? "Chưa có",
-                RecentRegistrations = registrations.Take(5).ToList()
-            };
+                var date = DateTime.Today.AddDays(-i);
+                var dayCount = await _diemDanhService.GetMemberAttendanceCountAsync(memberId, date, date.AddDays(1));
+                dashboardModel.AttendanceStats.WeeklyData.Add(new DailyAttendanceDto
+                {
+                    Day = date.ToString("ddd", new System.Globalization.CultureInfo("vi-VN")),
+                    Count = dayCount,
+                    Date = date
+                });
+            }
+
+            // 6. Payment Statistics
+            var memberPayments = await _thanhToanService.GetByMemberIdAsync(memberId);
+            dashboardModel.PaymentStats.ThisMonthSpent = memberPayments
+                .Where(p => p.NgayThanhToan.Month == currentMonth && 
+                           p.NgayThanhToan.Year == currentYear &&
+                           p.TrangThai == "SUCCESS")
+                .Sum(p => p.SoTien);
+            
+            dashboardModel.PaymentStats.TotalSpent = memberPayments
+                .Where(p => p.TrangThai == "SUCCESS")
+                .Sum(p => p.SoTien);
+
+            dashboardModel.PaymentStats.PendingPayments = allRegistrations
+                .Count(r => r.TrangThai == "PENDING_PAYMENT");
+
+            dashboardModel.PaymentStats.LastPayment = memberPayments
+                .Where(p => p.TrangThai == "SUCCESS")
+                .OrderByDescending(p => p.NgayThanhToan)
+                .FirstOrDefault();
+
+            // 7. Basic member info
+            dashboardModel.MemberName = User.Identity?.Name ?? "";
+            dashboardModel.LastLoginTime = DateTime.Now; // Could be tracked in database
+            dashboardModel.TotalWorkoutDays = dashboardModel.AttendanceStats.TotalCount;
+            dashboardModel.TotalSpent = dashboardModel.PaymentStats.TotalSpent;
+            dashboardModel.CurrentMembershipStatus = dashboardModel.ActiveRegistrations.Any() ? "ACTIVE" : "INACTIVE";
+
+            // 8. Recommended classes (based on member's interests or popular classes)
+            var activeClasses = await _lopHocService.GetActiveClassesAsync();
+            dashboardModel.RecommendedClasses = activeClasses
+                .Where(c => c.TrangThai == "OPEN")
+                .Take(3)
+                .ToList();
+
+            // 9. Quick Stats
+            dashboardModel.QuickStats.ActiveRegistrations = dashboardModel.ActiveRegistrations.Count;
+            dashboardModel.QuickStats.UpcomingBookings = dashboardModel.UpcomingBookings.Count;
+            dashboardModel.QuickStats.UnreadNotifications = dashboardModel.UnreadNotifications.Count;
+            dashboardModel.QuickStats.CheckInsThisWeek = dashboardModel.AttendanceStats.ThisWeekCount;
+            dashboardModel.QuickStats.HasPendingPayments = dashboardModel.PaymentStats.PendingPayments > 0;
+
+            // Next class time
+            var nextBooking = dashboardModel.UpcomingBookings.FirstOrDefault();
+            if (nextBooking != null && nextBooking.LichLop != null)
+            {
+                dashboardModel.QuickStats.NextClassTime = $"{nextBooking.Ngay:dd/MM} {nextBooking.LichLop.GioBatDau:HH:mm}";
+            }
 
             return View(dashboardModel);
         }

@@ -17,5 +17,7 @@ namespace GymManagement.Web.Services
         Task<ThongBao> CreateNotificationAsync(int nguoiDungId, string tieuDe, string noiDung, string kenh);
         Task SendBulkNotificationAsync(IEnumerable<int> nguoiDungIds, string tieuDe, string noiDung, string kenh);
         Task SendNotificationToAllMembersAsync(string tieuDe, string noiDung, string kenh);
+        Task<bool> DeleteOldNotificationsAsync(int daysOld = 30);
+        Task<IEnumerable<ThongBao>> GetRecentNotificationsAsync(int nguoiDungId, int count = 5);
     }
 }

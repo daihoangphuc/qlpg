@@ -240,7 +240,7 @@ namespace GymManagement.Web.Controllers
             }
         }
 
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,Member")]
         public async Task<IActionResult> Calendar()
         {
             try
@@ -258,29 +258,134 @@ namespace GymManagement.Web.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetCalendarEvents(DateTime start, DateTime end)
+        [Authorize(Roles = "Admin,Member")]
+        public async Task<IActionResult> GetCalendarEvents(DateTime start, DateTime end, int? classId = null)
         {
             try
             {
                 var user = await GetCurrentUserAsync();
-                if (user?.NguoiDungId == null)
+                List<object> events = new List<object>();
+
+                if (User.IsInRole("Member") && user?.NguoiDungId != null)
                 {
-                    return Json(new List<object>());
+                    // For members, show their bookings and available classes
+                    var bookings = await _bookingService.GetByMemberIdAsync(user.NguoiDungId.Value);
+                    var startDateOnly = DateOnly.FromDateTime(start.Date);
+                    var endDateOnly = DateOnly.FromDateTime(end.Date);
+
+                    // Add member's bookings
+                    var bookingEvents = bookings
+                        .Where(b => b.Ngay >= startDateOnly && b.Ngay <= endDateOnly)
+                        .Select(b => new {
+                            id = b.BookingId,
+                            title = $"✅ {GetShortClassName(b.LopHoc?.TenLop)}",
+                            start = b.Ngay.ToString("yyyy-MM-dd") + "T" + (b.LichLop?.GioBatDau.ToString("HH:mm") ?? b.LopHoc?.GioBatDau.ToString("HH:mm") ?? "08:00"),
+                            end = b.Ngay.ToString("yyyy-MM-dd") + "T" + (b.LichLop?.GioKetThuc.ToString("HH:mm") ?? b.LopHoc?.GioKetThuc.ToString("HH:mm") ?? "09:00"),
+                            backgroundColor = GetEventColor(b.TrangThai),
+                            borderColor = GetEventColor(b.TrangThai),
+                            textColor = "#FFFFFF",
+                            status = b.TrangThai,
+                            type = "booking",
+                            fullTitle = b.LopHoc?.TenLop ?? "Lớp học"
+                        });
+
+                    events.AddRange(bookingEvents);
+
+                    // Add available classes (both with and without LichLop)
+                    var availableClasses = await _lopHocService.GetActiveClassesAsync();
+                    if (classId.HasValue)
+                    {
+                        availableClasses = availableClasses.Where(c => c.LopHocId == classId.Value);
+                    }
+
+                    // For classes with LichLop schedules
+                    var classEventsWithSchedule = availableClasses
+                        .Where(c => c.LichLops != null && c.LichLops.Any())
+                        .SelectMany(c => c.LichLops.Where(l => 
+                            l.Ngay >= startDateOnly && 
+                            l.Ngay <= endDateOnly &&
+                            l.TrangThai == "SCHEDULED"))
+                        .Select(l => new {
+                            id = $"class_{l.LichLopId}_{l.Ngay:yyyyMMdd}",
+                            title = $"🏃 {GetShortClassName(l.LopHoc?.TenLop)}",
+                            start = l.Ngay.ToString("yyyy-MM-dd") + "T" + l.GioBatDau.ToString("HH:mm"),
+                            end = l.Ngay.ToString("yyyy-MM-dd") + "T" + l.GioKetThuc.ToString("HH:mm"),
+                            backgroundColor = "#059669",
+                            borderColor = "#059669",
+                            textColor = "#FFFFFF",
+                            status = "AVAILABLE",
+                            type = "class",
+                            lopHocId = l.LopHocId,
+                            lichLopId = l.LichLopId,
+                            fullTitle = l.LopHoc?.TenLop ?? "Lớp học"
+                        });
+
+                    events.AddRange(classEventsWithSchedule);
+
+                    // For classes without LichLop schedules (regular weekly classes)
+                    var classEventsWithoutSchedule = availableClasses
+                        .Where(c => c.LichLops == null || !c.LichLops.Any())
+                        .SelectMany(c => GenerateWeeklyClassEvents(c, startDateOnly, endDateOnly))
+                        .Select(evt => new {
+                            id = $"weekly_class_{evt.LopHocId}_{evt.Date:yyyyMMdd}",
+                            title = $"📅 {GetShortClassName(evt.TenLop)}",
+                            start = evt.Date.ToString("yyyy-MM-dd") + "T" + evt.GioBatDau.ToString("HH:mm"),
+                            end = evt.Date.ToString("yyyy-MM-dd") + "T" + evt.GioKetThuc.ToString("HH:mm"),
+                            backgroundColor = "#0891B2",
+                            borderColor = "#0891B2",
+                            textColor = "#FFFFFF",
+                            status = "AVAILABLE",
+                            type = "weekly_class",
+                            lopHocId = evt.LopHocId,
+                            fullTitle = evt.TenLop
+                        });
+
+                    events.AddRange(classEventsWithoutSchedule);
                 }
+                else if (User.IsInRole("Admin"))
+                {
+                    // For admin, show all bookings
+                    var allBookings = await _bookingService.GetAllAsync();
+                    var startDateOnly = DateOnly.FromDateTime(start.Date);
+                    var endDateOnly = DateOnly.FromDateTime(end.Date);
 
-                var bookings = await _bookingService.GetByMemberIdAsync(user.NguoiDungId.Value);
-                var startDateOnly = DateOnly.FromDateTime(start.Date);
-                var endDateOnly = DateOnly.FromDateTime(end.Date);
+                    var adminEvents = allBookings
+                        .Where(b => b.Ngay >= startDateOnly && b.Ngay <= endDateOnly)
+                        .Select(b => new {
+                            id = b.BookingId,
+                            title = $"{GetShortClassName(b.LopHoc?.TenLop)} - {GetShortMemberName(b.ThanhVien)}",
+                            start = b.Ngay.ToString("yyyy-MM-dd") + "T" + (b.LichLop?.GioBatDau.ToString("HH:mm") ?? b.LopHoc?.GioBatDau.ToString("HH:mm") ?? "08:00"),
+                            end = b.Ngay.ToString("yyyy-MM-dd") + "T" + (b.LichLop?.GioKetThuc.ToString("HH:mm") ?? b.LopHoc?.GioKetThuc.ToString("HH:mm") ?? "09:00"),
+                            backgroundColor = GetEventColor(b.TrangThai),
+                            borderColor = GetEventColor(b.TrangThai),
+                            textColor = "#FFFFFF",
+                            status = b.TrangThai,
+                            type = "booking",
+                            fullTitle = $"{b.LopHoc?.TenLop} - {b.ThanhVien?.Ho} {b.ThanhVien?.Ten}"
+                        });
 
-                var events = bookings
-                    .Where(b => b.Ngay >= startDateOnly && b.Ngay <= endDateOnly && b.TrangThai == "BOOKED")
-                    .Select(b => new {
-                        id = b.BookingId,
-                        title = b.LopHoc?.TenLop ?? "Lớp học",
-                        start = b.Ngay.ToString("yyyy-MM-dd") + "T" + (b.LichLop?.GioBatDau.ToString("HH:mm") ?? "00:00"),
-                        end = b.Ngay.ToString("yyyy-MM-dd") + "T" + (b.LichLop?.GioKetThuc.ToString("HH:mm") ?? "01:00"),
-                        color = b.TrangThai == "BOOKED" ? "#3b82f6" : "#ef4444"
-                    });
+                    events.AddRange(adminEvents);
+
+                    // Also add available classes for admin
+                    var availableClasses = await _lopHocService.GetActiveClassesAsync();
+                    var availableClassEvents = availableClasses
+                        .SelectMany(c => GenerateWeeklyClassEvents(c, DateOnly.FromDateTime(start.Date), DateOnly.FromDateTime(end.Date)))
+                        .Select(evt => new {
+                            id = $"admin_class_{evt.LopHocId}_{evt.Date:yyyyMMdd}",
+                            title = $"📚 {GetShortClassName(evt.TenLop)}",
+                            start = evt.Date.ToString("yyyy-MM-dd") + "T" + evt.GioBatDau.ToString("HH:mm"),
+                            end = evt.Date.ToString("yyyy-MM-dd") + "T" + evt.GioKetThuc.ToString("HH:mm"),
+                            backgroundColor = "#6B7280",
+                            borderColor = "#6B7280",
+                            textColor = "#FFFFFF",
+                            status = "AVAILABLE",
+                            type = "admin_class",
+                            lopHocId = evt.LopHocId,
+                            fullTitle = evt.TenLop
+                        });
+
+                    events.AddRange(availableClassEvents);
+                }
 
                 return Json(events);
             }
@@ -290,6 +395,123 @@ namespace GymManagement.Web.Controllers
                 return Json(new List<object>());
             }
         }
+
+        private IEnumerable<dynamic> GenerateWeeklyClassEvents(LopHoc lopHoc, DateOnly startDate, DateOnly endDate)
+        {
+            var events = new List<dynamic>();
+            
+            // Parse ThuTrongTuan (e.g., "Mon,Wed,Fri" or "2,4,6")
+            var daysOfWeek = ParseDaysOfWeek(lopHoc.ThuTrongTuan);
+            
+            for (var date = startDate; date <= endDate; date = date.AddDays(1))
+            {
+                var dayOfWeek = (int)date.DayOfWeek;
+                if (dayOfWeek == 0) dayOfWeek = 7; // Convert Sunday from 0 to 7
+                
+                if (daysOfWeek.Contains(dayOfWeek))
+                {
+                    events.Add(new {
+                        LopHocId = lopHoc.LopHocId,
+                        TenLop = lopHoc.TenLop,
+                        Date = date,
+                        GioBatDau = lopHoc.GioBatDau,
+                        GioKetThuc = lopHoc.GioKetThuc
+                    });
+                }
+            }
+            
+            return events;
+        }
+
+        private List<int> ParseDaysOfWeek(string thuTrongTuan)
+        {
+            var days = new List<int>();
+            
+            if (string.IsNullOrEmpty(thuTrongTuan))
+                return days;
+                
+            var parts = thuTrongTuan.Split(',', StringSplitOptions.RemoveEmptyEntries);
+            
+            foreach (var part in parts)
+            {
+                var trimmed = part.Trim();
+                
+                // Try to parse as number first (1=Monday, 2=Tuesday, etc.)
+                if (int.TryParse(trimmed, out int dayNum) && dayNum >= 1 && dayNum <= 7)
+                {
+                    days.Add(dayNum);
+                }
+                else
+                {
+                    // Try to parse as day name
+                    var dayOfWeek = trimmed.ToLower() switch
+                    {
+                        "mon" or "monday" or "thứ 2" => 1,
+                        "tue" or "tuesday" or "thứ 3" => 2,
+                        "wed" or "wednesday" or "thứ 4" => 3,
+                        "thu" or "thursday" or "thứ 5" => 4,
+                        "fri" or "friday" or "thứ 6" => 5,
+                        "sat" or "saturday" or "thứ 7" => 6,
+                        "sun" or "sunday" or "chủ nhật" => 7,
+                        _ => 0
+                    };
+                    
+                    if (dayOfWeek > 0)
+                    {
+                        days.Add(dayOfWeek);
+                    }
+                }
+            }
+            
+            return days;
+        }
+
+        private string GetEventColor(string status)
+        {
+            return status switch
+            {
+                "BOOKED" => "#2563EB",      // Darker Blue
+                "CANCELED" => "#6B7280",    // Gray
+                "ATTENDED" => "#7C3AED",    // Purple
+                "AVAILABLE" => "#059669",   // Green
+                _ => "#D97706"              // Orange
+            };
+        }
+
+        private string GetShortClassName(string? className)
+        {
+            if (string.IsNullOrEmpty(className))
+                return "Lớp học";
+                
+            // Rút gọn tên lớp nếu quá dài
+            if (className.Length > 15)
+            {
+                return className.Substring(0, 12) + "...";
+            }
+            
+            return className;
+        }
+
+        private string GetShortMemberName(NguoiDung? member)
+        {
+            if (member == null)
+                return "TV";
+                
+            // Chỉ hiển thị tên hoặc viết tắt
+            if (!string.IsNullOrEmpty(member.Ten))
+            {
+                return member.Ten.Length > 8 ? member.Ten.Substring(0, 6) + ".." : member.Ten;
+            }
+            
+            if (!string.IsNullOrEmpty(member.Ho))
+            {
+                return member.Ho.Substring(0, Math.Min(2, member.Ho.Length)).ToUpper();
+            }
+            
+            return "TV";
+        }
+
+
 
         private async Task LoadSelectLists()
         {

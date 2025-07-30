@@ -221,7 +221,7 @@ namespace GymManagement.Web.Data
                 entity.HasOne(d => d.DangKy)
                     .WithMany(p => p.ThanhToans)
                     .HasForeignKey(d => d.DangKyId)
-                    .OnDelete(DeleteBehavior.Cascade);
+                    .OnDelete(DeleteBehavior.SetNull);
             });
 
             // Cấu hình bảng ThanhToanGateway

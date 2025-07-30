@@ -53,34 +53,37 @@
                        class="@GetActiveClass("Home") px-3 py-2 rounded-md text-sm font-medium transition-colors">
                         🏠 Trang chủ
                     </a>
-                    <a asp-controller="Trainer" asp-action="Dashboard"
-                       class="@GetActiveClass("Trainer", "Dashboard") px-3 py-2 rounded-md text-sm font-medium transition-colors">
-                        📊 Dashboard
-                    </a>
-                    <a asp-controller="Trainer" asp-action="MyClasses"
-                       class="@GetActiveClass("Trainer", "MyClasses") px-3 py-2 rounded-md text-sm font-medium transition-colors">
-                        🎓 Lớp của tôi
-                    </a>
-                    <a asp-controller="Trainer" asp-action="Schedule"
-                       class="@GetActiveClass("Trainer", "Schedule") px-3 py-2 rounded-md text-sm font-medium transition-colors">
-                        📅 Lịch dạy
-                    </a>
-                    <a asp-controller="Trainer" asp-action="Students"
-                       class="@GetActiveClass("Trainer", "Students") px-3 py-2 rounded-md text-sm font-medium transition-colors">
-                        👥 Học viên
-                    </a>
-                    <a asp-controller="Trainer" asp-action="Attendance"
-                       class="@GetActiveClass("Trainer", "Attendance") px-3 py-2 rounded-md text-sm font-medium transition-colors">
-                        ✅ Điểm danh
-                    </a>
-                    <a asp-controller="Trainer" asp-action="Salary"
-                       class="@GetActiveClass("Trainer", "Salary") px-3 py-2 rounded-md text-sm font-medium transition-colors">
-                        💰 Lương
-                    </a>
-                    <a asp-controller="Analytics" asp-action="TrainerDashboard"
-                       class="@GetActiveClass("Analytics", "TrainerDashboard") px-3 py-2 rounded-md text-sm font-medium transition-colors">
-                        📈 Analytics
-                    </a>
+                    @if (User.Identity?.IsAuthenticated == true)
+                    {
+                        <a asp-controller="Trainer" asp-action="Dashboard"
+                           class="@GetActiveClass("Trainer", "Dashboard") px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                            📊 Dashboard
+                        </a>
+                        <a asp-controller="Trainer" asp-action="MyClasses"
+                           class="@GetActiveClass("Trainer", "MyClasses") px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                            🎓 Lớp của tôi
+                        </a>
+                        <a asp-controller="Trainer" asp-action="Schedule"
+                           class="@GetActiveClass("Trainer", "Schedule") px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                            📅 Lịch dạy
+                        </a>
+                        <a asp-controller="Trainer" asp-action="Students"
+                           class="@GetActiveClass("Trainer", "Students") px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                            👥 Học viên
+                        </a>
+                        <a asp-controller="Trainer" asp-action="Attendance"
+                           class="@GetActiveClass("Trainer", "Attendance") px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                            ✅ Điểm danh
+                        </a>
+                        <a asp-controller="Trainer" asp-action="Salary"
+                           class="@GetActiveClass("Trainer", "Salary") px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                            💰 Lương
+                        </a>
+                        <a asp-controller="Analytics" asp-action="TrainerDashboard"
+                           class="@GetActiveClass("Analytics", "TrainerDashboard") px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                            📈 Analytics
+                        </a>
+                    }
                 </div>
 
                 <!-- User Menu -->
@@ -152,30 +155,33 @@
                    class="block px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md text-base font-medium">
                     🏠 Trang chủ
                 </a>
-                <a asp-controller="Trainer" asp-action="Dashboard"
-                   class="block px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md text-base font-medium">
-                    📊 Dashboard
-                </a>
-                <a asp-controller="Trainer" asp-action="MyClasses"
-                   class="block px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md text-base font-medium">
-                    🎓 Lớp của tôi
-                </a>
-                <a asp-controller="Trainer" asp-action="Schedule"
-                   class="block px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md text-base font-medium">
-                    📅 Lịch dạy
-                </a>
-                <a asp-controller="Trainer" asp-action="Students"
-                   class="block px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md text-base font-medium">
-                    👥 Học viên
-                </a>
-                <a asp-controller="Trainer" asp-action="Attendance"
-                   class="block px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md text-base font-medium">
-                    ✅ Điểm danh
-                </a>
-                <a asp-controller="Trainer" asp-action="Salary"
-                   class="block px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md text-base font-medium">
-                    💰 Lương
-                </a>
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    <a asp-controller="Trainer" asp-action="Dashboard"
+                       class="block px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md text-base font-medium">
+                        📊 Dashboard
+                    </a>
+                    <a asp-controller="Trainer" asp-action="MyClasses"
+                       class="block px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md text-base font-medium">
+                        🎓 Lớp của tôi
+                    </a>
+                    <a asp-controller="Trainer" asp-action="Schedule"
+                       class="block px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md text-base font-medium">
+                        📅 Lịch dạy
+                    </a>
+                    <a asp-controller="Trainer" asp-action="Students"
+                       class="block px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md text-base font-medium">
+                        👥 Học viên
+                    </a>
+                    <a asp-controller="Trainer" asp-action="Attendance"
+                       class="block px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md text-base font-medium">
+                        ✅ Điểm danh
+                    </a>
+                    <a asp-controller="Trainer" asp-action="Salary"
+                       class="block px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md text-base font-medium">
+                        💰 Lương
+                    </a>
+                }
                 @if (User.Identity?.IsAuthenticated == true)
                 {
                     <div class="border-t border-gray-200 pt-2">

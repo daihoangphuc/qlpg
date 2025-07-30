@@ -24,6 +24,8 @@ namespace GymManagement.Web.Services
         Task<bool> TakeClassAttendanceAsync(int lichLopId, List<ClassAttendanceRecord> attendanceRecords);
         Task<IEnumerable<NguoiDung>> GetStudentsInClassScheduleAsync(int lichLopId);
         Task<bool> CanTrainerTakeAttendanceAsync(int trainerId, int lichLopId);
+        Task<DateTime?> GetFirstAttendanceDateAsync(int nguoiDungId);
+        Task<IEnumerable<DiemDanh>> GetByDateRangeAsync(DateTime fromDate, DateTime toDate);
     }
 
     // DTO for class attendance

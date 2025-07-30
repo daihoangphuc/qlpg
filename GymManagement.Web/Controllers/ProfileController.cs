@@ -10,12 +10,21 @@ namespace GymManagement.Web.Controllers
     public class ProfileController : Controller
     {
         private readonly INguoiDungService _nguoiDungService;
+        private readonly IDangKyService _dangKyService;
+        private readonly IDiemDanhService _diemDanhService;
         private readonly ILogger<ProfileController> _logger;
         private readonly IWebHostEnvironment _webHostEnvironment;
 
-        public ProfileController(INguoiDungService nguoiDungService, ILogger<ProfileController> logger, IWebHostEnvironment webHostEnvironment)
+        public ProfileController(
+            INguoiDungService nguoiDungService, 
+            IDangKyService dangKyService,
+            IDiemDanhService diemDanhService,
+            ILogger<ProfileController> logger, 
+            IWebHostEnvironment webHostEnvironment)
         {
             _nguoiDungService = nguoiDungService;
+            _dangKyService = dangKyService;
+            _diemDanhService = diemDanhService;
             _logger = logger;
             _webHostEnvironment = webHostEnvironment;
         }
@@ -298,6 +307,138 @@ namespace GymManagement.Web.Controllers
             {
                 _logger.LogError(ex, "Error occurred while deleting old avatar for user {UserId}", userId);
                 // Không throw exception vì đây không phải critical error
+            }
+        }
+
+        private int? GetCurrentNguoiDungIdSafe()
+        {
+            var userIdClaim = User.FindFirst("NguoiDungId")?.Value;
+            return int.TryParse(userIdClaim, out var userId) ? userId : null;
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetPersonalStats()
+        {
+            try
+            {
+                var nguoiDungId = GetCurrentNguoiDungIdSafe();
+                if (!nguoiDungId.HasValue)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy thông tin người dùng." });
+                }
+
+                // Get user registrations and attendance
+                var registrations = await _dangKyService.GetByMemberIdAsync(nguoiDungId.Value);
+                var totalCost = registrations.Where(r => r.TrangThai == "ACTIVE").Sum(r => r.PhiDangKy ?? 0);
+                
+                // Get attendance stats
+                var attendanceStats = new
+                {
+                    TotalSessions = await _diemDanhService.GetMemberAttendanceCountAsync(nguoiDungId.Value, DateTime.MinValue, DateTime.MaxValue),
+                    ThisMonth = await _diemDanhService.GetMemberAttendanceCountAsync(nguoiDungId.Value, 
+                        new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1), DateTime.Now),
+                    ThisWeek = await _diemDanhService.GetMemberAttendanceCountAsync(nguoiDungId.Value, 
+                        DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek), DateTime.Today.AddDays(1))
+                };
+
+                // Calculate frequency (sessions per week average)
+                var firstAttendance = await _diemDanhService.GetFirstAttendanceDateAsync(nguoiDungId.Value);
+                var weeksSinceFirst = firstAttendance.HasValue ? 
+                    Math.Max(1, (DateTime.Now - firstAttendance.Value).Days / 7) : 1;
+                var frequency = (double)attendanceStats.TotalSessions / weeksSinceFirst;
+
+                // Monthly attendance data for chart (last 6 months)
+                var monthlyData = new List<object>();
+                for (int i = 5; i >= 0; i--)
+                {
+                    var month = DateTime.Now.AddMonths(-i);
+                    var startOfMonth = new DateTime(month.Year, month.Month, 1);
+                    var endOfMonth = startOfMonth.AddMonths(1);
+                    var count = await _diemDanhService.GetMemberAttendanceCountAsync(nguoiDungId.Value, startOfMonth, endOfMonth);
+                    
+                    monthlyData.Add(new
+                    {
+                        Month = month.ToString("MMM yyyy", new System.Globalization.CultureInfo("vi-VN")),
+                        Count = count
+                    });
+                }
+
+                return Json(new
+                {
+                    success = true,
+                    stats = new
+                    {
+                        TotalSessions = attendanceStats.TotalSessions,
+                        TotalCost = totalCost,
+                        Frequency = Math.Round(frequency, 1),
+                        ThisMonth = attendanceStats.ThisMonth,
+                        ThisWeek = attendanceStats.ThisWeek,
+                        MonthlyData = monthlyData
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while getting personal stats");
+                return Json(new { success = false, message = "Có lỗi xảy ra khi tải thống kê." });
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> MyTrainers()
+        {
+            try
+            {
+                var nguoiDungId = GetCurrentNguoiDungIdSafe();
+                if (!nguoiDungId.HasValue)
+                {
+                    TempData["ErrorMessage"] = "Không tìm thấy thông tin người dùng.";
+                    return RedirectToAction("Index");
+                }
+
+                // Get all classes the member has registered for
+                var registrations = await _dangKyService.GetByMemberIdAsync(nguoiDungId.Value);
+                var classRegistrations = registrations.Where(r => r.LopHocId.HasValue).ToList();
+
+                // Get trainers from those classes
+                var trainerIds = classRegistrations
+                    .Where(r => r.LopHoc?.HlvId.HasValue == true)
+                    .Select(r => r.LopHoc!.HlvId!.Value)
+                    .Distinct()
+                    .ToList();
+
+                var trainers = new List<object>();
+                foreach (var trainerId in trainerIds)
+                {
+                    var trainer = await _nguoiDungService.GetByIdAsync(trainerId);
+                    if (trainer != null)
+                    {
+                        // Get classes taught by this trainer that the member is registered for
+                        var myClassesWithTrainer = classRegistrations
+                            .Where(r => r.LopHoc?.HlvId == trainerId)
+                            .Select(r => r.LopHoc!.TenLop)
+                            .ToList();
+
+                        trainers.Add(new
+                        {
+                            trainer.NguoiDungId,
+                            HoTen = trainer.HoTen,
+                            Email = trainer.Email,
+                            SoDienThoai = trainer.SoDienThoai,
+                            MyClasses = myClassesWithTrainer,
+                            TotalClasses = myClassesWithTrainer.Count
+                        });
+                    }
+                }
+
+                ViewBag.Trainers = trainers;
+                return View();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while getting trainers");
+                TempData["ErrorMessage"] = "Có lỗi xảy ra khi tải danh sách huấn luyện viên.";
+                return RedirectToAction("Index");
             }
         }
     }

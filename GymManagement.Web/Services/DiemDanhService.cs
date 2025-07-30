@@ -72,6 +72,19 @@ namespace GymManagement.Web.Services
             return await _diemDanhRepository.GetLatestAttendanceAsync(thanhVienId);
         }
 
+        public async Task<DateTime?> GetFirstAttendanceDateAsync(int nguoiDungId)
+        {
+            var attendances = await _diemDanhRepository.GetByNguoiDungIdAsync(nguoiDungId);
+            var firstAttendance = attendances.OrderBy(d => d.ThoiGianCheckIn).FirstOrDefault();
+            return firstAttendance?.ThoiGianCheckIn;
+        }
+
+        public async Task<IEnumerable<DiemDanh>> GetByDateRangeAsync(DateTime fromDate, DateTime toDate)
+        {
+            var allAttendances = await _diemDanhRepository.GetAllAsync();
+            return allAttendances.Where(d => d.ThoiGianCheckIn >= fromDate && d.ThoiGianCheckIn <= toDate);
+        }
+
         public async Task<bool> CheckInAsync(int thanhVienId, string? anhMinhChung = null)
         {
             // Check if member exists and is active

@@ -79,6 +79,11 @@ namespace GymManagement.Web.Services
             return await _dangKyRepository.GetExpiredRegistrationsAsync();
         }
 
+        public async Task<bool> RegisterPackageAsync(int nguoiDungId, int goiTapId, int thoiHanThang)
+        {
+            return await RegisterPackageAsync(nguoiDungId, goiTapId, thoiHanThang, null);
+        }
+
         public async Task<bool> RegisterPackageAsync(int nguoiDungId, int goiTapId, int thoiHanThang, int? khuyenMaiId = null)
         {
             // Check if package exists
@@ -280,6 +285,24 @@ namespace GymManagement.Web.Services
             return totalFee;
         }
 
+        public async Task<bool> HasActivePackageRegistrationAsync(int nguoiDungId)
+        {
+            return await _unitOfWork.Context.DangKys
+                .AnyAsync(d => d.NguoiDungId == nguoiDungId &&
+                              d.GoiTapId != null &&
+                              d.TrangThai == "ACTIVE" &&
+                              d.NgayKetThuc >= DateOnly.FromDateTime(DateTime.Today));
+        }
+
+        public async Task<bool> HasActiveClassRegistrationAsync(int nguoiDungId, int lopHocId)
+        {
+            return await _unitOfWork.Context.DangKys
+                .AnyAsync(d => d.NguoiDungId == nguoiDungId &&
+                              d.LopHocId == lopHocId &&
+                              d.TrangThai == "ACTIVE" &&
+                              d.NgayKetThuc >= DateOnly.FromDateTime(DateTime.Today));
+        }
+
         public async Task ProcessExpiredRegistrationsAsync()
         {
             var expiredRegistrations = await _dangKyRepository.GetExpiredRegistrationsAsync();
@@ -308,8 +331,14 @@ namespace GymManagement.Web.Services
 
         public async Task<IEnumerable<DangKy>> GetActiveRegistrationsByMemberIdAsync(int nguoiDungId)
         {
-            var allRegistrations = await _dangKyRepository.GetByMemberIdAsync(nguoiDungId);
-            return allRegistrations.Where(d => d.TrangThai == "ACTIVE" && d.NgayKetThuc >= DateOnly.FromDateTime(DateTime.Today));
+            return await _unitOfWork.Context.DangKys
+                .Include(d => d.GoiTap)
+                .Include(d => d.LopHoc)
+                .Include(d => d.NguoiDung)
+                .Where(d => d.NguoiDungId == nguoiDungId &&
+                           d.TrangThai == "ACTIVE" &&
+                           d.NgayKetThuc >= DateOnly.FromDateTime(DateTime.Today))
+                .ToListAsync();
         }
 
         /// <summary>
@@ -416,28 +445,12 @@ namespace GymManagement.Web.Services
             var lopHoc = await _lopHocRepository.GetByIdAsync(lopHocId);
             if (lopHoc == null || lopHoc.TrangThai != "OPEN") return false;
 
-            // Check if user already registered for this class
-            if (await _dangKyRepository.HasActiveRegistrationAsync(nguoiDungId, null, lopHocId))
-                return false;
+            // Check if user already has active registration for this specific class
+            if (await HasActiveClassRegistrationAsync(nguoiDungId, lopHocId)) return false;
 
-            // Check class capacity
+            // Check capacity
             var currentCount = await GetActiveClassRegistrationCountAsync(lopHocId);
             if (currentCount >= lopHoc.SucChua) return false;
-
-            // Check time conflicts
-            var existingActiveClasses = await _dangKyRepository.GetByMemberIdAsync(nguoiDungId);
-            var activeClassRegistrations = existingActiveClasses.Where(d =>
-                d.LopHocId != null &&
-                d.TrangThai == "ACTIVE" &&
-                d.NgayKetThuc >= DateOnly.FromDateTime(DateTime.Today)).ToList();
-
-            foreach (var existingReg in activeClassRegistrations)
-            {
-                if (existingReg.LopHoc != null && HasTimeConflict(lopHoc, existingReg.LopHoc))
-                {
-                    return false;
-                }
-            }
 
             return true;
         }
@@ -447,8 +460,11 @@ namespace GymManagement.Web.Services
         /// </summary>
         public async Task<int> GetActiveClassRegistrationCountAsync(int lopHocId)
         {
-            var activeRegistrations = await _dangKyRepository.GetActiveRegistrationsAsync();
-            return activeRegistrations.Count(d => d.LopHocId == lopHocId);
+            return await _unitOfWork.Context.DangKys
+                .Where(d => d.LopHocId == lopHocId &&
+                           d.TrangThai == "ACTIVE" &&
+                           d.NgayKetThuc >= DateOnly.FromDateTime(DateTime.Today))
+                .CountAsync();
         }
 
         /// <summary>
@@ -568,6 +584,210 @@ namespace GymManagement.Web.Services
             );
 
             return true;
+        }
+
+        // New methods for payment-first registration flow
+
+        public async Task<decimal> CalculatePackageFeeAsync(int goiTapId, int thoiHanThang, int? khuyenMaiId = null)
+        {
+            return await CalculateRegistrationFeeAsync(goiTapId, thoiHanThang, khuyenMaiId);
+        }
+
+        public async Task<decimal> CalculateClassFeeAsync(int lopHocId)
+        {
+            var lopHoc = await _lopHocRepository.GetByIdAsync(lopHocId);
+            if (lopHoc == null) return 0;
+
+            // Use custom price if set, otherwise use default class fee
+            return lopHoc.GiaTuyChinh ?? 200000m; // Default class fee 200k VND
+        }
+
+        public async Task<bool> CreatePackageRegistrationAfterPaymentAsync(int nguoiDungId, int goiTapId, int thoiHanThang, int thanhToanId)
+        {
+            // Verify payment exists and is successful
+            var thanhToan = await _unitOfWork.Context.ThanhToans.FindAsync(thanhToanId);
+            if (thanhToan == null || thanhToan.TrangThai != "SUCCESS") return false;
+
+            // Check if registration already exists for this payment
+            var existingRegistration = await _unitOfWork.Context.DangKys
+                .FirstOrDefaultAsync(d => d.ThanhToans.Any(t => t.ThanhToanId == thanhToanId));
+            if (existingRegistration != null) return true; // Already created
+
+            // Check if user already has active package
+            if (await HasActivePackageRegistrationAsync(nguoiDungId)) return false;
+
+            var goiTap = await _goiTapRepository.GetByIdAsync(goiTapId);
+            if (goiTap == null) return false;
+
+            // Calculate dates
+            var ngayBatDau = DateOnly.FromDateTime(DateTime.Today);
+            var ngayKetThuc = DateOnly.FromDateTime(DateTime.Today.AddMonths(thoiHanThang));
+
+            // Create registration
+            var dangKy = new DangKy
+            {
+                NguoiDungId = nguoiDungId,
+                GoiTapId = goiTapId,
+                NgayBatDau = ngayBatDau,
+                NgayKetThuc = ngayKetThuc,
+                TrangThai = "ACTIVE",
+                NgayTao = DateTime.Now
+            };
+
+            await _dangKyRepository.AddAsync(dangKy);
+            await _unitOfWork.SaveChangesAsync();
+
+            // Update payment to link with registration
+            thanhToan.DangKyId = dangKy.DangKyId;
+            await _unitOfWork.SaveChangesAsync();
+
+            // Send notification
+            await _thongBaoService.CreateNotificationAsync(
+                nguoiDungId,
+                "Đăng ký gói tập thành công",
+                $"Bạn đã đăng ký thành công gói {goiTap.TenGoi}. Thời hạn: {ngayBatDau:dd/MM/yyyy} - {ngayKetThuc:dd/MM/yyyy}",
+                "APP"
+            );
+
+            return true;
+        }
+
+        public async Task<bool> CreateClassRegistrationAfterPaymentAsync(int nguoiDungId, int lopHocId, DateTime ngayBatDau, DateTime ngayKetThuc, int thanhToanId)
+        {
+            // Verify payment exists and is successful
+            var thanhToan = await _unitOfWork.Context.ThanhToans.FindAsync(thanhToanId);
+            if (thanhToan == null || thanhToan.TrangThai != "SUCCESS") return false;
+
+            // Check if registration already exists for this payment
+            var existingRegistration = await _unitOfWork.Context.DangKys
+                .FirstOrDefaultAsync(d => d.ThanhToans.Any(t => t.ThanhToanId == thanhToanId));
+            if (existingRegistration != null) return true; // Already created
+
+            // Check if class exists and is open
+            var lopHoc = await _lopHocRepository.GetByIdAsync(lopHocId);
+            if (lopHoc == null || lopHoc.TrangThai != "OPEN") return false;
+
+            // Check if user already has active registration for this specific class
+            if (await HasActiveClassRegistrationAsync(nguoiDungId, lopHocId)) return false;
+
+            using var transaction = await _unitOfWork.Context.Database.BeginTransactionAsync();
+            try
+            {
+                // Re-check capacity within transaction
+                var currentCountInTransaction = await GetActiveRegistrationCountAsync(lopHocId);
+                if (currentCountInTransaction >= lopHoc.SucChua)
+                {
+                    await transaction.RollbackAsync();
+                    return false;
+                }
+
+                // Create registration within transaction
+                var dangKy = new DangKy
+                {
+                    NguoiDungId = nguoiDungId,
+                    LopHocId = lopHocId,
+                    NgayBatDau = DateOnly.FromDateTime(ngayBatDau),
+                    NgayKetThuc = DateOnly.FromDateTime(ngayKetThuc),
+                    TrangThai = "ACTIVE",
+                    NgayTao = DateTime.Now
+                };
+
+                await _dangKyRepository.AddAsync(dangKy);
+                await _unitOfWork.SaveChangesAsync();
+
+                // Update payment to link with registration
+                thanhToan.DangKyId = dangKy.DangKyId;
+                await _unitOfWork.SaveChangesAsync();
+
+                await transaction.CommitAsync();
+
+                // Send notification after successful registration
+                await _thongBaoService.CreateNotificationAsync(
+                    nguoiDungId,
+                    "Đăng ký lớp học thành công",
+                    $"Bạn đã đăng ký thành công lớp {lopHoc.TenLop}. Thời gian: {lopHoc.GioBatDau:HH:mm}-{lopHoc.GioKetThuc:HH:mm}",
+                    "APP"
+                );
+
+                return true;
+            }
+            catch (Exception)
+            {
+                await transaction.RollbackAsync();
+                throw; // Re-throw to be handled by calling method
+            }
+        }
+
+        public async Task<bool> CreateFixedClassRegistrationAfterPaymentAsync(int nguoiDungId, int lopHocId, int thanhToanId)
+        {
+            // Verify payment exists and is successful
+            var thanhToan = await _unitOfWork.Context.ThanhToans.FindAsync(thanhToanId);
+            if (thanhToan == null || thanhToan.TrangThai != "SUCCESS") return false;
+
+            // Check if registration already exists for this payment
+            var existingRegistration = await _unitOfWork.Context.DangKys
+                .FirstOrDefaultAsync(d => d.ThanhToans.Any(t => t.ThanhToanId == thanhToanId));
+            if (existingRegistration != null) return true; // Already created
+
+            var lopHoc = await _lopHocRepository.GetByIdAsync(lopHocId);
+            if (lopHoc == null || lopHoc.TrangThai != "OPEN") return false;
+
+            // Validate class has fixed schedule dates
+            if (!lopHoc.NgayBatDauKhoa.HasValue || !lopHoc.NgayKetThucKhoa.HasValue) return false;
+
+            // Check if class has already started
+            if (lopHoc.NgayBatDauKhoa.Value < DateOnly.FromDateTime(DateTime.Today)) return false;
+
+            // Check if user already has active registration for this specific class
+            if (await HasActiveClassRegistrationAsync(nguoiDungId, lopHocId)) return false;
+
+            using var transaction = await _unitOfWork.Context.Database.BeginTransactionAsync();
+            try
+            {
+                // Re-check capacity within transaction
+                var currentCountInTransaction = await GetActiveRegistrationCountAsync(lopHocId);
+                if (currentCountInTransaction >= lopHoc.SucChua)
+                {
+                    await transaction.RollbackAsync();
+                    return false;
+                }
+
+                var dangKy = new DangKy
+                {
+                    NguoiDungId = nguoiDungId,
+                    LopHocId = lopHocId,
+                    NgayBatDau = lopHoc.NgayBatDauKhoa.Value,
+                    NgayKetThuc = lopHoc.NgayKetThucKhoa.Value,
+                    TrangThai = "ACTIVE",
+                    NgayTao = DateTime.Now,
+                    LoaiDangKy = "CLASS",
+                    TrangThaiChiTiet = "ENROLLED"
+                };
+
+                await _dangKyRepository.AddAsync(dangKy);
+                await _unitOfWork.SaveChangesAsync();
+
+                // Update payment to link with registration
+                thanhToan.DangKyId = dangKy.DangKyId;
+                await _unitOfWork.SaveChangesAsync();
+
+                await transaction.CommitAsync();
+
+                // Send notification
+                await _thongBaoService.CreateNotificationAsync(
+                    nguoiDungId,
+                    "Đăng ký lớp học thành công",
+                    $"Bạn đã đăng ký thành công lớp {lopHoc.TenLop}. Lớp sẽ bắt đầu vào {lopHoc.NgayBatDauKhoa:dd/MM/yyyy}",
+                    "APP"
+                );
+
+                return true;
+            }
+            catch (Exception)
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
     }
 }

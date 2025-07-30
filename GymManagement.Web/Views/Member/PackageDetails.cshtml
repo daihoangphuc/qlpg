@@ -377,36 +377,58 @@
             const button = e.target.querySelector('button[type="submit"]');
             const originalText = button.innerHTML;
             
-            button.innerHTML = '<span class="flex items-center justify-center"><svg class="animate-spin -ml-1 mr-3 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Đang xử lý...</span>';
+            button.innerHTML = '<span class="flex items-center justify-center"><svg class="animate-spin -ml-1 mr-3 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Đang xử lý thanh toán...</span>';
             button.disabled = true;
             
             const formData = new FormData();
-            formData.append('packageId', selectedPackageId);
-            formData.append('duration', duration);
+            formData.append('goiTapId', selectedPackageId);
+            formData.append('thoiHanThang', duration);
             formData.append('__RequestVerificationToken', document.querySelector('input[name="__RequestVerificationToken"]').value);
 
-            fetch('@Url.Action("RegisterPackage", "Member")', {
+            fetch('@Url.Action("CreatePackagePayment", "ThanhToan")', {
                 method: 'POST',
                 body: formData
             })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    showNotification('✅ ' + data.message, 'success');
-                    closePackageModal();
-                    // Redirect to My Registrations after a short delay
-                    setTimeout(() => {
-                        window.location.href = '@Url.Action("MyRegistrations", "Member")';
-                    }, 1500);
+                    // Call VNPay Area to create payment URL
+                    fetch('/VNPayAPI/Home/CreatePayment', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            thanhToanId: data.thanhToanId,
+                            returnUrl: data.returnUrl
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(vnpayData => {
+                        if (vnpayData.success) {
+                            alert('Chuyển hướng đến cổng thanh toán...');
+                            window.location.href = vnpayData.paymentUrl;
+                        } else {
+                            alert('Lỗi VNPay: ' + vnpayData.message);
+                            button.innerHTML = originalText;
+                            button.disabled = false;
+                        }
+                    })
+                    .catch(error => {
+                        console.error('VNPay Error:', error);
+                        alert('Có lỗi xảy ra khi tạo thanh toán VNPay');
+                        button.innerHTML = originalText;
+                        button.disabled = false;
+                    });
                 } else {
-                    showNotification('❌ ' + data.message, 'error');
+                    alert('Lỗi: ' + data.message);
                     button.innerHTML = originalText;
                     button.disabled = false;
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                showNotification('❌ Có lỗi xảy ra khi đăng ký gói tập.', 'error');
+                alert('Có lỗi xảy ra khi xử lý thanh toán');
                 button.innerHTML = originalText;
                 button.disabled = false;
             });

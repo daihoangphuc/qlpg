@@ -7,8 +7,7 @@ namespace GymManagement.Web.Data.Models
     {
         public int ThanhToanId { get; set; }
         
-        [Required]
-        public int DangKyId { get; set; }
+        public int? DangKyId { get; set; }
         
         [Required]
         [Column(TypeName = "decimal(12,2)")]
@@ -26,7 +25,7 @@ namespace GymManagement.Web.Data.Models
         public string? GhiChu { get; set; }
 
         // Navigation properties
-        public virtual DangKy DangKy { get; set; } = null!;
+        public virtual DangKy? DangKy { get; set; }
         public virtual ThanhToanGateway? ThanhToanGateway { get; set; }
     }
 }

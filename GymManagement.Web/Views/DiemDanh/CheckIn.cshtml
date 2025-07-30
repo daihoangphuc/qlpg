@@ -1,11 +1,10 @@
 @{
     ViewData["Title"] = "Check-in";
-    Layout = "_Layout";
+    Layout = "_MemberLayout";
 }
 
-<div class="p-6">
     <!-- Header -->
-    <div class="mb-8">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
         <div class="flex items-center gap-4 mb-4">
             <a href="@Url.Action("Index")" class="text-gray-600 hover:text-gray-800">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -17,7 +16,8 @@
         <p class="text-gray-600">Điểm danh vào phòng gym</p>
     </div>
 
-    <div class="max-w-4xl mx-auto">
+<!-- Main Content -->
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <!-- Check-in Status -->
         <div id="checkInStatus" class="bg-white rounded-lg shadow-md p-6 mb-8">
             <div class="text-center">
@@ -175,7 +175,6 @@
                         <li>• Thời gian check-in sẽ được ghi nhận chính xác</li>
                         <li>• Dữ liệu check-in được sử dụng cho báo cáo và thống kê</li>
                     </ul>
-                </div>
             </div>
         </div>
     </div>

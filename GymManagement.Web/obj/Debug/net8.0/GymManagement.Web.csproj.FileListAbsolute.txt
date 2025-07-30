@@ -18,8 +18,13 @@ D:\DATN\HANG_REMOTE\qlpg\GymManagement.Web\bin\Debug\net8.0\GymManagement.Web.pd
 D:\DATN\HANG_REMOTE\qlpg\GymManagement.Web\bin\Debug\net8.0\Azure.Core.dll
 D:\DATN\HANG_REMOTE\qlpg\GymManagement.Web\bin\Debug\net8.0\Azure.Identity.dll
 D:\DATN\HANG_REMOTE\qlpg\GymManagement.Web\bin\Debug\net8.0\BCrypt.Net-Next.dll
+D:\DATN\HANG_REMOTE\qlpg\GymManagement.Web\bin\Debug\net8.0\BouncyCastle.Crypto.dll
 D:\DATN\HANG_REMOTE\qlpg\GymManagement.Web\bin\Debug\net8.0\BouncyCastle.Cryptography.dll
+D:\DATN\HANG_REMOTE\qlpg\GymManagement.Web\bin\Debug\net8.0\EPPlus.dll
+D:\DATN\HANG_REMOTE\qlpg\GymManagement.Web\bin\Debug\net8.0\EPPlus.Interfaces.dll
+D:\DATN\HANG_REMOTE\qlpg\GymManagement.Web\bin\Debug\net8.0\EPPlus.System.Drawing.dll
 D:\DATN\HANG_REMOTE\qlpg\GymManagement.Web\bin\Debug\net8.0\Humanizer.dll
+D:\DATN\HANG_REMOTE\qlpg\GymManagement.Web\bin\Debug\net8.0\itextsharp.dll
 D:\DATN\HANG_REMOTE\qlpg\GymManagement.Web\bin\Debug\net8.0\MailKit.dll
 D:\DATN\HANG_REMOTE\qlpg\GymManagement.Web\bin\Debug\net8.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll
 D:\DATN\HANG_REMOTE\qlpg\GymManagement.Web\bin\Debug\net8.0\Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore.dll
@@ -49,6 +54,7 @@ D:\DATN\HANG_REMOTE\qlpg\GymManagement.Web\bin\Debug\net8.0\Microsoft.IdentityMo
 D:\DATN\HANG_REMOTE\qlpg\GymManagement.Web\bin\Debug\net8.0\Microsoft.IdentityModel.Protocols.dll
 D:\DATN\HANG_REMOTE\qlpg\GymManagement.Web\bin\Debug\net8.0\Microsoft.IdentityModel.Protocols.OpenIdConnect.dll
 D:\DATN\HANG_REMOTE\qlpg\GymManagement.Web\bin\Debug\net8.0\Microsoft.IdentityModel.Tokens.dll
+D:\DATN\HANG_REMOTE\qlpg\GymManagement.Web\bin\Debug\net8.0\Microsoft.IO.RecyclableMemoryStream.dll
 D:\DATN\HANG_REMOTE\qlpg\GymManagement.Web\bin\Debug\net8.0\Microsoft.SqlServer.Server.dll
 D:\DATN\HANG_REMOTE\qlpg\GymManagement.Web\bin\Debug\net8.0\Microsoft.Win32.SystemEvents.dll
 D:\DATN\HANG_REMOTE\qlpg\GymManagement.Web\bin\Debug\net8.0\MimeKit.dll
@@ -154,9 +160,3 @@ D:\DATN\HANG_REMOTE\qlpg\GymManagement.Web\obj\Debug\net8.0\refint\GymManagement
 D:\DATN\HANG_REMOTE\qlpg\GymManagement.Web\obj\Debug\net8.0\GymManagement.Web.pdb
 D:\DATN\HANG_REMOTE\qlpg\GymManagement.Web\obj\Debug\net8.0\GymManagement.Web.genruntimeconfig.cache
 D:\DATN\HANG_REMOTE\qlpg\GymManagement.Web\obj\Debug\net8.0\ref\GymManagement.Web.dll
-D:\DATN\HANG_REMOTE\qlpg\GymManagement.Web\bin\Debug\net8.0\BouncyCastle.Crypto.dll
-D:\DATN\HANG_REMOTE\qlpg\GymManagement.Web\bin\Debug\net8.0\EPPlus.dll
-D:\DATN\HANG_REMOTE\qlpg\GymManagement.Web\bin\Debug\net8.0\EPPlus.Interfaces.dll
-D:\DATN\HANG_REMOTE\qlpg\GymManagement.Web\bin\Debug\net8.0\EPPlus.System.Drawing.dll
-D:\DATN\HANG_REMOTE\qlpg\GymManagement.Web\bin\Debug\net8.0\itextsharp.dll
-D:\DATN\HANG_REMOTE\qlpg\GymManagement.Web\bin\Debug\net8.0\Microsoft.IO.RecyclableMemoryStream.dll

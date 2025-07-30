@@ -1,7 +1,10 @@
+using GymManagement.Web.Data;
 using GymManagement.Web.Data.Models;
 using GymManagement.Web.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace GymManagement.Web.Controllers
 {
@@ -11,15 +14,31 @@ namespace GymManagement.Web.Controllers
         private readonly IThanhToanService _thanhToanService;
         private readonly IDangKyService _dangKyService;
         private readonly ILogger<ThanhToanController> _logger;
+        private readonly IAuthService _authService;
+        private readonly GymDbContext _context;
 
         public ThanhToanController(
             IThanhToanService thanhToanService,
             IDangKyService dangKyService,
-            ILogger<ThanhToanController> logger)
+            ILogger<ThanhToanController> logger,
+            IAuthService authService,
+            GymDbContext context)
         {
             _thanhToanService = thanhToanService;
             _dangKyService = dangKyService;
             _logger = logger;
+            _authService = authService;
+            _context = context;
+        }
+
+        // Helper method to get current user
+        private async Task<TaiKhoan?> GetCurrentUserAsync()
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+                return null;
+
+            return await _authService.GetUserByIdAsync(userId);
         }
 
         [Authorize(Roles = "Admin")]
@@ -59,23 +78,51 @@ namespace GymManagement.Web.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Member")]
         public async Task<IActionResult> CreatePayment(int registrationId, decimal amount, string method, string? note = null)
         {
             try
             {
+                // Verify that the registration belongs to the current user
+                var user = await GetCurrentUserAsync();
+                if (user?.NguoiDungId == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy thông tin người dùng." });
+                }
+
+                // Check if registration exists and belongs to current user
+                var registration = await _context.DangKys
+                    .FirstOrDefaultAsync(d => d.DangKyId == registrationId && d.NguoiDungId == user.NguoiDungId.Value);
+
+                if (registration == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy đăng ký hoặc bạn không có quyền thanh toán cho đăng ký này." });
+                }
+
+                if (registration.TrangThai != "PENDING_PAYMENT")
+                {
+                    return Json(new { success = false, message = "Đăng ký này không cần thanh toán." });
+                }
+
                 var payment = await _thanhToanService.CreatePaymentAsync(registrationId, amount, method, note);
                 
                 if (method == "VNPAY")
                 {
-                    var returnUrl = Url.Action("VnPayReturn", "ThanhToan", null, Request.Scheme);
-                    var paymentUrl = await _thanhToanService.CreateVnPayUrlAsync(payment.ThanhToanId, returnUrl!);
-                    return Redirect(paymentUrl);
+                    return Json(new { success = true, thanhToanId = payment.ThanhToanId });
                 }
                 else if (method == "CASH")
                 {
                     // Process cash payment immediately
-                    await _thanhToanService.ProcessCashPaymentAsync(payment.ThanhToanId);
-                    return Json(new { success = true, message = "Thanh toán tiền mặt thành công!" });
+                    var success = await _thanhToanService.ProcessCashPaymentAsync(payment.ThanhToanId);
+                    if (success)
+                    {
+                        return Redirect("/Member/MyRegistrations?paymentStatus=success&message=Thanh+toán+tiền+mặt+thành+công");
+                    }
+                    else
+                    {
+                        return Redirect("/Member/MyRegistrations?paymentStatus=error&message=Có+lỗi+xảy+ra+khi+xử+lý+thanh+toán");
+                    }
                 }
                 
                 return Json(new { success = true, message = "Tạo thanh toán thành công!", paymentId = payment.ThanhToanId });
@@ -87,31 +134,164 @@ namespace GymManagement.Web.Controllers
             }
         }
 
-        [HttpGet]
-        [AllowAnonymous]
-        public async Task<IActionResult> VnPayReturn()
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Member")]
+        public async Task<IActionResult> CreatePackagePayment(int goiTapId, int thoiHanThang, int? khuyenMaiId = null)
         {
             try
             {
-                var vnpayData = Request.Query.ToDictionary(x => x.Key, x => x.Value.ToString());
-                var result = await _thanhToanService.ProcessVnPayReturnAsync(vnpayData);
-                
-                if (result)
+                var user = await GetCurrentUserAsync();
+                if (user?.NguoiDungId == null)
                 {
-                    TempData["SuccessMessage"] = "Thanh toán VNPay thành công!";
+                    return Json(new { success = false, message = "Không tìm thấy thông tin người dùng." });
                 }
-                else
+
+                // Check if user already has active package
+                if (await _dangKyService.HasActivePackageRegistrationAsync(user.NguoiDungId.Value))
                 {
-                    TempData["ErrorMessage"] = "Thanh toán VNPay thất bại!";
+                    return Json(new { success = false, message = "Bạn đã có gói tập đang hoạt động. Mỗi thành viên chỉ có thể sở hữu một gói tập tại một thời điểm." });
                 }
+
+                var payment = await _thanhToanService.CreatePaymentForPackageRegistrationAsync(
+                    user.NguoiDungId.Value, goiTapId, thoiHanThang, "VNPAY", khuyenMaiId);
+
+                var returnUrl = Url.Action("PaymentConfirm", "Home", new { area = "VNPayAPI" }, Request.Scheme);
                 
-                return RedirectToAction("MyRegistrations", "DangKy");
+                return Json(new { success = true, thanhToanId = payment.ThanhToanId, returnUrl = returnUrl });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while processing VNPay return");
-                TempData["ErrorMessage"] = "Có lỗi xảy ra khi xử lý kết quả thanh toán.";
-                return RedirectToAction("Index", "Home");
+                _logger.LogError(ex, "Error occurred while creating package payment");
+                return Json(new { success = false, message = "Có lỗi xảy ra khi tạo thanh toán." });
+            }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Member")]
+        public async Task<IActionResult> CreateClassPayment(int lopHocId, DateTime ngayBatDau, DateTime ngayKetThuc)
+        {
+            try
+            {
+                var user = await GetCurrentUserAsync();
+                if (user?.NguoiDungId == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy thông tin người dùng." });
+                }
+
+                // Check if user already has active registration for this class
+                if (await _dangKyService.HasActiveClassRegistrationAsync(user.NguoiDungId.Value, lopHocId))
+                {
+                    return Json(new { success = false, message = "Bạn đã đăng ký lớp học này rồi." });
+                }
+
+                var payment = await _thanhToanService.CreatePaymentForClassRegistrationAsync(
+                    user.NguoiDungId.Value, lopHocId, ngayBatDau, ngayKetThuc, "VNPAY");
+
+                var returnUrl = Url.Action("PaymentConfirm", "Home", new { area = "VNPayAPI" }, Request.Scheme);
+                
+                return Json(new { success = true, thanhToanId = payment.ThanhToanId, returnUrl = returnUrl });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while creating class payment");
+                return Json(new { success = false, message = "Có lỗi xảy ra khi tạo thanh toán." });
+            }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Member")]
+        public async Task<IActionResult> CreateFixedClassPayment(int lopHocId)
+        {
+            try
+            {
+                var user = await GetCurrentUserAsync();
+                if (user?.NguoiDungId == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy thông tin người dùng." });
+                }
+
+                // Check if user already has active registration for this class
+                if (await _dangKyService.HasActiveClassRegistrationAsync(user.NguoiDungId.Value, lopHocId))
+                {
+                    return Json(new { success = false, message = "Bạn đã đăng ký lớp học này rồi." });
+                }
+
+                var payment = await _thanhToanService.CreatePaymentForFixedClassRegistrationAsync(
+                    user.NguoiDungId.Value, lopHocId, "VNPAY");
+
+                var returnUrl = Url.Action("PaymentConfirm", "Home", new { area = "VNPayAPI" }, Request.Scheme);
+                
+                return Json(new { success = true, thanhToanId = payment.ThanhToanId, returnUrl = returnUrl });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while creating fixed class payment");
+                return Json(new { success = false, message = "Có lỗi xảy ra khi tạo thanh toán." });
+            }
+        }
+
+        // VnPayReturn method removed - handled by VNPay Area
+
+        private async Task CreateRegistrationAfterSuccessfulPayment(string orderId)
+        {
+            try
+            {
+                // Find the payment by gateway order ID
+                var gateway = await _thanhToanService.GetGatewayByOrderIdAsync(orderId);
+                if (gateway == null) return;
+
+                var registrationInfo = await _thanhToanService.GetRegistrationInfoFromPaymentAsync(gateway.ThanhToanId);
+                if (registrationInfo == null) return;
+
+                var (type, info) = registrationInfo.Value;
+
+                switch (type)
+                {
+                    case "PKG":
+                        if (info.ContainsKey("nguoiDungId") && info.ContainsKey("goiTapId") && info.ContainsKey("thoiHanThang"))
+                        {
+                            var nguoiDungId = int.Parse(info["nguoiDungId"]);
+                            var goiTapId = int.Parse(info["goiTapId"]);
+                            var thoiHanThang = int.Parse(info["thoiHanThang"]);
+
+                            await _dangKyService.CreatePackageRegistrationAfterPaymentAsync(
+                                nguoiDungId, goiTapId, thoiHanThang, gateway.ThanhToanId);
+                }
+                        break;
+
+                    case "CLS":
+                        if (info.ContainsKey("nguoiDungId") && info.ContainsKey("lopHocId") && 
+                            info.ContainsKey("ngayBatDau") && info.ContainsKey("ngayKetThuc"))
+                        {
+                            var nguoiDungId = int.Parse(info["nguoiDungId"]);
+                            var lopHocId = int.Parse(info["lopHocId"]);
+                            var ngayBatDau = DateTime.Parse(info["ngayBatDau"]);
+                            var ngayKetThuc = DateTime.Parse(info["ngayKetThuc"]);
+
+                            await _dangKyService.CreateClassRegistrationAfterPaymentAsync(
+                                nguoiDungId, lopHocId, ngayBatDau, ngayKetThuc, gateway.ThanhToanId);
+                        }
+                        break;
+
+                    case "FIX":
+                        if (info.ContainsKey("nguoiDungId") && info.ContainsKey("lopHocId"))
+                        {
+                            var nguoiDungId = int.Parse(info["nguoiDungId"]);
+                            var lopHocId = int.Parse(info["lopHocId"]);
+
+                            await _dangKyService.CreateFixedClassRegistrationAfterPaymentAsync(
+                                nguoiDungId, lopHocId, gateway.ThanhToanId);
+                        }
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating registration after successful payment for order {OrderId}", orderId);
+                // Don't throw - payment was successful, just log the error
             }
         }
 
@@ -262,6 +442,32 @@ namespace GymManagement.Web.Controllers
             {
                 _logger.LogError(ex, "Error occurred while getting registration info");
                 return Json(new { success = false, message = "Có lỗi xảy ra khi tải thông tin đăng ký." });
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetPaymentHistory(int registrationId)
+        {
+            try
+            {
+                var payments = await _thanhToanService.GetByRegistrationIdAsync(registrationId);
+                
+                return Json(new {
+                    success = true,
+                    payments = payments.Select(p => new {
+                        thanhToanId = p.ThanhToanId,
+                        soTien = p.SoTien,
+                        phuongThuc = p.PhuongThuc,
+                        trangThai = p.TrangThai,
+                        ngayThanhToan = p.NgayThanhToan.ToString("yyyy-MM-ddTHH:mm:ss"),
+                        ghiChu = p.GhiChu
+                    }).OrderByDescending(p => p.ngayThanhToan)
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while getting payment history");
+                return Json(new { success = false, message = "Có lỗi xảy ra khi tải lịch sử thanh toán." });
             }
         }
     }

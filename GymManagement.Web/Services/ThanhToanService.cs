@@ -10,27 +10,30 @@ namespace GymManagement.Web.Services
 {
     public class ThanhToanService : IThanhToanService
     {
-        private readonly IUnitOfWork _unitOfWork;
         private readonly IThanhToanRepository _thanhToanRepository;
         private readonly IDangKyRepository _dangKyRepository;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly IThongBaoService _thongBaoService;
         private readonly IEmailService _emailService;
         private readonly IConfiguration _configuration;
+        private readonly ILogger<ThanhToanService> _logger;
 
         public ThanhToanService(
-            IUnitOfWork unitOfWork,
             IThanhToanRepository thanhToanRepository,
             IDangKyRepository dangKyRepository,
+            IUnitOfWork unitOfWork,
             IThongBaoService thongBaoService,
             IEmailService emailService,
-            IConfiguration configuration)
+            IConfiguration configuration,
+            ILogger<ThanhToanService> logger)
         {
-            _unitOfWork = unitOfWork;
             _thanhToanRepository = thanhToanRepository;
             _dangKyRepository = dangKyRepository;
+            _unitOfWork = unitOfWork;
             _thongBaoService = thongBaoService;
             _emailService = emailService;
             _configuration = configuration;
+            _logger = logger;
         }
 
         public async Task<IEnumerable<ThanhToan>> GetAllAsync()
@@ -72,6 +75,22 @@ namespace GymManagement.Web.Services
             return await _thanhToanRepository.GetByDangKyIdAsync(dangKyId);
         }
 
+        public async Task<IEnumerable<ThanhToan>> GetByMemberIdAsync(int memberId)
+        {
+            // Get all payments for registrations belonging to this member
+            var memberRegistrations = await _dangKyRepository.GetByMemberIdAsync(memberId);
+            var registrationIds = memberRegistrations.Select(r => r.DangKyId).ToList();
+            
+            var allPayments = new List<ThanhToan>();
+            foreach (var registrationId in registrationIds)
+            {
+                var payments = await _thanhToanRepository.GetByDangKyIdAsync(registrationId);
+                allPayments.AddRange(payments);
+            }
+            
+            return allPayments.OrderByDescending(p => p.NgayThanhToan);
+        }
+
         public async Task<IEnumerable<ThanhToan>> GetPendingPaymentsAsync()
         {
             return await _thanhToanRepository.GetPendingPaymentsAsync();
@@ -106,6 +125,20 @@ namespace GymManagement.Web.Services
 
             thanhToan.TrangThai = "SUCCESS";
             thanhToan.NgayThanhToan = DateTime.Now;
+
+            // Activate pending registration if exists
+            if (thanhToan.DangKyId.HasValue)
+            {
+                var registration = await _unitOfWork.Context.DangKys
+                    .FirstOrDefaultAsync(d => d.DangKyId == thanhToan.DangKyId.Value);
+
+                if (registration != null && registration.TrangThai == "PENDING_PAYMENT")
+                {
+                    registration.TrangThai = "ACTIVE";
+                    registration.TrangThaiChiTiet = "Thanh toán tiền mặt thành công";
+                }
+            }
+
             await _unitOfWork.SaveChangesAsync();
 
             // Send notifications
@@ -114,103 +147,65 @@ namespace GymManagement.Web.Services
             return true;
         }
 
+        // Simplified method to work with new VNPay Area
         public async Task<string> CreateVnPayUrlAsync(int thanhToanId, string returnUrl)
         {
-            var thanhToan = await _thanhToanRepository.GetPaymentWithGatewayAsync(thanhToanId);
-            if (thanhToan == null) throw new ArgumentException("Payment not found");
-
-            var vnpayConfig = _configuration.GetSection("VnPay");
-            var tmnCode = vnpayConfig["TmnCode"];
-            var hashSecret = vnpayConfig["HashSecret"];
-            var baseUrl = vnpayConfig["BaseUrl"];
-
-            var orderId = $"GYM{thanhToanId}{DateTime.Now:yyyyMMddHHmmss}";
-            var amount = (long)(thanhToan.SoTien * 100); // VNPay requires amount in VND cents
-
-            var vnpayData = new SortedDictionary<string, string>
-            {
-                {"vnp_Version", "2.1.0"},
-                {"vnp_Command", "pay"},
-                {"vnp_TmnCode", tmnCode},
-                {"vnp_Amount", amount.ToString()},
-                {"vnp_CreateDate", DateTime.Now.ToString("yyyyMMddHHmmss")},
-                {"vnp_CurrCode", "VND"},
-                {"vnp_IpAddr", "127.0.0.1"},
-                {"vnp_Locale", "vn"},
-                {"vnp_OrderInfo", $"Thanh toan gym {orderId}"},
-                {"vnp_OrderType", "other"},
-                {"vnp_ReturnUrl", returnUrl},
-                {"vnp_TxnRef", orderId}
-            };
-
-            // Create gateway record
-            var gateway = new ThanhToanGateway
-            {
-                ThanhToanId = thanhToanId,
-                GatewayTen = "VNPAY",
-                GatewayOrderId = orderId,
-                GatewayAmount = thanhToan.SoTien
-            };
-
-            await _unitOfWork.Context.ThanhToanGateways.AddAsync(gateway);
-            await _unitOfWork.SaveChangesAsync();
-
-            // Create signature
-            var signData = string.Join("&", vnpayData.Select(kv => $"{kv.Key}={kv.Value}"));
-            var signature = CreateHmacSha512(hashSecret, signData);
-            vnpayData.Add("vnp_SecureHash", signature);
-
-            // Build URL
-            var queryString = string.Join("&", vnpayData.Select(kv => $"{kv.Key}={HttpUtility.UrlEncode(kv.Value)}"));
-            return $"{baseUrl}?{queryString}";
+            // This will be handled by JavaScript calling VNPay Area directly
+            // Return the VNPay Area endpoint URL
+            return $"/VNPayAPI/Home/CreatePayment";
         }
 
-        public async Task<bool> ProcessVnPayReturnAsync(Dictionary<string, string> vnpayData)
+        // Method to get registration info from payment for controller to process
+        public async Task<(string registrationType, Dictionary<string, string> registrationInfo)?> GetRegistrationInfoFromPaymentAsync(int thanhToanId)
         {
-            var vnpayConfig = _configuration.GetSection("VnPay");
-            var hashSecret = vnpayConfig["HashSecret"];
-
-            // Verify signature
-            var secureHash = vnpayData["vnp_SecureHash"];
-            vnpayData.Remove("vnp_SecureHash");
-
-            var sortedData = new SortedDictionary<string, string>(vnpayData);
-            var signData = string.Join("&", sortedData.Select(kv => $"{kv.Key}={kv.Value}"));
-            var computedHash = CreateHmacSha512(hashSecret, signData);
-
-            if (secureHash != computedHash) return false;
-
-            // Process payment result
-            var orderId = vnpayData["vnp_TxnRef"];
-            var responseCode = vnpayData["vnp_ResponseCode"];
-            var transactionId = vnpayData["vnp_TransactionNo"];
-
             var gateway = await _unitOfWork.Context.ThanhToanGateways
+                .FirstOrDefaultAsync(g => g.ThanhToanId == thanhToanId);
+                
+            if (gateway?.GatewayMessage == null) return null;
+
+            var parts = gateway.GatewayMessage.Split('|');
+            if (parts.Length < 3) return null;
+
+            var type = parts[0];
+            var info = new Dictionary<string, string>();
+
+            switch (type)
+            {
+                case "PKG":
+                    if (parts.Length >= 4)
+                    {
+                        info["nguoiDungId"] = parts[1];
+                        info["goiTapId"] = parts[2];
+                        info["thoiHanThang"] = parts[3];
+                        if (parts.Length > 4) info["khuyenMaiId"] = parts[4];
+                    }
+                    break;
+                case "CLS":
+                    if (parts.Length >= 5)
+                    {
+                        info["nguoiDungId"] = parts[1];
+                        info["lopHocId"] = parts[2];
+                        info["ngayBatDau"] = parts[3];
+                        info["ngayKetThuc"] = parts[4];
+                    }
+                    break;
+                case "FIX":
+                    if (parts.Length >= 3)
+                    {
+                        info["nguoiDungId"] = parts[1];
+                        info["lopHocId"] = parts[2];
+                    }
+                    break;
+            }
+
+            return (type, info);
+        }
+
+        public async Task<ThanhToanGateway?> GetGatewayByOrderIdAsync(string orderId)
+        {
+            return await _unitOfWork.Context.ThanhToanGateways
                 .Include(g => g.ThanhToan)
                 .FirstOrDefaultAsync(g => g.GatewayOrderId == orderId);
-
-            if (gateway == null) return false;
-
-            gateway.GatewayTransId = transactionId;
-            gateway.GatewayRespCode = responseCode;
-            gateway.ThoiGianCallback = DateTime.Now;
-
-            if (responseCode == "00") // Success
-            {
-                gateway.ThanhToan.TrangThai = "SUCCESS";
-                gateway.GatewayMessage = "Thanh toán thành công";
-
-                // Send notifications
-                await SendPaymentSuccessNotifications(gateway.ThanhToan);
-            }
-            else
-            {
-                gateway.ThanhToan.TrangThai = "FAILED";
-                gateway.GatewayMessage = "Thanh toán thất bại";
-            }
-
-            await _unitOfWork.SaveChangesAsync();
-            return true;
         }
 
         public async Task<bool> RefundPaymentAsync(int thanhToanId, string reason)
@@ -223,15 +218,18 @@ namespace GymManagement.Web.Services
             await _unitOfWork.SaveChangesAsync();
 
             // Send notification
-            var dangKy = await _dangKyRepository.GetByIdAsync(thanhToan.DangKyId);
+            if (thanhToan.DangKyId.HasValue)
+            {
+                var dangKy = await _dangKyRepository.GetByIdAsync(thanhToan.DangKyId.Value);
             if (dangKy != null)
             {
                 await _thongBaoService.CreateNotificationAsync(
                     dangKy.NguoiDungId,
                     "Hoàn tiền",
-                    $"Đã hoàn tiền {thanhToan.SoTien:N0} VNĐ. Lý do: {reason}",
-                    "APP"
+                        $"Đã hoàn tiền {thanhToan.SoTien:N0} VNĐ cho đăng ký. Lý do: {reason}",
+                        "payment"
                 );
+                }
             }
 
             return true;
@@ -239,44 +237,174 @@ namespace GymManagement.Web.Services
 
         public async Task<decimal> GetTotalRevenueAsync(DateTime startDate, DateTime endDate)
         {
-            return await _thanhToanRepository.GetTotalRevenueByDateRangeAsync(startDate, endDate);
+            return await _unitOfWork.Context.ThanhToans
+                .Where(t => t.TrangThai == "SUCCESS" &&
+                           t.NgayThanhToan >= startDate &&
+                           t.NgayThanhToan <= endDate)
+                .SumAsync(t => t.SoTien);
+        }
+
+        // New methods for payment-first registration flow
+
+        public async Task<ThanhToan> CreatePaymentForPackageRegistrationAsync(int nguoiDungId, int goiTapId, int thoiHanThang, string phuongThuc, int? khuyenMaiId = null)
+        {
+            // Calculate fee manually without DangKyService to avoid circular dependency
+            var goiTap = await _unitOfWork.Context.GoiTaps.FindAsync(goiTapId);
+            if (goiTap == null) throw new ArgumentException("Gói tập không tồn tại");
+
+            decimal fee = goiTap.Gia * thoiHanThang;
+
+            // Apply discount if available
+            if (khuyenMaiId.HasValue)
+            {
+                var khuyenMai = await _unitOfWork.Context.KhuyenMais.FindAsync(khuyenMaiId.Value);
+                if (khuyenMai != null && khuyenMai.KichHoat &&
+                    DateOnly.FromDateTime(DateTime.Today) >= khuyenMai.NgayBatDau && 
+                    DateOnly.FromDateTime(DateTime.Today) <= khuyenMai.NgayKetThuc)
+                {
+                    decimal discount = fee * (khuyenMai.PhanTramGiam ?? 0) / 100;
+                    fee -= discount;
+                }
+            }
+
+            // Create a temporary pending registration first  
+            var tempRegistration = new DangKy
+            {
+                NguoiDungId = nguoiDungId,
+                GoiTapId = goiTapId,
+                NgayTao = DateTime.Today,
+                NgayBatDau = DateOnly.FromDateTime(DateTime.Today),
+                NgayKetThuc = DateOnly.FromDateTime(DateTime.Today.AddMonths(thoiHanThang)),
+                TrangThai = "PENDING_PAYMENT",
+                PhiDangKy = fee,
+                TrangThaiChiTiet = $"Chờ thanh toán - {thoiHanThang} tháng"
+            };
+
+            await _unitOfWork.Context.DangKys.AddAsync(tempRegistration);
+            await _unitOfWork.SaveChangesAsync();
+            
+            var thanhToan = new ThanhToan
+            {
+                DangKyId = tempRegistration.DangKyId, // Use the temp registration ID
+                SoTien = fee,
+                PhuongThuc = phuongThuc,
+                TrangThai = "PENDING",
+                NgayThanhToan = DateTime.Now,
+                GhiChu = $"Thanh toán đăng ký gói tập - Người dùng: {nguoiDungId}, Gói: {goiTapId}, Thời hạn: {thoiHanThang} tháng"
+            };
+
+            var created = await _thanhToanRepository.AddAsync(thanhToan);
+            await _unitOfWork.SaveChangesAsync();
+
+            // Gateway record will be created by VNPay Area when payment URL is generated
+
+            return created;
+        }
+
+        public async Task<ThanhToan> CreatePaymentForClassRegistrationAsync(int nguoiDungId, int lopHocId, DateTime ngayBatDau, DateTime ngayKetThuc, string phuongThuc)
+        {
+            // Calculate fee manually
+            var lopHoc = await _unitOfWork.Context.LopHocs.FindAsync(lopHocId);
+            if (lopHoc == null) throw new ArgumentException("Lớp học không tồn tại");
+
+            decimal fee = lopHoc.GiaTuyChinh ?? 200000m; // Default class fee 200k VND
+
+            // Create a temporary pending registration first
+            var tempRegistration = new DangKy
+            {
+                NguoiDungId = nguoiDungId,
+                LopHocId = lopHocId,
+                NgayTao = DateTime.Today,
+                NgayBatDau = DateOnly.FromDateTime(ngayBatDau),
+                NgayKetThuc = DateOnly.FromDateTime(ngayKetThuc),
+                TrangThai = "PENDING_PAYMENT",
+                PhiDangKy = fee,
+                TrangThaiChiTiet = "Chờ thanh toán lớp học"
+            };
+
+            await _unitOfWork.Context.DangKys.AddAsync(tempRegistration);
+            await _unitOfWork.SaveChangesAsync();
+            
+            var thanhToan = new ThanhToan
+            {
+                DangKyId = tempRegistration.DangKyId, // Use the temp registration ID
+                SoTien = fee,
+                PhuongThuc = phuongThuc,
+                TrangThai = "PENDING",
+                NgayThanhToan = DateTime.Now,
+                GhiChu = $"Thanh toán đăng ký lớp học - Người dùng: {nguoiDungId}, Lớp: {lopHocId}"
+            };
+
+            var created = await _thanhToanRepository.AddAsync(thanhToan);
+            await _unitOfWork.SaveChangesAsync();
+
+            // Gateway record will be created by VNPay Area when payment URL is generated
+
+            return created;
+        }
+
+        public async Task<ThanhToan> CreatePaymentForFixedClassRegistrationAsync(int nguoiDungId, int lopHocId, string phuongThuc)
+        {
+            // Calculate fee manually
+            var lopHoc = await _unitOfWork.Context.LopHocs.FindAsync(lopHocId);
+            if (lopHoc == null) throw new ArgumentException("Lớp học không tồn tại");
+
+            decimal fee = lopHoc.GiaTuyChinh ?? 200000m; // Default class fee 200k VND
+
+            // Create a temporary pending registration first
+            var tempRegistration = new DangKy
+            {
+                NguoiDungId = nguoiDungId,
+                LopHocId = lopHocId,
+                NgayTao = DateTime.Today,
+                NgayBatDau = lopHoc.NgayBatDauKhoa ?? DateOnly.FromDateTime(DateTime.Today),
+                NgayKetThuc = lopHoc.NgayKetThucKhoa ?? DateOnly.FromDateTime(DateTime.Today.AddMonths(3)),
+                TrangThai = "PENDING_PAYMENT",
+                PhiDangKy = fee,
+                TrangThaiChiTiet = "Chờ thanh toán lớp cố định"
+            };
+
+            await _unitOfWork.Context.DangKys.AddAsync(tempRegistration);
+            await _unitOfWork.SaveChangesAsync();
+            
+            var thanhToan = new ThanhToan
+            {
+                DangKyId = tempRegistration.DangKyId, // Use the temp registration ID
+                SoTien = fee,
+                PhuongThuc = phuongThuc,
+                TrangThai = "PENDING",
+                NgayThanhToan = DateTime.Now,
+                GhiChu = $"Thanh toán đăng ký lớp học cố định - Người dùng: {nguoiDungId}, Lớp: {lopHocId}"
+            };
+
+            var created = await _thanhToanRepository.AddAsync(thanhToan);
+            await _unitOfWork.SaveChangesAsync();
+
+            // Gateway record will be created by VNPay Area when payment URL is generated
+
+            return created;
         }
 
         private async Task SendPaymentSuccessNotifications(ThanhToan thanhToan)
         {
-            var dangKy = await _dangKyRepository.GetByIdAsync(thanhToan.DangKyId);
+            if (thanhToan.DangKyId.HasValue)
+            {
+                var dangKy = await _dangKyRepository.GetByIdAsync(thanhToan.DangKyId.Value);
             if (dangKy?.NguoiDung != null)
             {
                 // Send in-app notification
                 await _thongBaoService.CreateNotificationAsync(
                     dangKy.NguoiDungId,
                     "Thanh toán thành công",
-                    $"Thanh toán {thanhToan.SoTien:N0} VNĐ đã được xử lý thành công",
-                    "APP"
-                );
-
-                // Send email confirmation
-                if (!string.IsNullOrEmpty(dangKy.NguoiDung.Email))
-                {
-                    var memberName = $"{dangKy.NguoiDung.Ho} {dangKy.NguoiDung.Ten}".Trim();
-                    await _emailService.SendPaymentConfirmationEmailAsync(
-                        dangKy.NguoiDung.Email,
-                        memberName,
-                        thanhToan.SoTien,
-                        thanhToan.PhuongThuc ?? "Unknown"
+                        $"Thanh toán {thanhToan.SoTien:N0} VNĐ đã được xử lý thành công.",
+                        "payment"
                     );
                 }
             }
         }
 
-        private string CreateHmacSha512(string key, string data)
-        {
-            var keyBytes = Encoding.UTF8.GetBytes(key);
-            var dataBytes = Encoding.UTF8.GetBytes(data);
 
-            using var hmac = new HMACSHA512(keyBytes);
-            var hashBytes = hmac.ComputeHash(dataBytes);
-            return Convert.ToHexString(hashBytes).ToLower();
-        }
+
+        // HMAC method moved to VNPay Area
     }
 }

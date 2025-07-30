@@ -572,28 +572,55 @@
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
-                        Đang xử lý...
+                        Đang xử lý thanh toán...
                     </span>
                 `;
                 button.disabled = true;
 
                 const formData = new FormData();
-                formData.append('packageId', selectedPackageId);
-                formData.append('duration', selectedDuration);
+                formData.append('goiTapId', selectedPackageId);
+                formData.append('thoiHanThang', selectedDuration);
                 formData.append('__RequestVerificationToken', document.querySelector('input[name="__RequestVerificationToken"]').value);
 
-                fetch('@Url.Action("RegisterPackage", "Member")', {
+                fetch('@Url.Action("CreatePackagePayment", "ThanhToan")', {
                     method: 'POST',
                     body: formData
                 })
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        // Show success notification
-                        showNotification('✅ ' + data.message, 'success');
+                        // Call VNPay Area to create payment URL
+                        showNotification('✅ Đang tạo thanh toán...', 'success');
+                        
+                        fetch('/VNPayAPI/Home/CreatePayment', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                thanhToanId: data.thanhToanId,
+                                returnUrl: data.returnUrl
+                            })
+                        })
+                        .then(response => response.json())
+                        .then(vnpayData => {
+                            if (vnpayData.success) {
+                                showNotification('✅ Chuyển hướng đến cổng thanh toán...', 'success');
                         setTimeout(() => {
-                            window.location.href = '@Url.Action("MyRegistrations", "Member")';
-                        }, 1500);
+                                    window.location.href = vnpayData.paymentUrl;
+                                }, 1000);
+                            } else {
+                                showNotification('❌ ' + vnpayData.message, 'error');
+                                button.innerHTML = originalText;
+                                button.disabled = false;
+                            }
+                        })
+                        .catch(error => {
+                            console.error('VNPay Error:', error);
+                            showNotification('❌ Có lỗi xảy ra khi tạo thanh toán VNPay.', 'error');
+                            button.innerHTML = originalText;
+                            button.disabled = false;
+                        });
                     } else {
                         showNotification('❌ ' + data.message, 'error');
                         button.innerHTML = originalText;

@@ -160,5 +160,33 @@ namespace GymManagement.Web.Services
 
             await SendBulkNotificationAsync(members, tieuDe, noiDung, kenh);
         }
+
+        public async Task<bool> DeleteOldNotificationsAsync(int daysOld = 30)
+        {
+            try
+            {
+                var cutoffDate = DateTime.Now.AddDays(-daysOld);
+                var allNotifications = await _thongBaoRepository.GetAllAsync();
+                var oldNotifications = allNotifications.Where(n => n.NgayTao < cutoffDate);
+                
+                foreach (var notification in oldNotifications)
+                {
+                    await _thongBaoRepository.DeleteAsync(notification);
+                }
+                
+                await _unitOfWork.SaveChangesAsync();
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public async Task<IEnumerable<ThongBao>> GetRecentNotificationsAsync(int nguoiDungId, int count = 5)
+        {
+            var allNotifications = await GetByUserIdAsync(nguoiDungId);
+            return allNotifications.Take(count);
+        }
     }
 }

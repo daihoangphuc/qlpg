@@ -478,7 +478,7 @@
                             Hủy bỏ
                         </span>
                     </button>
-                    <button onclick="confirmClassRegistration()"
+                    <button onclick="confirmRegistration()"
                             class="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 hover:shadow-xl text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 group">
                         <span class="flex items-center justify-center">
                             <svg class="w-4 h-4 mr-2 group-hover:rotate-12 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -543,7 +543,7 @@
         }
 
         // Confirm registration function
-        function confirmClassRegistration() {
+        function confirmRegistration() {
             const startDate = document.getElementById('startDate').value;
             const endDate = document.getElementById('endDate').value;
 
@@ -576,28 +576,56 @@
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
-                        Đang xử lý...
+                        Đang xử lý thanh toán...
                     </span>
                 `;
                 button.disabled = true;
 
                 const formData = new FormData();
-                formData.append('classId', selectedClassId);
-                formData.append('startDate', startDate);
-                formData.append('endDate', endDate);
+                formData.append('lopHocId', selectedClassId);
+                formData.append('ngayBatDau', startDate);
+                formData.append('ngayKetThuc', endDate);
                 formData.append('__RequestVerificationToken', document.querySelector('input[name="__RequestVerificationToken"]').value);
 
-                fetch('@Url.Action("RegisterClass", "Member")', {
+                fetch('@Url.Action("CreateClassPayment", "ThanhToan")', {
                     method: 'POST',
                     body: formData
                 })
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        showNotification('✅ ' + data.message, 'success');
+                        // Call VNPay Area to create payment URL
+                        showNotification('✅ Đang tạo thanh toán...', 'success');
+                        
+                        fetch('/VNPayAPI/Home/CreatePayment', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                thanhToanId: data.thanhToanId,
+                                returnUrl: data.returnUrl
+                            })
+                        })
+                        .then(response => response.json())
+                        .then(vnpayData => {
+                            if (vnpayData.success) {
+                                showNotification('✅ Chuyển hướng đến cổng thanh toán...', 'success');
                         setTimeout(() => {
-                            window.location.href = '@Url.Action("MyRegistrations", "Member")';
-                        }, 1500);
+                                    window.location.href = vnpayData.paymentUrl;
+                                }, 1000);
+                            } else {
+                                showNotification('❌ ' + vnpayData.message, 'error');
+                                button.innerHTML = originalText;
+                                button.disabled = false;
+                            }
+                        })
+                        .catch(error => {
+                            console.error('VNPay Error:', error);
+                            showNotification('❌ Có lỗi xảy ra khi tạo thanh toán VNPay.', 'error');
+                            button.innerHTML = originalText;
+                            button.disabled = false;
+                        });
                     } else {
                         showNotification('❌ ' + data.message, 'error');
                         button.innerHTML = originalText;
@@ -606,7 +634,7 @@
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    showNotification('❌ Có lỗi xảy ra khi đăng ký lớp học.', 'error');
+                    showNotification('❌ Có lỗi xảy ra khi xử lý thanh toán.', 'error');
                     button.innerHTML = originalText;
                     button.disabled = false;
                 });
