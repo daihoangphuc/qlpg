@@ -26,6 +26,7 @@
     <PackageReference Include="MailKit" Version="4.3.0" />
     <PackageReference Include="MimeKit" Version="4.8.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="8.0.0" />
   </ItemGroup>
 
 </Project>

@@ -11,15 +11,18 @@ namespace GymManagement.Web.Controllers
     {
         private readonly IAuthService _authService;
         private readonly IUserSessionService _userSessionService;
+        private readonly IGoogleAuthService _googleAuthService;
         private readonly ILogger<AuthController> _logger;
 
         public AuthController(
             IAuthService authService,
             IUserSessionService userSessionService,
+            IGoogleAuthService googleAuthService,
             ILogger<AuthController> logger)
         {
             _authService = authService;
             _userSessionService = userSessionService;
+            _googleAuthService = googleAuthService;
             _logger = logger;
         }
 
@@ -216,6 +219,91 @@ namespace GymManagement.Web.Controllers
             TempData["SuccessMessage"] = "Nếu email tồn tại trong hệ thống, chúng tôi đã gửi link đặt lại mật khẩu.";
 
             return RedirectToAction("Login");
+        }
+
+        [HttpGet]
+        [AllowAnonymous]
+        public IActionResult GoogleLogin(string? returnUrl = null)
+        {
+            var properties = new AuthenticationProperties
+            {
+                RedirectUri = Url.Action(nameof(GoogleCallback), "Auth", new { returnUrl }),
+                Items =
+                {
+                    { "returnUrl", returnUrl ?? Url.Action("Index", "Home") }
+                }
+            };
+
+            return Challenge(properties, "Google");
+        }
+
+        [HttpGet]
+        [AllowAnonymous]
+        public async Task<IActionResult> GoogleCallback(string? returnUrl = null)
+        {
+            try
+            {
+                // Lấy thông tin từ Google
+                var result = await HttpContext.AuthenticateAsync("Google");
+                
+                if (!result.Succeeded)
+                {
+                    _logger.LogWarning("Google authentication failed");
+                    TempData["Error"] = "Đăng nhập Google thất bại. Vui lòng thử lại.";
+                    return RedirectToAction(nameof(Login));
+                }
+
+                var claims = result.Principal.Claims;
+                var email = claims.FirstOrDefault(c => c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress")?.Value;
+                var name = claims.FirstOrDefault(c => c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name")?.Value;
+                var googleId = claims.FirstOrDefault(c => c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+
+                if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(googleId))
+                {
+                    TempData["Error"] = "Không thể lấy thông tin từ Google. Vui lòng thử lại.";
+                    return RedirectToAction(nameof(Login));
+                }
+
+                // Xác thực với Google Auth Service
+                var (success, message, user) = await _googleAuthService.AuthenticateGoogleUserAsync(email, name ?? email, googleId);
+
+                if (success && user != null)
+                {
+                    // Tạo claims principal và đăng nhập
+                    var principal = await _authService.CreateClaimsPrincipalAsync(user);
+                    await HttpContext.SignInAsync("Cookies", principal);
+
+                    // Set user session
+                    await _userSessionService.SetCurrentUserAsync(user);
+
+                    _logger.LogInformation("Google user {Email} logged in successfully.", email);
+
+                    if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+                    {
+                        return Redirect(returnUrl);
+                    }
+
+                    // Redirect based on user role
+                    var userRoles = await _authService.GetUserRolesAsync(user.Id);
+                    if (userRoles.Contains("Trainer"))
+                    {
+                        return RedirectToAction("Dashboard", "Trainer");
+                    }
+
+                    return RedirectToAction("Index", "Home");
+                }
+                else
+                {
+                    TempData["Error"] = message;
+                    return RedirectToAction(nameof(Login));
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during Google authentication callback");
+                TempData["Error"] = "Đã xảy ra lỗi trong quá trình đăng nhập Google. Vui lòng thử lại.";
+                return RedirectToAction(nameof(Login));
+            }
         }
 
     }
