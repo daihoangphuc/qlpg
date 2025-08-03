@@ -43,7 +43,7 @@ namespace GymManagement.Web.Data
             {
                 new NguoiDung
                 {
-                    LoaiNguoiDung = "NHANVIEN",
+                    LoaiNguoiDung = "ADMIN",
                     Ho = "Nguyễn",
                     Ten = "Văn Admin",
                     GioiTinh = "Nam",

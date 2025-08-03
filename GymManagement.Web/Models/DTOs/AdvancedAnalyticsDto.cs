@@ -218,4 +218,18 @@ namespace GymManagement.Web.Models.DTOs
         public bool IncludeSummary { get; set; } = true;
         public string Template { get; set; } = "default";
     }
+
+    // Alias for compatibility
+    public class ReportTemplateDto
+    {
+        public int TemplateId { get; set; }
+        public string TemplateName { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public string Type { get; set; } = string.Empty;
+        public string ReportType { get; set; } = string.Empty;
+        public string ReportFormat { get; set; } = "pdf";
+        public List<string> AvailableMetrics { get; set; } = new();
+        public Dictionary<string, object> DefaultParameters { get; set; } = new();
+    }
 } 

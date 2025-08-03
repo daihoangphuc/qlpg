@@ -14,6 +14,7 @@ namespace GymManagement.Web.Controllers
         private readonly ILopHocService _lopHocService;
         private readonly INguoiDungService _nguoiDungService;
         private readonly IAuthService _authService;
+        private readonly IEmailService _emailService;
         private readonly ILogger<BookingController> _logger;
 
         public BookingController(
@@ -21,12 +22,14 @@ namespace GymManagement.Web.Controllers
             ILopHocService lopHocService,
             INguoiDungService nguoiDungService,
             IAuthService authService,
+            IEmailService emailService,
             ILogger<BookingController> logger)
         {
             _bookingService = bookingService;
             _lopHocService = lopHocService;
             _nguoiDungService = nguoiDungService;
             _authService = authService;
+            _emailService = emailService;
             _logger = logger;
         }
 
@@ -103,7 +106,11 @@ namespace GymManagement.Web.Controllers
                         }
                     }
 
-                    await _bookingService.CreateAsync(booking);
+                    var createdBooking = await _bookingService.CreateAsync(booking);
+                    
+                    // Send booking confirmation email
+                    await SendBookingConfirmationEmailAsync(createdBooking);
+                    
                     TempData["SuccessMessage"] = "Đặt lịch thành công!";
                     return RedirectToAction(nameof(MyBookings));
                 }
@@ -133,6 +140,9 @@ namespace GymManagement.Web.Controllers
                 var result = await _bookingService.BookClassAsync(user.NguoiDungId.Value, classId, date);
                 if (result)
                 {
+                    // Send booking confirmation email for class booking
+                    await SendClassBookingConfirmationEmailAsync(user.NguoiDungId.Value, classId, date);
+                    
                     return Json(new { success = true, message = "Đặt lịch thành công!" });
                 }
                 else
@@ -183,6 +193,9 @@ namespace GymManagement.Web.Controllers
                 var result = await _bookingService.CancelBookingAsync(id);
                 if (result)
                 {
+                    // Send cancellation email
+                    await SendBookingCancellationEmailAsync(id);
+                    
                     return Json(new { success = true, message = "Hủy đặt lịch thành công!" });
                 }
                 else
@@ -512,6 +525,94 @@ namespace GymManagement.Web.Controllers
         }
 
 
+
+        #region Email Helper Methods
+
+        private async Task SendBookingConfirmationEmailAsync(Booking booking)
+        {
+            try
+            {
+                var member = await _nguoiDungService.GetByIdAsync(booking.ThanhVienId ?? 0);
+                var trainer = booking.LopHoc?.HlvId != null ? await _nguoiDungService.GetByIdAsync(booking.LopHoc.HlvId.Value) : null;
+                
+                if (member != null && !string.IsNullOrEmpty(member.Email))
+                {
+                    var sessionType = booking.LopHoc?.TenLop ?? "Buổi tập";
+                    var instructorName = trainer != null ? $"{trainer.Ho} {trainer.Ten}" : "Đang cập nhật";
+                    
+                    await _emailService.SendBookingConfirmationEmailAsync(
+                        member.Email,
+                        $"{member.Ho} {member.Ten}",
+                        sessionType,
+                        booking.Ngay.ToDateTime(TimeOnly.MinValue),
+                        instructorName
+                    );
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error sending booking confirmation email for booking {BookingId}", booking.BookingId);
+            }
+        }
+
+        private async Task SendClassBookingConfirmationEmailAsync(int memberId, int classId, DateTime date)
+        {
+            try
+            {
+                var member = await _nguoiDungService.GetByIdAsync(memberId);
+                var lopHoc = await _lopHocService.GetByIdAsync(classId);
+                var trainer = lopHoc?.HlvId != null ? await _nguoiDungService.GetByIdAsync(lopHoc.HlvId.Value) : null;
+                
+                if (member != null && lopHoc != null && !string.IsNullOrEmpty(member.Email))
+                {
+                    var instructorName = trainer != null ? $"{trainer.Ho} {trainer.Ten}" : "Đang cập nhật";
+                    
+                    await _emailService.SendBookingConfirmationEmailAsync(
+                        member.Email,
+                        $"{member.Ho} {member.Ten}",
+                        lopHoc.TenLop,
+                        date,
+                        instructorName
+                    );
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error sending class booking confirmation email for member {MemberId}, class {ClassId}", memberId, classId);
+            }
+        }
+
+        private async Task SendBookingCancellationEmailAsync(int bookingId)
+        {
+            try
+            {
+                var booking = await _bookingService.GetByIdAsync(bookingId);
+                if (booking == null) return;
+
+                var member = await _nguoiDungService.GetByIdAsync(booking.ThanhVienId ?? 0);
+                
+                if (member != null && !string.IsNullOrEmpty(member.Email))
+                {
+                    var sessionType = booking.LopHoc?.TenLop ?? "Buổi tập";
+                    var sessionTime = booking.Ngay.ToDateTime(TimeOnly.MinValue);
+                    var reason = "Theo yêu cầu của thành viên";
+                    
+                    await _emailService.SendBookingCancellationEmailAsync(
+                        member.Email,
+                        $"{member.Ho} {member.Ten}",
+                        sessionType,
+                        sessionTime,
+                        reason
+                    );
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error sending booking cancellation email for booking {BookingId}", bookingId);
+            }
+        }
+
+        #endregion
 
         private async Task LoadSelectLists()
         {

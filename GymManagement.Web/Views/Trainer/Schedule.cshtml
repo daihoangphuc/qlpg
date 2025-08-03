@@ -32,16 +32,33 @@
                 <button id="todayBtn" class="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors">
                     Hôm nay
                 </button>
+                
+                <!-- View Mode Selector -->
                 <div class="flex items-center gap-2">
-                    <label for="classFilter" class="text-sm font-medium text-gray-700">Lọc theo lớp:</label>
-                    <select id="classFilter" class="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
-                        <option value="">Tất cả lớp</option>
+                    <label for="viewMode" class="text-sm font-medium text-gray-700">📅 Chế độ xem:</label>
+                    <select id="viewMode" class="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[140px]">
+                        <option value="listWeek">📊 Danh sách tuần</option>
+                        <option value="dayGridMonth">🗓️ Lịch tháng</option>
+                        <option value="timeGridWeek" selected>⏰ Lịch tuần</option>
+                        <option value="listMonth">📋 Danh sách tháng</option>
+                    </select>
+                </div>
+                
+                <!-- Class Filter -->
+                <div class="flex items-center gap-2">
+                    <label for="classFilter" class="text-sm font-medium text-gray-700">📚 Lọc theo lớp:</label>
+                    <select id="classFilter" class="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[150px]">
                         @if (myClasses != null)
                         {
                             @foreach (var lopHoc in myClasses)
                             {
                                 <option value="@lopHoc.LopHocId">@lopHoc.TenLop</option>
                             }
+                            <option value="">🔄 Tất cả lớp</option>
+                        }
+                        else
+                        {
+                            <option value="">Không có lớp nào</option>
                         }
                     </select>
                 </div>
@@ -115,13 +132,31 @@
         let currentClassFilter = '';
 
         document.addEventListener('DOMContentLoaded', function() {
+            // Set default class filter FIRST (before calendar init)
+            const classSelect = document.getElementById('classFilter');
+            const firstClassOption = classSelect.querySelector('option[value]:not([value=""])');
+            if (firstClassOption) {
+                classSelect.value = firstClassOption.value;
+                currentClassFilter = firstClassOption.value;
+                console.log('Default class filter set to:', currentClassFilter);
+            }
+            
+            // Initialize calendar AFTER filter is set
             initializeCalendar();
             loadTodaySchedule();
             
             // Event listeners
-            document.getElementById('classFilter').addEventListener('change', function() {
+            classSelect.addEventListener('change', function() {
                 currentClassFilter = this.value;
+                console.log('Class filter changed to:', currentClassFilter);
                 calendar.refetchEvents();
+                loadTodaySchedule(); // Reload today's schedule with new filter
+            });
+            
+            document.getElementById('viewMode').addEventListener('change', function() {
+                const newView = this.value;
+                console.log('View mode changed to:', newView);
+                calendar.changeView(newView);
             });
             
             document.getElementById('todayBtn').addEventListener('click', function() {
@@ -133,7 +168,7 @@
             const calendarEl = document.getElementById('calendar');
             
             calendar = new FullCalendar.Calendar(calendarEl, {
-                initialView: 'dayGridMonth',
+                initialView: 'timeGridWeek', // Default to Lịch tuần
                 locale: 'vi',
                 headerToolbar: {
                     left: '',
@@ -141,6 +176,24 @@
                     right: ''
                 },
                 height: 'auto',
+                views: {
+                    timeGridWeek: {
+                        titleFormat: { year: 'numeric', month: 'long', day: 'numeric' },
+                        dayHeaderFormat: { weekday: 'short', month: 'numeric', day: 'numeric', omitCommas: true }
+                    },
+                    dayGridMonth: {
+                        titleFormat: { year: 'numeric', month: 'long' }
+                    },
+                    listWeek: {
+                        titleFormat: { year: 'numeric', month: 'long', day: 'numeric' }
+                    },
+                    listMonth: {
+                        titleFormat: { year: 'numeric', month: 'long' }
+                    }
+                },
+                slotMinTime: '06:00:00',
+                slotMaxTime: '22:00:00',
+                allDaySlot: false,
                 events: function(info, successCallback, failureCallback) {
                     loadScheduleEvents(info.start, info.end, successCallback, failureCallback);
                 },
@@ -159,20 +212,33 @@
             document.getElementById('nextMonth').addEventListener('click', () => calendar.next());
         }
 
-        function loadScheduleEvents(start, end, successCallback, failureCallback) {
+                function loadScheduleEvents(start, end, successCallback, failureCallback) {
             const url = '@Url.Action("GetScheduleEvents", "Trainer")';
             const params = new URLSearchParams({
                 start: start.toISOString(),
                 end: end.toISOString()
             });
             
-            if (currentClassFilter) {
+            // Always include classId if filter is set
+            if (currentClassFilter && currentClassFilter !== '') {
                 params.append('classId', currentClassFilter);
             }
             
+            console.log('Loading schedule events:', {
+                url: url,
+                start: start.toISOString(),
+                end: end.toISOString(),
+                classFilter: currentClassFilter,
+                fullUrl: `${url}?${params}`
+            });
+
             fetch(`${url}?${params}`)
-                .then(response => response.json())
+                .then(response => {
+                    console.log('Schedule API response status:', response.status);
+                    return response.json();
+                })
                 .then(data => {
+                    console.log('Schedule events received:', data);
                     successCallback(data);
                 })
                 .catch(error => {
@@ -238,16 +304,87 @@
 
         function loadTodaySchedule() {
             const today = new Date();
-            const todayStr = today.toISOString().split('T')[0];
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
             
-            // Placeholder for today's schedule
-            setTimeout(() => {
-                document.getElementById('todaySchedule').innerHTML = `
+            console.log('Loading today schedule for:', today.toDateString());
+            
+            const url = '@Url.Action("GetScheduleEvents", "Trainer")';
+            const params = new URLSearchParams({
+                start: today.toISOString(),
+                end: tomorrow.toISOString()
+            });
+            
+            // Include class filter if set
+            if (currentClassFilter && currentClassFilter !== '') {
+                params.append('classId', currentClassFilter);
+            }
+            
+            fetch(`${url}?${params}`)
+                .then(response => response.json())
+                .then(events => {
+                    console.log('Today events received:', events);
+                    displayTodaySchedule(events);
+                })
+                .catch(error => {
+                    console.error('Error loading today schedule:', error);
+                    document.getElementById('todaySchedule').innerHTML = `
+                        <div class="text-center py-4 text-red-500">
+                            <p>Lỗi khi tải lịch hôm nay</p>
+                        </div>
+                    `;
+                });
+        }
+        
+        function displayTodaySchedule(events) {
+            const todayScheduleEl = document.getElementById('todaySchedule');
+            
+            if (!events || events.length === 0) {
+                todayScheduleEl.innerHTML = `
                     <div class="text-center py-4 text-gray-500">
                         <p>Không có lớp học nào hôm nay</p>
                     </div>
                 `;
-            }, 1000);
+                return;
+            }
+            
+            // Sort events by start time
+            events.sort((a, b) => new Date(a.start) - new Date(b.start));
+            
+            const eventsHtml = events.map(event => {
+                const startTime = new Date(event.start).toLocaleTimeString('vi-VN', { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
+                const endTime = new Date(event.end).toLocaleTimeString('vi-VN', { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
+                
+                const statusClass = getStatusClass((event.extendedProps && event.extendedProps.status) || 'SCHEDULED');
+                const statusText = getStatusText((event.extendedProps && event.extendedProps.status) || 'SCHEDULED');
+                
+                return `
+                    <div class="border-l-4 border-blue-500 bg-blue-50 p-3 rounded-r-md">
+                        <div class="flex justify-between items-start">
+                            <div class="flex-1">
+                                <h4 class="font-medium text-gray-900">${event.title}</h4>
+                                <p class="text-sm text-gray-600">
+                                    ⏰ ${startTime} - ${endTime}
+                                </p>
+                                <p class="text-xs text-gray-500 mt-1">
+                                    👥 ${(event.extendedProps && event.extendedProps.booked) || 0}/${(event.extendedProps && event.extendedProps.capacity) || 0} người đã đăng ký
+                                </p>
+                            </div>
+                            <span class="px-2 py-1 text-xs rounded-full ${statusClass}">
+                                ${statusText}
+                            </span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            todayScheduleEl.innerHTML = eventsHtml;
         }
 
         // Close modal when clicking outside

@@ -45,6 +45,43 @@ namespace GymManagement.Web.Controllers
             return await _authService.GetUserByIdAsync(userId);
         }
 
+        // Debug method để kiểm tra dữ liệu database
+        [HttpGet]
+        public async Task<IActionResult> DebugData()
+        {
+            try
+            {
+                var allTrainers = await _nguoiDungService.GetAllAsync();
+                var trainers = allTrainers.Where(u => u.LoaiNguoiDung == "HLV" || u.LoaiNguoiDung == "TRAINER");
+                
+                var allClasses = await _lopHocService.GetAllAsync();
+                
+                var debugInfo = new
+                {
+                    TotalUsers = allTrainers.Count(),
+                    Trainers = trainers.Select(t => new { 
+                        Id = t.NguoiDungId, 
+                        Name = $"{t.Ho} {t.Ten}", 
+                        Type = t.LoaiNguoiDung,
+                        Status = t.TrangThai
+                    }),
+                    TotalClasses = allClasses.Count(),
+                    Classes = allClasses.Select(c => new { 
+                        Id = c.LopHocId, 
+                        Name = c.TenLop, 
+                        HlvId = c.HlvId, 
+                        Status = c.TrangThai 
+                    })
+                };
+                
+                return Json(debugInfo);
+            }
+            catch (Exception ex)
+            {
+                return Json(new { Error = ex.Message });
+            }
+        }
+
         // Dashboard - Trang chủ của Trainer
         public async Task<IActionResult> Dashboard()
         {
@@ -58,23 +95,53 @@ namespace GymManagement.Web.Controllers
                 }
 
                 var trainerId = user.NguoiDungId.Value;
+                _logger.LogInformation("Loading dashboard for trainer with NguoiDungId: {TrainerId}", trainerId);
 
                 // Lấy thông tin trainer
                 var trainer = await _nguoiDungService.GetByIdAsync(trainerId);
                 ViewBag.Trainer = trainer;
+                _logger.LogInformation("Trainer info loaded: {TrainerName}, Type: {TrainerType}", 
+                    trainer != null ? $"{trainer.Ho} {trainer.Ten}" : "NULL", 
+                    trainer?.LoaiNguoiDung);
 
                 // Lấy lớp học được phân công
                 var myClasses = await _lopHocService.GetClassesByTrainerAsync(trainerId);
-                ViewBag.MyClasses = myClasses.Take(5); // Hiển thị 5 lớp gần nhất
+                var myClassesList = myClasses.ToList(); // Convert to list để có thể log
+                ViewBag.MyClasses = myClassesList.Take(5).ToList(); // Hiển thị 5 lớp gần nhất
+                
+                _logger.LogInformation("Found {ClassCount} classes for trainer {TrainerId}", myClassesList.Count, trainerId);
+                foreach (var cls in myClassesList.Take(3)) // Log first 3 classes
+                {
+                    _logger.LogInformation("Class: {ClassName}, HlvId: {HlvId}, Status: {Status}", 
+                        cls.TenLop, cls.HlvId, cls.TrangThai);
+                }
 
-                // Lấy thông tin lương tháng hiện tại
+                // Lấy thông tin lương tháng hiện tại (tạm bỏ qua để fix dashboard)
                 var currentMonth = DateTime.Now.ToString("yyyy-MM");
-                var currentSalary = await _bangLuongService.GetByTrainerAndMonthAsync(trainerId, currentMonth);
-                ViewBag.CurrentSalary = currentSalary;
+                // var currentSalary = await _bangLuongService.GetByTrainerAndMonthAsync(trainerId, currentMonth);
+                ViewBag.CurrentSalary = null; // Tạm set null
+                _logger.LogInformation("Current salary loading skipped for month {Month}", currentMonth);
 
-                // Thống kê cơ bản
-                ViewBag.TotalClasses = myClasses.Count();
-                ViewBag.ActiveClasses = myClasses.Count(c => c.TrangThai == "OPEN");
+                // Thống kê cơ bản với debug chi tiết
+                var totalClasses = myClassesList.Count;
+                var activeClasses = myClassesList.Count(c => c.TrangThai == "OPEN");
+                
+                ViewBag.TotalClasses = totalClasses;
+                ViewBag.ActiveClasses = activeClasses;
+                
+                _logger.LogInformation("DEBUG: myClassesList count = {Count}", myClassesList.Count);
+                _logger.LogInformation("DEBUG: ViewBag.TotalClasses = {Total}", totalClasses);
+                _logger.LogInformation("DEBUG: ViewBag.ActiveClasses = {Active}", activeClasses);
+                
+                // Log chi tiết từng lớp học
+                foreach (var cls in myClassesList)
+                {
+                    _logger.LogInformation("DEBUG Class: {Name}, Status: {Status}, HlvId: {HlvId}", 
+                        cls.TenLop, cls.TrangThai, cls.HlvId);
+                }
+                
+                _logger.LogInformation("Dashboard stats - Total: {Total}, Active: {Active}", 
+                    totalClasses, activeClasses);
 
                 return View();
             }
@@ -141,45 +208,77 @@ namespace GymManagement.Web.Controllers
 
         // API để lấy lịch dạy dạng JSON cho calendar
         [HttpGet]
-        public async Task<IActionResult> GetScheduleEvents(DateTime start, DateTime end)
+        public async Task<IActionResult> GetScheduleEvents(DateTime start, DateTime end, int? classId = null)
         {
             try
             {
+                _logger.LogInformation("GetScheduleEvents called with start: {Start}, end: {End}, classId: {ClassId}", start, end, classId);
+                
                 var user = await GetCurrentUserAsync();
                 if (user?.NguoiDungId == null)
                 {
+                    _logger.LogWarning("GetScheduleEvents: User not found or NguoiDungId is null");
                     return Json(new List<object>());
                 }
 
                 var trainerId = user.NguoiDungId.Value;
+                _logger.LogInformation("GetScheduleEvents: TrainerId = {TrainerId}", trainerId);
+                
                 var myClasses = await _lopHocService.GetClassesByTrainerAsync(trainerId);
+                
+                // Filter by classId if provided
+                if (classId.HasValue)
+                {
+                    myClasses = myClasses.Where(c => c.LopHocId == classId.Value);
+                    _logger.LogInformation("Filtered to class ID {ClassId}, found {ClassCount} classes", classId.Value, myClasses.Count());
+                }
+                else
+                {
+                    _logger.LogInformation("GetScheduleEvents: Found {ClassCount} classes for trainer (no filter)", myClasses.Count());
+                }
 
                 var events = new List<object>();
                 
                 foreach (var lopHoc in myClasses)
                 {
+                    _logger.LogInformation("Checking schedules for class: {ClassName} (ID: {ClassId})", lopHoc.TenLop, lopHoc.LopHocId);
                     var schedules = await _lopHocService.GetClassScheduleAsync(lopHoc.LopHocId, start, end);
+                    _logger.LogInformation("Found {ScheduleCount} schedules for class {ClassName}", schedules.Count(), lopHoc.TenLop);
                     
-                    foreach (var schedule in schedules)
+                    if (schedules.Any())
                     {
-                        events.Add(new
+                        foreach (var schedule in schedules)
                         {
-                            id = schedule.LichLopId,
-                            title = lopHoc.TenLop,
-                            start = schedule.Ngay.ToDateTime(schedule.GioBatDau),
-                            end = schedule.Ngay.ToDateTime(schedule.GioKetThuc),
-                            backgroundColor = schedule.TrangThai == "SCHEDULED" ? "#3b82f6" : "#ef4444",
-                            borderColor = schedule.TrangThai == "SCHEDULED" ? "#2563eb" : "#dc2626",
-                            extendedProps = new
+                            _logger.LogInformation("Adding event from schedule: {ClassName} on {Date} at {Time}", 
+                                lopHoc.TenLop, schedule.Ngay, schedule.GioBatDau);
+                            
+                            events.Add(new
                             {
-                                status = schedule.TrangThai,
-                                capacity = lopHoc.SucChua,
-                                booked = schedule.SoLuongDaDat
-                            }
-                        });
+                                id = schedule.LichLopId,
+                                title = lopHoc.TenLop,
+                                start = schedule.Ngay.ToDateTime(schedule.GioBatDau),
+                                end = schedule.Ngay.ToDateTime(schedule.GioKetThuc),
+                                backgroundColor = schedule.TrangThai == "SCHEDULED" ? "#3b82f6" : "#ef4444",
+                                borderColor = schedule.TrangThai == "SCHEDULED" ? "#2563eb" : "#dc2626",
+                                extendedProps = new
+                                {
+                                    status = schedule.TrangThai,
+                                    capacity = lopHoc.SucChua,
+                                    booked = schedule.SoLuongDaDat
+                                }
+                            });
+                        }
+                    }
+                    else
+                    {
+                        // Generate events from class schedule if no LichLop exists
+                        _logger.LogInformation("No schedules found, generating from class info: {ClassName}", lopHoc.TenLop);
+                        var generatedEvents = GenerateEventsFromClass(lopHoc, start, end);
+                        events.AddRange(generatedEvents);
                     }
                 }
 
+                _logger.LogInformation("GetScheduleEvents: Returning {EventCount} events", events.Count);
                 return Json(events);
             }
             catch (Exception ex)
@@ -218,6 +317,63 @@ namespace GymManagement.Web.Controllers
             }
         }
 
+        // API để lấy tất cả học viên của trainer (từ tất cả lớp học)
+        [HttpGet]
+        public async Task<IActionResult> GetAllStudentsByTrainer()
+        {
+            try
+            {
+                var user = await GetCurrentUserAsync();
+                if (user?.NguoiDungId == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy thông tin trainer." });
+                }
+
+                var trainerId = user.NguoiDungId.Value;
+                var myClasses = await _lopHocService.GetClassesByTrainerAsync(trainerId);
+                
+                var studentDict = new Dictionary<int, object>();
+                
+                foreach (var lopHoc in myClasses)
+                {
+                    var lopHocDetail = await _lopHocService.GetByIdAsync(lopHoc.LopHocId);
+                    if (lopHocDetail?.DangKys != null)
+                    {
+                        foreach (var dangKy in lopHocDetail.DangKys.Where(d => d.NguoiDung != null))
+                        {
+                            var studentId = dangKy.NguoiDung!.NguoiDungId;
+                            if (!studentDict.ContainsKey(studentId))
+                            {
+                                studentDict[studentId] = new
+                                {
+                                    id = studentId,
+                                    name = $"{dangKy.NguoiDung.Ho} {dangKy.NguoiDung.Ten}".Trim(),
+                                    email = dangKy.NguoiDung.Email,
+                                    phone = dangKy.NguoiDung.SoDienThoai,
+                                    registrationDate = dangKy.NgayBatDau.ToString("dd/MM/yyyy"),
+                                    expiryDate = dangKy.NgayKetThuc.ToString("dd/MM/yyyy"),
+                                    status = GetStudentStatus(dangKy),
+                                    isActive = dangKy.TrangThai == "ACTIVE" && dangKy.NgayKetThuc >= DateOnly.FromDateTime(DateTime.Today),
+                                    className = lopHoc.TenLop,
+                                    classId = lopHoc.LopHocId
+                                };
+                            }
+                        }
+                    }
+                }
+                
+                // Get unique students and sort by name
+                var uniqueStudents = studentDict.Values.ToList();
+
+                return Json(new { success = true, data = uniqueStudents });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while getting all students for trainer");
+                return Json(new { success = false, message = "Có lỗi xảy ra khi tải danh sách học viên." });
+            }
+        }
+
         // API để lấy danh sách học viên theo lớp học
         [HttpGet]
         public async Task<IActionResult> GetStudentsByClass(int classId)
@@ -247,9 +403,7 @@ namespace GymManagement.Web.Controllers
                 }
 
                 var students = lopHoc.DangKys
-                    .Where(d => d.TrangThai == "ACTIVE" &&
-                               d.NgayKetThuc >= DateOnly.FromDateTime(DateTime.Today) &&
-                               d.NguoiDung != null)
+                    .Where(d => d.NguoiDung != null)
                     .Select(d => new
                     {
                         id = d.NguoiDung!.NguoiDungId,
@@ -258,7 +412,8 @@ namespace GymManagement.Web.Controllers
                         phone = d.NguoiDung.SoDienThoai,
                         registrationDate = d.NgayBatDau.ToString("dd/MM/yyyy"),
                         expiryDate = d.NgayKetThuc.ToString("dd/MM/yyyy"),
-                        status = d.TrangThai
+                        status = GetStudentStatus(d),
+                        isActive = d.TrangThai == "ACTIVE" && d.NgayKetThuc >= DateOnly.FromDateTime(DateTime.Today)
                     })
                     .OrderBy(s => s.name)
                     .ToList();
@@ -530,6 +685,166 @@ namespace GymManagement.Web.Controllers
             {
                 _logger.LogError(ex, "Error occurred while getting class schedules for class {ClassId} on {Date}", classId, date);
                 return Json(new { success = false, message = "Có lỗi xảy ra khi tải lịch học." });
+            }
+        }
+
+        // Helper method to determine student status
+        private string GetStudentStatus(DangKy dangKy)
+        {
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            
+            if (dangKy.TrangThai != "ACTIVE")
+                return "INACTIVE";
+            
+            if (dangKy.NgayKetThuc < today)
+                return "EXPIRED";
+            
+            return "ACTIVE";
+        }
+
+        // Helper method to generate events from class schedule when no LichLop exists
+        private List<object> GenerateEventsFromClass(LopHoc lopHoc, DateTime start, DateTime end)
+        {
+            var events = new List<object>();
+            
+            if (string.IsNullOrEmpty(lopHoc.ThuTrongTuan))
+                return events;
+
+            // Parse days of week from ThuTrongTuan string
+            var daysOfWeek = lopHoc.ThuTrongTuan.Split(',')
+                .Select(d => d.Trim())
+                .Where(d => !string.IsNullOrEmpty(d))
+                .ToList();
+
+            // Map Vietnamese day names to DayOfWeek
+            var dayMapping = new Dictionary<string, DayOfWeek>
+            {
+                { "Thứ 2", DayOfWeek.Monday },
+                { "Thứ 3", DayOfWeek.Tuesday },
+                { "Thứ 4", DayOfWeek.Wednesday },
+                { "Thứ 5", DayOfWeek.Thursday },
+                { "Thứ 6", DayOfWeek.Friday },
+                { "Thứ 7", DayOfWeek.Saturday },
+                { "Chủ nhật", DayOfWeek.Sunday }
+            };
+
+            // Generate events for date range
+            for (var date = start.Date; date <= end.Date; date = date.AddDays(1))
+            {
+                var dayName = GetVietnameseDayName(date.DayOfWeek);
+                
+                if (daysOfWeek.Contains(dayName))
+                {
+                    var eventStart = date.Add(lopHoc.GioBatDau.ToTimeSpan());
+                    var eventEnd = date.Add(lopHoc.GioKetThuc.ToTimeSpan());
+                    
+                    events.Add(new
+                    {
+                        id = $"generated_{lopHoc.LopHocId}_{date:yyyyMMdd}",
+                        title = lopHoc.TenLop,
+                        start = eventStart,
+                        end = eventEnd,
+                        backgroundColor = "#3b82f6",
+                        borderColor = "#2563eb",
+                        extendedProps = new
+                        {
+                            status = "SCHEDULED",
+                            capacity = lopHoc.SucChua,
+                            booked = 0,
+                            isGenerated = true
+                        }
+                    });
+                }
+            }
+
+            return events;
+        }
+
+        private string GetVietnameseDayName(DayOfWeek dayOfWeek)
+        {
+            return dayOfWeek switch
+            {
+                DayOfWeek.Monday => "Thứ 2",
+                DayOfWeek.Tuesday => "Thứ 3",
+                DayOfWeek.Wednesday => "Thứ 4",
+                DayOfWeek.Thursday => "Thứ 5",
+                DayOfWeek.Friday => "Thứ 6",
+                DayOfWeek.Saturday => "Thứ 7",
+                DayOfWeek.Sunday => "Chủ nhật",
+                _ => ""
+            };
+        }
+
+        // API to get detailed student information
+        [HttpGet]
+        public async Task<IActionResult> GetStudentDetails(int studentId)
+        {
+            try
+            {
+                var user = await GetCurrentUserAsync();
+                if (user?.NguoiDungId == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy thông tin trainer." });
+                }
+
+                var trainerId = user.NguoiDungId.Value;
+
+                // Get student information
+                var student = await _nguoiDungService.GetByIdAsync(studentId);
+                if (student == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy thông tin học viên." });
+                }
+
+                // Verify that this trainer can access this student (through class assignments)
+                var trainerClasses = await _lopHocService.GetClassesByTrainerAsync(trainerId);
+                var hasAccess = trainerClasses.Any(c => c.DangKys != null && 
+                    c.DangKys.Any(d => d.NguoiDungId == studentId));
+
+                if (!hasAccess)
+                {
+                    return Json(new { success = false, message = "Bạn không có quyền xem thông tin học viên này." });
+                }
+
+                // Get student's registrations in trainer's classes
+                var studentRegistrations = trainerClasses
+                    .Where(c => c.DangKys != null)
+                    .SelectMany(c => c.DangKys.Where(d => d.NguoiDungId == studentId)
+                        .Select(d => new
+                        {
+                            className = c.TenLop,
+                            classId = c.LopHocId,
+                            registrationDate = d.NgayBatDau.ToString("dd/MM/yyyy"),
+                            expiryDate = d.NgayKetThuc.ToString("dd/MM/yyyy"),
+                            status = GetStudentStatus(d),
+                            isActive = d.TrangThai == "ACTIVE" && d.NgayKetThuc >= DateOnly.FromDateTime(DateTime.Today)
+                        }))
+                    .ToList();
+
+                var result = new
+                {
+                    success = true,
+                    data = new
+                    {
+                        id = student.NguoiDungId,
+                        name = $"{student.Ho} {student.Ten}".Trim(),
+                        email = student.Email,
+                        phone = student.SoDienThoai,
+                        address = student.DiaChi,
+                        dateOfBirth = student.NgaySinh?.ToString("dd/MM/yyyy"),
+                        gender = student.GioiTinh,
+                        joinDate = student.NgayThamGia.ToString("dd/MM/yyyy"),
+                        avatar = student.AnhDaiDien,
+                        registrations = studentRegistrations
+                    }
+                };
+
+                return Json(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while getting student details for student {StudentId}", studentId);
+                return Json(new { success = false, message = "Có lỗi xảy ra khi tải thông tin học viên." });
             }
         }
     }

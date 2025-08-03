@@ -9,7 +9,7 @@
     {
         "THANHVIEN" => "Quản lý thành viên",
         "HLV" => "Quản lý huấn luyện viên", 
-        "NHANVIEN" => "Quản lý nhân viên",
+                        "ADMIN" => "Quản lý quản trị viên",
         "VANGLAI" => "Quản lý khách vãng lai",
         _ => "Quản lý người dùng"
     };
@@ -73,14 +73,14 @@
                         {
                                 <option value="HLV">💪 Huấn luyện viên</option>
                         }
-                            @if(loaiNguoiDung == "NHANVIEN")
-                        {
-                                <option value="NHANVIEN" selected>👔 Nhân viên</option>
-                        }
-                        else
-                        {
-                                <option value="NHANVIEN">👔 Nhân viên</option>
-                        }
+                                        @if(loaiNguoiDung == "ADMIN")
+            {
+                <option value="ADMIN" selected>👔 Quản trị viên</option>
+            }
+            else
+            {
+                <option value="ADMIN">👔 Quản trị viên</option>
+            }
                             @if(loaiNguoiDung == "VANGLAI")
                         {
                                 <option value="VANGLAI" selected>🚶 Vãng lai</option>
@@ -197,7 +197,7 @@
                                         {
                                             "THANHVIEN" => ("bg-blue-100 text-blue-800", "Thành viên", "👤"),
                                                     "HLV" => ("bg-purple-100 text-purple-800", "Huấn luyện viên", "💪"),
-                                                    "NHANVIEN" => ("bg-green-100 text-green-800", "Nhân viên", "👔"),
+                                                    "ADMIN" => ("bg-green-100 text-green-800", "Quản trị viên", "👔"),
                                             "VANGLAI" => ("bg-yellow-100 text-yellow-800", "Vãng lai", "🚶"),
                                                     _ => ("bg-gray-100 text-gray-800", nguoiDung.LoaiNguoiDung, "👤")
                                         };

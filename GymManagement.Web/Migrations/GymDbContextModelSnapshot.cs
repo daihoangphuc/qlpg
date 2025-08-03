@@ -40,6 +40,9 @@ namespace GymManagement.Web.Migrations
                     b.Property<decimal>("LuongCoBan")
                         .HasColumnType("decimal(12,2)");
 
+                    b.Property<DateTime>("NgayTao")
+                        .HasColumnType("datetime2");
+
                     b.Property<DateOnly?>("NgayThanhToan")
                         .HasColumnType("date");
 
@@ -190,12 +193,27 @@ namespace GymManagement.Web.Migrations
                     b.Property<int?>("GoiTapId")
                         .HasColumnType("int");
 
+                    b.Property<bool>("KichHoat")
+                        .HasColumnType("bit");
+
+                    b.Property<int?>("LopHocId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("MoTa")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime>("NgayTao")
+                        .HasColumnType("datetime2");
+
                     b.Property<int>("PhanTramHoaHong")
                         .HasColumnType("int");
 
                     b.HasKey("CauHinhHoaHongId");
 
                     b.HasIndex("GoiTapId");
+
+                    b.HasIndex("LopHocId");
 
                     b.ToTable("CauHinhHoaHongs", (string)null);
                 });
@@ -210,6 +228,11 @@ namespace GymManagement.Web.Migrations
 
                     b.Property<int?>("GoiTapId")
                         .HasColumnType("int");
+
+                    b.Property<string>("LoaiDangKy")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<int?>("LopHocId")
                         .HasColumnType("int");
@@ -241,6 +264,10 @@ namespace GymManagement.Web.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)")
                         .HasDefaultValue("ACTIVE");
+
+                    b.Property<string>("TrangThaiChiTiet")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.HasKey("DangKyId");
 
@@ -500,9 +527,20 @@ namespace GymManagement.Web.Migrations
                     b.Property<int?>("HlvId")
                         .HasColumnType("int");
 
+                    b.Property<string>("LoaiDangKy")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
                     b.Property<string>("MoTa")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateOnly?>("NgayBatDauKhoa")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly?>("NgayKetThucKhoa")
+                        .HasColumnType("date");
 
                     b.Property<int>("SucChua")
                         .HasColumnType("int");
@@ -723,7 +761,7 @@ namespace GymManagement.Web.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ThanhToanId"));
 
-                    b.Property<int>("DangKyId")
+                    b.Property<int?>("DangKyId")
                         .HasColumnType("int");
 
                     b.Property<string>("GhiChu")
@@ -943,7 +981,13 @@ namespace GymManagement.Web.Migrations
                         .WithMany("CauHinhHoaHongs")
                         .HasForeignKey("GoiTapId");
 
+                    b.HasOne("GymManagement.Web.Data.Models.LopHoc", "LopHoc")
+                        .WithMany()
+                        .HasForeignKey("LopHocId");
+
                     b.Navigation("GoiTap");
+
+                    b.Navigation("LopHoc");
                 });
 
             modelBuilder.Entity("GymManagement.Web.Data.Models.DangKy", b =>
@@ -1069,8 +1113,7 @@ namespace GymManagement.Web.Migrations
                     b.HasOne("GymManagement.Web.Data.Models.DangKy", "DangKy")
                         .WithMany("ThanhToans")
                         .HasForeignKey("DangKyId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("DangKy");
                 });

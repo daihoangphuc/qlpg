@@ -112,6 +112,7 @@ builder.Services.AddScoped<IBangLuongService, BangLuongService>();
 builder.Services.AddScoped<IBaoCaoService, BaoCaoService>();
 builder.Services.AddScoped<IThongBaoService, ThongBaoService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IPdfExportService, PdfExportService>();
 builder.Services.AddScoped<IAdvancedAnalyticsService, AdvancedAnalyticsService>();
 
 // Add Memory Cache

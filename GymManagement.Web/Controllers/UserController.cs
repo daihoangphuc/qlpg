@@ -112,7 +112,7 @@ namespace GymManagement.Web.Controllers
         [HttpGet]
         public async Task<IActionResult> Staff(int page = 1, int pageSize = 10)
         {
-            return await Index("NHANVIEN", null, page, pageSize);
+            return await Index("ADMIN", null, page, pageSize);
         }
 
         [HttpGet]
@@ -207,14 +207,14 @@ namespace GymManagement.Web.Controllers
                     if (accountCreated)
                     {
                         // Assign role based on user type
-                        string roleName = createDto.LoaiNguoiDung switch
-                        {
-                            "NHANVIEN" => "Admin",
-                            "HLV" => "Trainer", 
-                            "THANHVIEN" => "Member",
-                            "VANGLAI" => "Member",
-                            _ => "Member"
-                        };
+                                            string roleName = createDto.LoaiNguoiDung switch
+                    {
+                        "ADMIN" => "Admin",
+                        "HLV" => "Trainer", 
+                        "THANHVIEN" => "Member",
+                        "VANGLAI" => "Member",
+                        _ => "Member"
+                    };
                         
                         await _authService.AssignRoleAsync(taiKhoan.Id, roleName);
                         _logger.LogInformation("Successfully created account for user {Username} with role {Role}", createDto.Username, roleName);
@@ -284,7 +284,7 @@ namespace GymManagement.Web.Controllers
                     // Assign role based on user type
                     string roleName = nguoiDung.LoaiNguoiDung switch
                     {
-                        "NHANVIEN" => "Admin",
+                        "ADMIN" => "Admin",
                         "HLV" => "Trainer", 
                         "THANHVIEN" => "Member",
                         "VANGLAI" => "Member",

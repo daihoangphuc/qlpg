@@ -34,9 +34,8 @@ uploads/
 
 # Logs
 Logs/
-
-# .cursor (AI code tool)
 .cursor/
+.augment/
 .cursorignore
 
 # Environment & config

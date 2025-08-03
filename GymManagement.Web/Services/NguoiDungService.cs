@@ -66,7 +66,7 @@ namespace GymManagement.Web.Services
         {
             var nguoiDung = await _unitOfWork.NguoiDungs.GetByIdAsync(updateDto.NguoiDungId);
             if (nguoiDung == null)
-                throw new ArgumentException("Người dùng không tồn tại");
+                throw new InvalidOperationException("Người dùng không tồn tại");
 
             // Validation
             await ValidateUpdateAsync(updateDto);
@@ -226,13 +226,13 @@ namespace GymManagement.Web.Services
             if (!string.IsNullOrEmpty(createDto.Email))
             {
                 if (await IsEmailExistsAsync(createDto.Email))
-                    throw new ArgumentException("Email đã tồn tại");
+                    throw new InvalidOperationException("Email đã tồn tại");
             }
 
             if (!string.IsNullOrEmpty(createDto.SoDienThoai))
             {
                 if (await IsSoDienThoaiExistsAsync(createDto.SoDienThoai))
-                    throw new ArgumentException("Số điện thoại đã tồn tại");
+                    throw new InvalidOperationException("Số điện thoại đã tồn tại");
             }
         }
 
@@ -241,13 +241,13 @@ namespace GymManagement.Web.Services
             if (!string.IsNullOrEmpty(updateDto.Email))
             {
                 if (await IsEmailExistsAsync(updateDto.Email, updateDto.NguoiDungId))
-                    throw new ArgumentException("Email đã tồn tại");
+                    throw new InvalidOperationException("Email đã tồn tại");
             }
 
             if (!string.IsNullOrEmpty(updateDto.SoDienThoai))
             {
                 if (await IsSoDienThoaiExistsAsync(updateDto.SoDienThoai, updateDto.NguoiDungId))
-                    throw new ArgumentException("Số điện thoại đã tồn tại");
+                    throw new InvalidOperationException("Số điện thoại đã tồn tại");
             }
         }
 

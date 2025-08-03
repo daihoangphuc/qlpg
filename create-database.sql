@@ -16,7 +16,7 @@ GO
 
 CREATE TABLE NguoiDung(
     NguoiDungId   INT IDENTITY PRIMARY KEY,
-    LoaiNguoiDung NVARCHAR(20) CHECK (LoaiNguoiDung IN ('THANHVIEN','HLV','NHANVIEN','VANGLAI')) NOT NULL,
+    LoaiNguoiDung NVARCHAR(20) CHECK (LoaiNguoiDung IN ('THANHVIEN','HLV','ADMIN','VANGLAI')) NOT NULL,
     Ho            NVARCHAR(50) NOT NULL,
     Ten           NVARCHAR(50),
     GioiTinh      NVARCHAR(10),

@@ -12,15 +12,18 @@ namespace GymManagement.Web.Controllers
     {
         private readonly ILopHocService _lopHocService;
         private readonly INguoiDungService _nguoiDungService;
+        private readonly IEmailService _emailService;
 
         public LopHocController(
             ILopHocService lopHocService,
             INguoiDungService nguoiDungService,
+            IEmailService emailService,
             IUserSessionService userSessionService,
             ILogger<LopHocController> logger) : base(userSessionService, logger)
         {
             _lopHocService = lopHocService;
             _nguoiDungService = nguoiDungService;
+            _emailService = emailService;
         }
 
         /// <summary>
@@ -253,6 +256,9 @@ namespace GymManagement.Web.Controllers
                 }
 
                 await _lopHocService.UpdateAsync(lopHoc);
+                
+                // Send schedule change notifications
+                await SendScheduleChangeNotificationAsync(lopHoc);
                 
                 _logger.LogInformation("Successfully updated class ID: {ClassId}", id);
                 TempData["SuccessMessage"] = $"Cập nhật lớp học '{lopHoc.TenLop}' thành công!";
@@ -629,6 +635,71 @@ namespace GymManagement.Web.Controllers
                 ViewBag.Trainers = new SelectList(new List<object>(), "NguoiDungId", "FullName");
             }
         }
+
+        #region Email Helper Methods
+
+        private async Task SendScheduleChangeNotificationAsync(LopHoc lopHoc)
+        {
+            try
+            {
+                // Get enrolled members for this class
+                var enrolledMembers = await GetEnrolledMembersAsync(lopHoc.LopHocId);
+                
+                // Get trainer info
+                var trainer = lopHoc.HlvId != null ? await _nguoiDungService.GetByIdAsync(lopHoc.HlvId.Value) : null;
+                var trainerName = trainer != null ? $"{trainer.Ho} {trainer.Ten}" : "Đang cập nhật";
+
+                var classInfo = $"Lớp: {lopHoc.TenLop}\nHuấn luyện viên: {trainerName}";
+                var changeDetails = $"Lịch học của lớp '{lopHoc.TenLop}' đã được cập nhật.\n" +
+                                  $"Vui lòng kiểm tra lại thời gian và địa điểm mới trên hệ thống.";
+
+                // Send notifications to all enrolled members
+                foreach (var member in enrolledMembers)
+                {
+                    if (!string.IsNullOrEmpty(member.Email))
+                    {
+                        await _emailService.SendScheduleChangeNotificationAsync(
+                            member.Email,
+                            $"{member.Ho} {member.Ten}",
+                            changeDetails,
+                            classInfo
+                        );
+                    }
+                }
+
+                // Send notification to trainer
+                if (trainer != null && !string.IsNullOrEmpty(trainer.Email))
+                {
+                    await _emailService.SendInstructorScheduleChangeAsync(
+                        trainer.Email,
+                        trainerName,
+                        $"Lịch dạy lớp '{lopHoc.TenLop}' đã được cập nhật.",
+                        DateTime.Now
+                    );
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error sending schedule change notifications for class {ClassId}", lopHoc.LopHocId);
+            }
+        }
+
+        private async Task<List<NguoiDung>> GetEnrolledMembersAsync(int classId)
+        {
+            try
+            {
+                // This would typically come from a registration service
+                // For now, return empty list - you might want to implement this based on your DangKy entity
+                return new List<NguoiDung>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting enrolled members for class {ClassId}", classId);
+                return new List<NguoiDung>();
+            }
+        }
+
+        #endregion
     }
 
     /// <summary>

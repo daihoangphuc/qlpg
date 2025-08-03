@@ -12,17 +12,20 @@ namespace GymManagement.Web.Controllers
         private readonly IBangLuongService _bangLuongService;
         private readonly INguoiDungService _nguoiDungService;
         private readonly IAuthService _authService;
+        private readonly IPdfExportService _pdfExportService;
         private readonly ILogger<BangLuongController> _logger;
 
         public BangLuongController(
             IBangLuongService bangLuongService,
             INguoiDungService nguoiDungService,
             IAuthService authService,
+            IPdfExportService pdfExportService,
             ILogger<BangLuongController> logger)
         {
             _bangLuongService = bangLuongService;
             _nguoiDungService = nguoiDungService;
             _authService = authService;
+            _pdfExportService = pdfExportService;
             _logger = logger;
         }
 
@@ -317,5 +320,168 @@ namespace GymManagement.Web.Controllers
                 return Json(new { success = false, message = "Có lỗi xảy ra khi cập nhật lương cơ bản." });
             }
         }
+
+        #region PDF Export Endpoints
+
+        [HttpGet]
+        [Authorize(Roles = "Admin,Manager")]
+        public async Task<IActionResult> ExportSalaryDetailPdf(int salaryId)
+        {
+            try
+            {
+                var salary = await _bangLuongService.GetByIdAsync(salaryId);
+                if (salary == null)
+                {
+                    return NotFound("Không tìm thấy bảng lương.");
+                }
+
+                var breakdown = await _bangLuongService.CalculateDetailedCommissionAsync(salary.HlvId ?? 0, salary.Thang);
+                var pdfBytes = await _pdfExportService.GenerateSalaryReportAsync(salary, breakdown);
+
+                var fileName = $"BangLuong_{salary.Hlv?.Ho}_{salary.Hlv?.Ten}_{salary.Thang}.pdf";
+                return File(pdfBytes, "application/pdf", fileName);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error exporting salary detail PDF for salary ID: {SalaryId}", salaryId);
+                TempData["ErrorMessage"] = "Có lỗi xảy ra khi xuất báo cáo PDF.";
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
+        [HttpGet]
+        [Authorize(Roles = "Admin,Manager")]
+        public async Task<IActionResult> ExportMonthlyReportPdf(string month)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(month))
+                {
+                    month = DateTime.Now.ToString("yyyy-MM");
+                }
+
+                var salaries = await _bangLuongService.GetByMonthAsync(month);
+                var pdfBytes = await _pdfExportService.GenerateMonthlySalaryReportAsync(salaries, month);
+
+                var fileName = $"BaoCaoLuongThang_{month}.pdf";
+                return File(pdfBytes, "application/pdf", fileName);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error exporting monthly report PDF for month: {Month}", month);
+                TempData["ErrorMessage"] = "Có lỗi xảy ra khi xuất báo cáo tháng PDF.";
+                return RedirectToAction(nameof(MonthlyView), new { month });
+            }
+        }
+
+        // Removed for simplification: ExportTrainerPerformancePdf
+
+        // Removed for simplification: ExportPayrollSummaryPdf
+
+        // Removed for simplification: ExportComparativePdf
+
+        [HttpGet]
+        [Authorize(Roles = "Trainer")]
+        public async Task<IActionResult> ExportMySalaryPdf(string? month = null)
+        {
+            try
+            {
+                var user = await GetCurrentUserAsync();
+                if (user?.NguoiDungId == null)
+                {
+                    return RedirectToAction("Login", "Auth");
+                }
+
+                month ??= DateTime.Now.ToString("yyyy-MM");
+
+                var salary = await _bangLuongService.GetByTrainerAndMonthAsync(user.NguoiDungId.Value, month);
+                if (salary == null)
+                {
+                    TempData["ErrorMessage"] = "Không tìm thấy bảng lương cho tháng này.";
+                    return RedirectToAction(nameof(MySalary));
+                }
+
+                var breakdown = await _bangLuongService.CalculateDetailedCommissionAsync(user.NguoiDungId.Value, month);
+                var pdfBytes = await _pdfExportService.GenerateSalaryReportAsync(salary, breakdown);
+
+                var fileName = $"BangLuong_{month}.pdf";
+                return File(pdfBytes, "application/pdf", fileName);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error exporting trainer's own salary PDF");
+                TempData["ErrorMessage"] = "Có lỗi xảy ra khi xuất bảng lương PDF.";
+                return RedirectToAction(nameof(MySalary));
+            }
+        }
+
+        #endregion
+
+        #region Enhanced Reporting Endpoints
+
+        [HttpGet]
+        [Authorize(Roles = "Admin,Manager")]
+        public async Task<IActionResult> GetDetailedCommissionBreakdown(int trainerId, string month)
+        {
+            try
+            {
+                var breakdown = await _bangLuongService.CalculateDetailedCommissionAsync(trainerId, month);
+                return Json(new
+                {
+                    success = true,
+                    data = new
+                    {
+                        packageCommission = breakdown.PackageCommission,
+                        classCommission = breakdown.ClassCommission,
+                        personalCommission = breakdown.PersonalCommission,
+                        performanceBonus = breakdown.PerformanceBonus,
+                        attendanceBonus = breakdown.AttendanceBonus,
+                        totalCommission = breakdown.TotalCommission,
+                        studentCount = breakdown.StudentCount,
+                        classesTaught = breakdown.ClassesTaught,
+                        personalSessions = breakdown.PersonalSessions,
+                        attendanceRate = breakdown.AttendanceRate
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting detailed commission breakdown");
+                return Json(new { success = false, message = "Có lỗi xảy ra khi tính hoa hồng chi tiết." });
+            }
+        }
+
+        [HttpGet]
+        [Authorize(Roles = "Admin,Manager")]
+        public async Task<IActionResult> GetSalaryComparison(int trainerId, string month1, string month2)
+        {
+            try
+            {
+                var breakdown1 = await _bangLuongService.CalculateDetailedCommissionAsync(trainerId, month1);
+                var breakdown2 = await _bangLuongService.CalculateDetailedCommissionAsync(trainerId, month2);
+
+                var comparison = new
+                {
+                    month1 = new { month = month1, data = breakdown1 },
+                    month2 = new { month = month2, data = breakdown2 },
+                    changes = new
+                    {
+                        totalCommissionChange = breakdown2.TotalCommission - breakdown1.TotalCommission,
+                        studentCountChange = breakdown2.StudentCount - breakdown1.StudentCount,
+                        classesTaughtChange = breakdown2.ClassesTaught - breakdown1.ClassesTaught,
+                        attendanceRateChange = breakdown2.AttendanceRate - breakdown1.AttendanceRate
+                    }
+                };
+
+                return Json(new { success = true, data = comparison });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting salary comparison");
+                return Json(new { success = false, message = "Có lỗi xảy ra khi so sánh lương." });
+            }
+        }
+
+        #endregion
     }
 }

@@ -46,7 +46,7 @@
             </div>
 
             <!-- Validation Summary -->
-            <div asp-validation-summary="ModelOnly" class="bg-red-50 border-l-4 border-red-400 p-4 m-6 mb-0" style="display: none;" id="validationSummary">
+            <div asp-validation-summary="All" class="bg-red-50 border-l-4 border-red-400 p-4 m-6 mb-0" style="display: none;" id="validationSummary">
                 <div class="flex">
                     <div class="flex-shrink-0">
                         <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
@@ -81,7 +81,7 @@
                                 <option value="">-- Chọn loại người dùng --</option>
                                 <option value="THANHVIEN">👤 Thành viên</option>
                                 <option value="HLV">💪 Huấn luyện viên</option>
-                                <option value="NHANVIEN">👔 Nhân viên</option>
+                                <option value="ADMIN">👔 Quản trị viên</option>
                                 <option value="VANGLAI">🚶 Vãng lai</option>
                             </select>
                             <span asp-validation-for="LoaiNguoiDung" class="text-red-500 text-sm mt-1 block"></span>
@@ -500,8 +500,15 @@
 
             // Show validation errors from server
             const serverErrors = document.querySelectorAll('.field-validation-error');
-            if (serverErrors.length > 0) {
-                document.getElementById('validationSummary').style.display = 'block';
+            const validationSummary = document.getElementById('validationSummary');
+            
+            // Check if there are any validation errors from ASP.NET Core
+            const validationList = validationSummary.querySelector('.validation-summary-errors ul');
+            
+            if (serverErrors.length > 0 || (validationList && validationList.children.length > 0)) {
+                validationSummary.style.display = 'block';
+                // Scroll to top to show errors
+                window.scrollTo({ top: 0, behavior: 'smooth' });
             }
         });
 

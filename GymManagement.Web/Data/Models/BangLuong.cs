@@ -18,7 +18,7 @@ namespace GymManagement.Web.Data.Models
         public decimal LuongCoBan { get; set; }
         
         [Column(TypeName = "decimal(12,2)")]
-        public decimal TienHoaHong { get; set; } = 0;
+        public decimal TienHoaHong { get; set; } = 0; // Total commission
 
         [NotMapped]
         public decimal TongThanhToan => LuongCoBan + TienHoaHong;
@@ -27,6 +27,8 @@ namespace GymManagement.Web.Data.Models
 
         [StringLength(500)]
         public string? GhiChu { get; set; }
+
+        public DateTime NgayTao { get; set; } = DateTime.Now;
 
         // Navigation properties
         public virtual NguoiDung? Hlv { get; set; }

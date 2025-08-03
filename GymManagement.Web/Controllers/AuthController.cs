@@ -67,6 +67,15 @@ namespace GymManagement.Web.Controllers
                         return Redirect(returnUrl);
                     }
 
+                    // Get user roles to determine redirect destination
+                    var userRoles = await _authService.GetUserRolesAsync(user.Id);
+                    
+                    // Redirect trainers to their dashboard
+                    if (userRoles.Contains("Trainer"))
+                    {
+                        return RedirectToAction("Dashboard", "Trainer");
+                    }
+
                     return RedirectToAction("Index", "Home");
                 }
                 catch (Exception ex)
