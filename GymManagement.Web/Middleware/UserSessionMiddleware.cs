@@ -30,9 +30,13 @@ namespace GymManagement.Web.Middleware
                     return;
                 }
 
-                // Check if this is a login/logout action to avoid infinite loops
+                // Check if this is a login/logout action or Google OAuth callback to avoid infinite loops
                 var path = context.Request.Path.Value?.ToLower();
-                if (path != null && (path.Contains("/auth/login") || path.Contains("/auth/logout")))
+                if (path != null && (path.Contains("/auth/login") || 
+                                   path.Contains("/auth/logout") || 
+                                   path.Contains("/auth/loginwithgoogle") ||
+                                   path.Contains("/auth/googlecallback") ||
+                                   path.Contains("/signin-google")))
                 {
                     await _next(context);
                     return;

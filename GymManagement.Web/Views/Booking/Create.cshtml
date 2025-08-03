@@ -1,14 +1,14 @@
 @model GymManagement.Web.Data.Models.Booking
 @{
     ViewData["Title"] = "Đặt lịch mới";
-    Layout = "_Layout";
+    Layout = User.IsInRole("Admin") ? "_Layout" : "_MemberLayout";
 }
 
-<div class="p-6">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <!-- Header -->
     <div class="mb-8">
         <div class="flex items-center gap-4 mb-4">
-            <a href="@Url.Action("Index")" class="text-gray-600 hover:text-gray-800">
+            <a href="@(User.IsInRole("Admin") ? Url.Action("Index") : Url.Action("MyBookings"))" class="text-gray-600 hover:text-gray-800">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
                 </svg>
@@ -18,7 +18,7 @@
         <p class="text-gray-600">Đặt lịch tham gia lớp học</p>
     </div>
 
-    <div class="max-w-4xl">
+    <div class="max-w-4xl mx-auto">
         <form asp-action="Create" method="post" class="bg-white rounded-lg shadow-md p-6">
             <div asp-validation-summary="ModelOnly" class="text-red-600 mb-4"></div>
 
@@ -138,7 +138,7 @@
                 <button type="submit" id="submitBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md font-medium transition-colors" disabled>
                     ✅ Xác nhận đặt lịch
                 </button>
-                <a href="@Url.Action("Index")" class="bg-gray-300 hover:bg-gray-400 text-gray-700 px-6 py-2 rounded-md font-medium transition-colors">
+                <a href="@(User.IsInRole("Admin") ? Url.Action("Index") : Url.Action("MyBookings"))" class="bg-gray-300 hover:bg-gray-400 text-gray-700 px-6 py-2 rounded-md font-medium transition-colors">
                     ❌ Hủy bỏ
                 </a>
             </div>

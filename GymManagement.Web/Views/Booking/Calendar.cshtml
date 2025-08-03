@@ -14,11 +14,8 @@
                     <p class="text-gray-600">Xem và quản lý lịch đặt chỗ tổng quan</p>
                 </div>
                 <div class="flex gap-3">
-                    <a href="@Url.Action("Create")" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
-                        ➕ Đặt lịch mới
-                    </a>
-                    <a href="@Url.Action("Index")" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
-                        📋 Danh sách
+                    <a href="@Url.Action("MyBookings")" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                        📋 Đặt lịch của tôi
                     </a>
                 </div>
             </div>
@@ -48,9 +45,9 @@
                     <div class="flex items-center gap-2">
                         <label for="viewSelect" class="text-sm font-medium text-gray-700">Chế độ xem:</label>
                         <select id="viewSelect" class="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="listWeek">📋 Danh sách tuần</option>
+                            <option value="timeGridWeek" selected>⏰ Lịch tuần</option>
                             <option value="dayGridMonth">📅 Lịch tháng</option>
-                            <option value="timeGridWeek">⏰ Lịch tuần</option>
+                            <option value="listWeek">📋 Danh sách tuần</option>
                             <option value="listMonth">📋 Danh sách tháng</option>
                         </select>
                     </div>
@@ -437,7 +434,7 @@
             const calendarEl = document.getElementById('calendar');
             
             calendar = new FullCalendar.Calendar(calendarEl, {
-                initialView: 'listWeek',
+                initialView: 'timeGridWeek',
                 locale: 'vi',
                 headerToolbar: {
                     left: '',
@@ -660,6 +657,10 @@
                                 }
                             </select>
                         </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Ghi chú:</label>
+                            <textarea id="quickBookingNote" class="w-full px-3 py-2 border border-gray-300 rounded-md" rows="3" placeholder="Nhập ghi chú (tuỳ chọn)..."></textarea>
+                        </div>
                     </div>
                     <div class="flex gap-2 pt-4 border-t">
                         <button onclick="confirmQuickBooking('${dateStr}')" class="flex-1 bg-green-600 text-white px-4 py-2 rounded-md text-sm hover:bg-green-700">
@@ -689,13 +690,53 @@
 
         function confirmQuickBooking(date) {
             const classId = document.getElementById('quickBookingClass').value;
+            const note = document.getElementById('quickBookingNote').value;
+            
             if (!classId) {
                 alert('Vui lòng chọn lớp học');
                 return;
             }
             
-            // Redirect to create booking page with pre-filled data
-            window.location.href = `@Url.Action("Create")?classId=${classId}&date=${date}`;
+            // Disable button to prevent double-click
+            const confirmBtn = event.target;
+            confirmBtn.disabled = true;
+            confirmBtn.textContent = 'Đang xử lý...';
+            
+            // Make AJAX request to book class
+            fetch('@Url.Action("BookClass", "Booking")', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                },
+                body: JSON.stringify({
+                    classId: parseInt(classId),
+                    date: date,
+                    note: note
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Đặt lịch thành công!');
+                    closeQuickBookingModal();
+                    // Refresh calendar to show new booking
+                    calendar.refetchEvents();
+                    loadTodaySchedule();
+                    loadQuickStats();
+                } else {
+                    alert(data.message || 'Đã xảy ra lỗi khi đặt lịch');
+                }
+            })
+            .catch(error => {
+                console.error('Error booking class:', error);
+                alert('Lỗi kết nối. Vui lòng thử lại!');
+            })
+            .finally(() => {
+                // Re-enable button
+                confirmBtn.disabled = false;
+                confirmBtn.textContent = 'Xác nhận đặt lịch';
+            });
         }
 
         function loadTodaySchedule() {

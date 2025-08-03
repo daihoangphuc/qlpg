@@ -41,7 +41,11 @@ builder.Services.AddScoped<IPasswordService, PasswordService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 
 // Add Authentication
-builder.Services.AddAuthentication("Cookies")
+builder.Services.AddAuthentication(options =>
+    {
+        options.DefaultScheme = "Cookies";
+        options.DefaultChallengeScheme = "Cookies";
+    })
     .AddCookie("Cookies", options =>
     {
         options.LoginPath = "/Auth/Login";
@@ -49,6 +53,23 @@ builder.Services.AddAuthentication("Cookies")
         options.AccessDeniedPath = "/Auth/AccessDenied";
         options.ExpireTimeSpan = TimeSpan.FromHours(24);
         options.SlidingExpiration = true;
+    })
+    .AddGoogle(options =>
+    {
+        options.ClientId = builder.Configuration["Authentication:Google:ClientId"] ?? "";
+        options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"] ?? "";
+        options.CallbackPath = "/signin-google";
+        options.SaveTokens = true;
+        options.SignInScheme = "Cookies"; // Important: Sign in to Cookies scheme after Google auth
+        options.Events.OnCreatingTicket = async context =>
+        {
+            // Lưu thông tin từ Google vào claims
+            var user = context.Principal;
+            if (user?.Identity?.IsAuthenticated == true)
+            {
+                // Các claims sẽ được xử lý trong AuthController
+            }
+        };
     });
 
 // Configure cookie settings

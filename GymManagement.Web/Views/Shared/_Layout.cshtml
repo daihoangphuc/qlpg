@@ -235,9 +235,7 @@
                         <div class="relative">
                             <button type="button" class="flex text-sm bg-gray-800 rounded-full focus:ring-4 focus:ring-gray-300 " aria-expanded="false" data-dropdown-toggle="dropdown-user">
                                 <span class="sr-only">Open user menu</span>
-                                <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white font-medium">
-                                    @(User.Identity?.Name?.Substring(0, 1).ToUpper() ?? "A")
-                                </div>
+                                @await Component.InvokeAsync("UserAvatar", new { cssClass = "w-8 h-8" })
                             </button>
                             <div class="z-50 hidden my-4 text-base list-none bg-white divide-y divide-gray-100 rounded-lg shadow " id="dropdown-user">
                                 <div class="px-4 py-3" role="none">

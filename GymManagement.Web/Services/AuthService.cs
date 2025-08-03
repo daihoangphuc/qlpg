@@ -12,13 +12,14 @@ namespace GymManagement.Web.Services
         Task<TaiKhoan?> GetUserByIdAsync(string id);
         Task<TaiKhoan?> GetUserByEmailAsync(string email);
         Task<TaiKhoan?> GetUserByUsernameAsync(string username);
-        Task<bool> CreateUserAsync(TaiKhoan user, string password);
+        Task<bool> CreateUserAsync(TaiKhoan user, string password, bool isGoogleUser = false);
         Task<bool> AssignRoleAsync(string userId, string roleName);
         Task<List<string>> GetUserRolesAsync(string userId);
         Task<ClaimsPrincipal> CreateClaimsPrincipalAsync(TaiKhoan user);
         Task<bool> UpdateLastLoginAsync(string userId);
         Task<TaiKhoan?> FindByExternalLoginAsync(string provider, string providerKey);
         Task<bool> AddExternalLoginAsync(string userId, string provider, string providerKey, string? displayName = null);
+        Task<bool> SaveExternalLoginAsync(string userId, string provider, string providerKey, string? displayName = null);
     }
 
     public class AuthService : IAuthService
@@ -74,7 +75,7 @@ namespace GymManagement.Web.Services
                 .FirstOrDefaultAsync(u => u.TenDangNhap == username);
         }
 
-        public async Task<bool> CreateUserAsync(TaiKhoan user, string password)
+        public async Task<bool> CreateUserAsync(TaiKhoan user, string password, bool isGoogleUser = false)
         {
             try
             {
@@ -93,7 +94,7 @@ namespace GymManagement.Web.Services
                 var nguoiDung = new NguoiDung
                 {
                     LoaiNguoiDung = "THANHVIEN",
-                    Ho = "Chưa cập nhật",
+                    Ho = isGoogleUser ? "Google User" : "Chưa cập nhật",
                     Ten = user.TenDangNhap,
                     Email = user.Email,
                     NgayThamGia = DateOnly.FromDateTime(DateTime.Now),
@@ -284,6 +285,44 @@ namespace GymManagement.Web.Services
             }
             catch
             {
+                return false;
+            }
+        }
+
+        public async Task<bool> SaveExternalLoginAsync(string userId, string provider, string providerKey, string? displayName = null)
+        {
+            try
+            {
+                // Check if external login already exists
+                var existingLogin = await _context.ExternalLogins
+                    .FirstOrDefaultAsync(el => el.TaiKhoanId == userId && el.Provider == provider);
+                
+                if (existingLogin != null)
+                {
+                    // Update existing login
+                    existingLogin.ProviderKey = providerKey;
+                    existingLogin.ProviderDisplayName = displayName;
+                    _context.ExternalLogins.Update(existingLogin);
+                }
+                else
+                {
+                    // Add new external login
+                    var externalLogin = new ExternalLogin
+                    {
+                        TaiKhoanId = userId,
+                        Provider = provider,
+                        ProviderKey = providerKey,
+                        ProviderDisplayName = displayName
+                    };
+                    _context.ExternalLogins.Add(externalLogin);
+                }
+
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error saving external login: {ex.Message}");
                 return false;
             }
         }
