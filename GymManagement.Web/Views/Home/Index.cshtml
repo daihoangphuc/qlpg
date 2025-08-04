@@ -155,6 +155,110 @@
     </div>
 </section> *@
 
+<!-- News Section -->
+<section class="py-20 bg-gray-50">
+    <div class="max-w-screen-xl mx-auto px-4">
+        <div class="text-center mb-16">
+            <h2 class="text-3xl font-bold text-gray-900 mb-4">Tin tức mới nhất</h2>
+            <p class="text-lg text-gray-600">Cập nhật những thông tin và tin tức mới nhất từ phòng gym</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            @if (ViewBag.News != null && ((IEnumerable<TinTucPublicDto>)ViewBag.News).Any())
+            {
+                @foreach (var news in (IEnumerable<TinTucPublicDto>)ViewBag.News)
+                {
+                    <article class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
+                        @if (!string.IsNullOrEmpty(news.AnhDaiDien))
+                        {
+                            <div class="aspect-w-16 aspect-h-9 overflow-hidden">
+                                <img src="@news.AnhDaiDien" alt="@news.TieuDe" class="w-full h-48 object-cover hover:scale-105 transition-transform duration-300" />
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="w-full h-48 bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
+                                <svg class="w-16 h-16 text-white opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"></path>
+                                </svg>
+                            </div>
+                        }
+                        
+                        <div class="p-6">
+                            @if (news.NoiBat)
+                            {
+                                <div class="mb-3">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                        ⭐ Nổi bật
+                                    </span>
+                                </div>
+                            }
+                            
+                            <h3 class="font-bold text-xl text-gray-900 mb-3 line-clamp-2 hover:text-blue-600 transition-colors duration-200">
+                                <a href="@Url.Action("ChiTietTinTuc", "Home", new { slug = news.Slug })">@news.TieuDe</a>
+                            </h3>
+                            
+                            <p class="text-gray-600 mb-4 line-clamp-3">@news.MoTaNgan</p>
+                            
+                            <div class="flex items-center justify-between text-sm text-gray-500">
+                                <div class="flex items-center">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                    </svg>
+                                    @if (news.NgayXuatBan.HasValue)
+                                    {
+                                        <span>@news.NgayXuatBan.Value.ToString("dd/MM/yyyy")</span>
+                                    }
+                                </div>
+                                <div class="flex items-center">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                    </svg>
+                                    <span>@news.LuotXem lượt xem</span>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-4">
+                                <a href="@Url.Action("ChiTietTinTuc", "Home", new { slug = news.Slug })" 
+                                   class="inline-flex items-center text-blue-600 hover:text-blue-800 font-medium">
+                                    Đọc thêm
+                                    <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                    </svg>
+                                </a>
+                            </div>
+                        </div>
+                    </article>
+                }
+            }
+            else
+            {
+                <div class="col-span-full text-center py-12">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"></path>
+                    </svg>
+                    <h3 class="mt-2 text-sm font-medium text-gray-900">Chưa có tin tức nào</h3>
+                    <p class="mt-1 text-sm text-gray-500">Các tin tức sẽ được cập nhật sớm nhất có thể.</p>
+                </div>
+            }
+        </div>
+
+        @if (ViewBag.News != null && ((IEnumerable<TinTucPublicDto>)ViewBag.News).Any())
+        {
+            <div class="text-center mt-12">
+                <a href="@Url.Action("TinTuc", "Home")" 
+                   class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors duration-200">
+                    Xem tất cả tin tức
+                    <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                    </svg>
+                </a>
+            </div>
+        }
+    </div>
+</section>
+
 <!-- Pricing Section -->
 <section class="py-20">
     <div class="max-w-screen-xl mx-auto px-4">

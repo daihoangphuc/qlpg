@@ -127,7 +127,7 @@ namespace GymManagement.Web.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> BookClass(int classId, DateTime date)
+        public async Task<IActionResult> BookClass(int classId, DateTime date, string? note = null)
         {
             try
             {
@@ -137,7 +137,7 @@ namespace GymManagement.Web.Controllers
                     return Json(new { success = false, message = "Vui lòng đăng nhập để đặt lịch." });
                 }
 
-                var result = await _bookingService.BookClassAsync(user.NguoiDungId.Value, classId, date);
+                var result = await _bookingService.BookClassAsync(user.NguoiDungId.Value, classId, date, note);
                 if (result)
                 {
                     // Send booking confirmation email for class booking

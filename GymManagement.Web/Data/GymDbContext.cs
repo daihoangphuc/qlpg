@@ -45,6 +45,7 @@ namespace GymManagement.Web.Data
         // Hệ thống
         public DbSet<ThongBao> ThongBaos { get; set; }
         public DbSet<LichSuAnh> LichSuAnhs { get; set; }
+        public DbSet<TinTuc> TinTucs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -379,6 +380,30 @@ namespace GymManagement.Web.Data
                 entity.HasOne(d => d.NguoiDung)
                     .WithMany(p => p.LichSuAnhs)
                     .HasForeignKey(d => d.NguoiDungId);
+            });
+
+            // Cấu hình bảng TinTuc
+            modelBuilder.Entity<TinTuc>(entity =>
+            {
+                entity.HasKey(e => e.TinTucId);
+                entity.Property(e => e.TinTucId).ValueGeneratedOnAdd();
+                entity.Property(e => e.TieuDe).HasMaxLength(200).IsRequired();
+                entity.Property(e => e.MoTaNgan).HasMaxLength(500).IsRequired();
+                entity.Property(e => e.NoiDung).IsRequired();
+                entity.Property(e => e.AnhDaiDien).HasMaxLength(500);
+                entity.Property(e => e.NgayTao).HasDefaultValueSql("GETDATE()");
+                entity.Property(e => e.TenTacGia).HasMaxLength(100);
+                entity.Property(e => e.TrangThai).HasMaxLength(20).HasDefaultValue("DRAFT");
+                entity.Property(e => e.Slug).HasMaxLength(200);
+                entity.HasIndex(e => e.Slug).IsUnique();
+                entity.Property(e => e.MetaTitle).HasMaxLength(160);
+                entity.Property(e => e.MetaDescription).HasMaxLength(160);
+                entity.Property(e => e.MetaKeywords).HasMaxLength(500);
+                
+                entity.HasOne(d => d.TacGia)
+                    .WithMany()
+                    .HasForeignKey(d => d.TacGiaId)
+                    .OnDelete(DeleteBehavior.SetNull);
             });
         }
     }

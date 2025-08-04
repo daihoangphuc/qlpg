@@ -24,6 +24,7 @@ public class HomeController : BaseController
     private readonly IBookingService _bookingService;
     private readonly IThanhToanService _thanhToanService;
     private readonly IThongBaoService _thongBaoService;
+    private readonly ITinTucService _tinTucService;
 
     public HomeController(
         IUserSessionService userSessionService,
@@ -37,7 +38,8 @@ public class HomeController : BaseController
         IDiemDanhService diemDanhService,
         IBookingService bookingService,
         IThanhToanService thanhToanService,
-        IThongBaoService thongBaoService) : base(userSessionService, logger)
+        IThongBaoService thongBaoService,
+        ITinTucService tinTucService) : base(userSessionService, logger)
     {
         _baoCaoService = baoCaoService;
         _goiTapService = goiTapService;
@@ -49,6 +51,7 @@ public class HomeController : BaseController
         _bookingService = bookingService;
         _thanhToanService = thanhToanService;
         _thongBaoService = thongBaoService;
+        _tinTucService = tinTucService;
     }
 
     public async Task<IActionResult> Index()
@@ -107,6 +110,18 @@ public class HomeController : BaseController
         {
             _logger.LogError(ex, "Error occurred while loading classes");
             ViewBag.Classes = new List<LopHocDto>();
+        }
+
+        // Load latest news separately
+        try
+        {
+            var latestNews = await _tinTucService.GetPublishedAsync();
+            ViewBag.News = latestNews.Take(6).ToList(); // Show top 6 latest published news
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error occurred while loading latest news");
+            ViewBag.News = new List<TinTucPublicDto>();
         }
 
             return View(); // This will return Index.cshtml (the public home page)
@@ -474,6 +489,68 @@ public class HomeController : BaseController
             isAuthenticated = User.Identity?.IsAuthenticated,
             userName = User.Identity?.Name
         });
+    }
+
+    // Tin tức - Public Actions
+    public async Task<IActionResult> TinTuc(string searchTerm = "", int page = 1, int pageSize = 9)
+    {
+        try
+        {
+            var allTinTuc = string.IsNullOrWhiteSpace(searchTerm) 
+                ? await _tinTucService.GetPublishedAsync()
+                : await _tinTucService.SearchAsync(searchTerm);
+
+            // Pagination
+            var totalCount = allTinTuc.Count();
+            var tinTucs = allTinTuc
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            ViewBag.SearchTerm = searchTerm;
+            ViewBag.CurrentPage = page;
+            ViewBag.PageSize = pageSize;
+            ViewBag.TotalCount = totalCount;
+            ViewBag.TotalPages = (int)Math.Ceiling((double)totalCount / pageSize);
+            ViewBag.NoiBatTinTucs = await _tinTucService.GetNoiBatAsync(5);
+
+            return View(tinTucs);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error loading tin tuc list");
+            return View(new List<TinTucPublicDto>());
+        }
+    }
+
+    public async Task<IActionResult> ChiTietTinTuc(string slug)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(slug))
+            {
+                return NotFound();
+            }
+
+            var tinTuc = await _tinTucService.GetPublishedBySlugAsync(slug);
+            if (tinTuc == null)
+            {
+                return NotFound();
+            }
+
+            // Increment view count
+            await _tinTucService.IncrementViewAsync(tinTuc.TinTucId);
+
+            // Get related news
+            ViewBag.RelatedTinTucs = await _tinTucService.GetRelatedAsync(tinTuc.TinTucId, 4);
+
+            return View(tinTuc);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error loading tin tuc detail for slug: {Slug}", slug);
+            return NotFound();
+        }
     }
 
 

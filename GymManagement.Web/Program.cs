@@ -120,6 +120,7 @@ builder.Services.AddScoped<IBookingRepository, BookingRepository>();
 builder.Services.AddScoped<IDiemDanhRepository, DiemDanhRepository>();
 builder.Services.AddScoped<IBangLuongRepository, BangLuongRepository>();
 builder.Services.AddScoped<IThongBaoRepository, ThongBaoRepository>();
+builder.Services.AddScoped<ITinTucRepository, TinTucRepository>();
 
 // Add Services
 builder.Services.AddScoped<INguoiDungService, NguoiDungService>();
@@ -132,6 +133,7 @@ builder.Services.AddScoped<IDiemDanhService, DiemDanhService>();
 builder.Services.AddScoped<IBangLuongService, BangLuongService>();
 builder.Services.AddScoped<IBaoCaoService, BaoCaoService>();
 builder.Services.AddScoped<IThongBaoService, ThongBaoService>();
+builder.Services.AddScoped<ITinTucService, TinTucService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IPdfExportService, PdfExportService>();
 builder.Services.AddScoped<IAdvancedAnalyticsService, AdvancedAnalyticsService>();

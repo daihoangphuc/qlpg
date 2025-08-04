@@ -73,8 +73,12 @@ namespace GymManagement.Web.Services
             return await _bookingRepository.GetBookingsByDateAsync(DateTime.Today);
         }
 
-        public async Task<bool> BookClassAsync(int thanhVienId, int lopHocId, DateTime date)
+        public async Task<bool> BookClassAsync(int thanhVienId, int lopHocId, DateTime date, string? ghiChu = null)
         {
+            // Check if date is in the future
+            if (date.Date < DateTime.Today)
+                return false;
+
             // Check if class exists and is open
             var lopHoc = await _lopHocRepository.GetByIdAsync(lopHocId);
             if (lopHoc == null || lopHoc.TrangThai != "OPEN")
@@ -95,7 +99,9 @@ namespace GymManagement.Web.Services
                 ThanhVienId = thanhVienId,
                 LopHocId = lopHocId,
                 Ngay = DateOnly.FromDateTime(date),
-                TrangThai = "BOOKED"
+                NgayDat = DateOnly.FromDateTime(DateTime.Now),
+                TrangThai = "BOOKED",
+                GhiChu = ghiChu
             };
 
             await _bookingRepository.AddAsync(booking);
@@ -168,6 +174,16 @@ namespace GymManagement.Web.Services
             var booking = await _bookingRepository.GetByIdAsync(bookingId);
             if (booking == null || booking.TrangThai != "BOOKED")
                 return false;
+
+            // Check if cancellation is at least 2 hours before class time
+            if (booking.LopHoc != null)
+            {
+                var classDateTime = booking.Ngay.ToDateTime(booking.LopHoc.GioBatDau);
+                var hoursUntilClass = (classDateTime - DateTime.Now).TotalHours;
+                
+                if (hoursUntilClass < 2)
+                    return false; // Cannot cancel less than 2 hours before class
+            }
 
             booking.TrangThai = "CANCELED";
             await _unitOfWork.SaveChangesAsync();
