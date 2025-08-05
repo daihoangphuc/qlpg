@@ -235,6 +235,13 @@
                                                 class="text-purple-600 hover:text-purple-900">
                                             📊 Phân tích
                                         </button>
+                                        @if (!bangLuong.NgayThanhToan.HasValue)
+                                        {
+                                            <button onclick="deleteSalary(@bangLuong.BangLuongId)" 
+                                                    class="text-red-600 hover:text-red-900">
+                                                🗑️ Xóa
+                                            </button>
+                                        }
                                     </div>
                                 </td>
                             </tr>
@@ -302,6 +309,36 @@
                             ❌ Hủy bỏ
                         </button>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div id="loadingOverlay" class="fixed inset-0 bg-gray-900 bg-opacity-75 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen">
+        <div class="bg-white rounded-lg shadow-xl p-8 mx-4 max-w-sm w-full text-center">
+            <!-- Animated Spinner -->
+            <div class="inline-block animate-spin rounded-full h-16 w-16 border-b-4 border-green-600 mb-4"></div>
+            
+            <!-- Loading Text -->
+            <h3 class="text-lg font-semibold text-gray-900 mb-2">Đang tạo bảng lương...</h3>
+            <p class="text-gray-600 text-sm mb-4">Hệ thống đang tính toán lương và hoa hồng cho từng huấn luyện viên. Vui lòng đợi trong giây lát.</p>
+            
+            <!-- Progress Steps -->
+            <div class="text-left text-sm text-gray-500">
+                <div class="flex items-center mb-2">
+                    <div class="w-3 h-3 bg-green-500 rounded-full mr-2 animate-pulse"></div>
+                    <span>Đang tính lương cơ bản...</span>
+                </div>
+                <div class="flex items-center mb-2">
+                    <div class="w-3 h-3 bg-blue-500 rounded-full mr-2 animate-pulse" style="animation-delay: 0.5s"></div>
+                    <span>Đang tính hoa hồng...</span>
+                </div>
+                <div class="flex items-center">
+                    <div class="w-3 h-3 bg-purple-500 rounded-full mr-2 animate-pulse" style="animation-delay: 1s"></div>
+                    <span>Đang lưu dữ liệu...</span>
                 </div>
             </div>
         </div>
@@ -402,6 +439,9 @@
                 return;
             }
             
+            // Show loading overlay
+            document.getElementById('loadingOverlay').classList.remove('hidden');
+            
             try {
                 const response = await fetch('@Url.Action("GenerateMonthlySalaries")', {
                     method: 'POST',
@@ -414,6 +454,9 @@
                 
                 const result = await response.json();
                 
+                // Hide loading overlay
+                document.getElementById('loadingOverlay').classList.add('hidden');
+                
                 if (result.success) {
                     alert(result.message);
                     closeGenerateSalaryModal();
@@ -422,6 +465,9 @@
                     alert(result.message);
                 }
             } catch (error) {
+                // Hide loading overlay on error
+                document.getElementById('loadingOverlay').classList.add('hidden');
+                
                 console.error('Error generating salaries:', error);
                 alert('Có lỗi xảy ra khi tạo bảng lương.');
             }
@@ -470,6 +516,33 @@
 
         function closeSalaryBreakdownModal() {
             document.getElementById('salaryBreakdownModal').classList.add('hidden');
+        }
+
+        async function deleteSalary(salaryId) {
+            if (confirm('Bạn có chắc chắn muốn xóa bảng lương này?\n\nLưu ý: Chỉ có thể xóa bảng lương chưa được thanh toán.')) {
+                try {
+                    const response = await fetch('@Url.Action("Delete")', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                        },
+                        body: JSON.stringify({ id: salaryId })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        alert(result.message);
+                        location.reload();
+                    } else {
+                        alert(result.message);
+                    }
+                } catch (error) {
+                    console.error('Error deleting salary:', error);
+                    alert('Có lỗi xảy ra khi xóa bảng lương.');
+                }
+            }
         }
 
         function exportSalaries() {

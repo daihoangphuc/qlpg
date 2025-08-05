@@ -61,15 +61,32 @@ namespace GymManagement.Web.Controllers
 
         // MyRegistrations action đã được chuyển sang MemberController để tránh trùng lặp
 
-        public async Task<IActionResult> RegisterPackage()
+        public async Task<IActionResult> RegisterPackage(int? packageId = null, int? duration = null)
         {
             await LoadPackagesSelectList();
+
+            // Pre-select package if provided from Member/Packages
+            if (packageId.HasValue && duration.HasValue)
+            {
+                ViewBag.PreSelectedPackageId = packageId.Value;
+                ViewBag.PreSelectedDuration = duration.Value;
+
+                // Get package details for display
+                var goiTapService = HttpContext.RequestServices.GetRequiredService<IGoiTapService>();
+                var selectedPackage = await goiTapService.GetByIdAsync(packageId.Value);
+                if (selectedPackage != null)
+                {
+                    ViewBag.PreSelectedPackageName = selectedPackage.TenGoi;
+                    ViewBag.PreSelectedPackagePrice = selectedPackage.Gia;
+                }
+            }
+
             return View();
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> RegisterPackage(int packageId, int duration)
+        public async Task<IActionResult> RegisterPackage(int packageId, int duration, string? promotionCode = null)
         {
             try
             {
@@ -79,11 +96,45 @@ namespace GymManagement.Web.Controllers
                     return RedirectToAction("Login", "Auth");
                 }
 
-                var result = await _dangKyService.RegisterPackageAsync(user.NguoiDungId.Value, packageId, duration);
-                if (result)
+                // Validate promotion code if provided
+                int? khuyenMaiId = null;
+                if (!string.IsNullOrWhiteSpace(promotionCode))
                 {
-                    TempData["SuccessMessage"] = "Đăng ký gói tập thành công!";
-                    return RedirectToAction("MyRegistrations", "Member");
+                    var khuyenMaiService = HttpContext.RequestServices.GetRequiredService<IKhuyenMaiService>();
+                    var khuyenMai = await khuyenMaiService.GetByCodeAsync(promotionCode);
+
+                    if (khuyenMai != null && await khuyenMaiService.ValidateCodeAsync(promotionCode))
+                    {
+                        khuyenMaiId = khuyenMai.KhuyenMaiId;
+                    }
+                    else
+                    {
+                        TempData["ErrorMessage"] = "Mã khuyến mãi không hợp lệ hoặc đã hết hạn.";
+                        await LoadPackagesSelectList();
+                        return View();
+                    }
+                }
+
+                // Instead of registering directly, create payment first
+                // This ensures payment is created with promotion code applied
+                var thanhToanService = HttpContext.RequestServices.GetRequiredService<IThanhToanService>();
+                var payment = await thanhToanService.CreatePaymentForPackageRegistrationAsync(
+                    user.NguoiDungId.Value,
+                    packageId,
+                    duration,
+                    "VNPAY",
+                    khuyenMaiId);
+
+                if (payment != null)
+                {
+                    TempData["SuccessMessage"] = "Đã tạo thanh toán thành công! Đang chuyển hướng đến cổng thanh toán...";
+
+                    // Redirect to VNPay payment
+                    return RedirectToAction("CreatePayment", "Home", new {
+                        area = "VNPayAPI",
+                        thanhToanId = payment.ThanhToanId,
+                        returnUrl = Url.Action("PaymentReturn", "ThanhToan", null, Request.Scheme)
+                    });
                 }
                 else
                 {

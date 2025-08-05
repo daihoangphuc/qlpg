@@ -137,6 +137,8 @@ builder.Services.AddScoped<ITinTucService, TinTucService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IPdfExportService, PdfExportService>();
 builder.Services.AddScoped<IAdvancedAnalyticsService, AdvancedAnalyticsService>();
+builder.Services.AddScoped<IAuditLogService, AuditLogService>();
+builder.Services.AddScoped<IKhuyenMaiService, KhuyenMaiService>();
 
 // Add Memory Cache
 builder.Services.AddMemoryCache();

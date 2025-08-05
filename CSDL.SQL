@@ -184,7 +184,9 @@ CREATE TABLE BangLuong(
     LuongCoBan    DECIMAL(12,2) NOT NULL,
     TienHoaHong   DECIMAL(12,2) DEFAULT 0,
     TongThanhToan AS CAST(LuongCoBan + TienHoaHong AS DECIMAL(12,2)) PERSISTED,
-    NgayThanhToan DATE
+    NgayThanhToan DATE,
+    NgayTao       DATETIME2 DEFAULT SYSDATETIME(),
+    GhiChu        NVARCHAR(500)
 );
 GO
 /********* 7. Hệ thống ****************************************/

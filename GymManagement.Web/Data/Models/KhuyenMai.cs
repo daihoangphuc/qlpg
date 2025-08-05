@@ -23,5 +23,7 @@ namespace GymManagement.Web.Data.Models
         public DateOnly NgayKetThuc { get; set; }
         
         public bool KichHoat { get; set; } = true;
+
+        public DateTime NgayTao { get; set; } = DateTime.Now;
     }
 }

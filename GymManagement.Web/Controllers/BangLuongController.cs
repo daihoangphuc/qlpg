@@ -14,19 +14,22 @@ namespace GymManagement.Web.Controllers
         private readonly IAuthService _authService;
         private readonly IPdfExportService _pdfExportService;
         private readonly ILogger<BangLuongController> _logger;
+        private readonly IAuditLogService _auditLog;
 
         public BangLuongController(
             IBangLuongService bangLuongService,
             INguoiDungService nguoiDungService,
             IAuthService authService,
             IPdfExportService pdfExportService,
-            ILogger<BangLuongController> logger)
+            ILogger<BangLuongController> logger,
+            IAuditLogService auditLog)
         {
             _bangLuongService = bangLuongService;
             _nguoiDungService = nguoiDungService;
             _authService = authService;
             _pdfExportService = pdfExportService;
             _logger = logger;
+            _auditLog = auditLog;
         }
 
         // Helper method to get current user
@@ -138,19 +141,51 @@ namespace GymManagement.Web.Controllers
 
         [HttpPost]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> GenerateMonthlySalaries(string month)
+        public async Task<IActionResult> GenerateMonthlySalaries([FromBody] GenerateSalaryRequest request)
         {
             try
             {
-                var result = await _bangLuongService.GenerateMonthlySalariesAsync(month);
+                // Server-side validation
+                if (request == null || string.IsNullOrWhiteSpace(request.Month))
+                {
+                    return Json(new { success = false, message = "Tháng không được để trống." });
+                }
+
+                // Validate month format
+                if (!System.Text.RegularExpressions.Regex.IsMatch(request.Month, @"^\d{4}-(0[1-9]|1[0-2])$"))
+                {
+                    return Json(new { success = false, message = "Định dạng tháng không hợp lệ. Sử dụng format YYYY-MM." });
+                }
+
+                // Check if month is not too far in the future
+                if (DateTime.TryParseExact($"{request.Month}-01", "yyyy-MM-dd", null,
+                    System.Globalization.DateTimeStyles.None, out var monthDate))
+                {
+                    var maxFutureDate = DateTime.Today.AddMonths(2);
+                    if (monthDate > maxFutureDate)
+                    {
+                        return Json(new { success = false, message = "Không thể tạo lương quá xa trong tương lai." });
+                    }
+                }
+
+                var result = await _bangLuongService.GenerateMonthlySalariesAsync(request.Month);
                 if (result)
                 {
-                    return Json(new { success = true, message = $"Tạo bảng lương tháng {month} thành công!" });
+                    // Audit log
+                    var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                    _auditLog.LogMonthlySalaryGenerated(request.Month, 0, userId ?? "Unknown"); // Count would need to be returned from service
+
+                    return Json(new { success = true, message = $"Tạo bảng lương tháng {request.Month} thành công!" });
                 }
                 else
                 {
-                    return Json(new { success = false, message = "Không thể tạo bảng lương." });
+                    return Json(new { success = false, message = "Không thể tạo bảng lương. Có thể lương tháng này đã tồn tại." });
                 }
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Invalid argument for generating monthly salaries");
+                return Json(new { success = false, message = ex.Message });
             }
             catch (Exception ex)
             {
@@ -160,20 +195,39 @@ namespace GymManagement.Web.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin,Manager")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> PaySalary(int salaryId)
         {
             try
             {
+                // Server-side validation
+                if (salaryId <= 0)
+                {
+                    return Json(new { success = false, message = "ID bảng lương không hợp lệ." });
+                }
+
                 var result = await _bangLuongService.PaySalaryAsync(salaryId);
                 if (result)
                 {
+                    // Audit log
+                    var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                    var salary = await _bangLuongService.GetByIdAsync(salaryId);
+                    if (salary != null)
+                    {
+                        _auditLog.LogSalaryPaid(salaryId, salary.Thang, salary.TongThanhToan, userId ?? "Unknown");
+                    }
+
                     return Json(new { success = true, message = "Thanh toán lương thành công!" });
                 }
                 else
                 {
-                    return Json(new { success = false, message = "Không thể thanh toán lương." });
+                    return Json(new { success = false, message = "Không thể thanh toán lương. Có thể lương đã được thanh toán hoặc không tồn tại." });
                 }
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex, "Invalid operation for paying salary {SalaryId}", salaryId);
+                return Json(new { success = false, message = ex.Message });
             }
             catch (Exception ex)
             {
@@ -206,7 +260,7 @@ namespace GymManagement.Web.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "Admin,Manager")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CalculateCommission(int trainerId, string month)
         {
             try
@@ -225,8 +279,29 @@ namespace GymManagement.Web.Controllers
             }
         }
 
-        [HttpGet]
-        [Authorize(Roles = "Admin,Manager")]
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Delete([FromBody] DeleteSalaryRequest request)
+        {
+            try
+            {
+                var result = await _bangLuongService.DeleteAsync(request.Id);
+                if (result)
+                {
+                    return Json(new { success = true, message = "Đã xóa bảng lương thành công!" });
+                }
+                else
+                {
+                    return Json(new { success = false, message = "Không thể xóa bảng lương." });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while deleting salary");
+                return Json(new { success = false, message = $"Có lỗi xảy ra khi xóa bảng lương: {ex.Message}" });
+            }
+        }
+
         public async Task<IActionResult> GetSalaryExpense(string month)
         {
             try
@@ -246,7 +321,7 @@ namespace GymManagement.Web.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "Admin,Manager")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> ExportSalaries(string month, string format = "csv")
         {
             try
@@ -276,7 +351,7 @@ namespace GymManagement.Web.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "Admin,Manager")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetTrainerSalaryHistory(int trainerId)
         {
             try
@@ -298,7 +373,7 @@ namespace GymManagement.Web.Controllers
             }
         }
 
-        [Authorize(Roles = "Admin,Manager")]
+        [Authorize(Roles = "Admin")]
         public IActionResult SalarySettings()
         {
             return View();
@@ -310,9 +385,28 @@ namespace GymManagement.Web.Controllers
         {
             try
             {
-                // TODO: Implement base salary configuration
-                // This would typically be stored in a configuration table
-                return Json(new { success = true, message = "Cập nhật lương cơ bản thành công!" });
+                // Input validation
+                if (newBaseSalary <= 0)
+                {
+                    return Json(new { success = false, message = "Lương cơ bản phải lớn hơn 0." });
+                }
+
+                if (newBaseSalary > 100000000) // 100M VND max
+                {
+                    return Json(new { success = false, message = "Lương cơ bản không được vượt quá 100,000,000 VNĐ." });
+                }
+
+                // For now, we'll just log the change since there's no configuration table
+                // In a real implementation, this would update a configuration table
+                _logger.LogInformation("Base salary update requested: {NewBaseSalary} VND by user {UserId}",
+                    newBaseSalary, User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value);
+
+                // Return success with note about implementation
+                return Json(new {
+                    success = true,
+                    message = $"Yêu cầu cập nhật lương cơ bản thành {newBaseSalary:N0} VNĐ đã được ghi nhận. " +
+                             "Lưu ý: Cần implement bảng cấu hình để lưu trữ giá trị này."
+                });
             }
             catch (Exception ex)
             {
@@ -324,7 +418,7 @@ namespace GymManagement.Web.Controllers
         #region PDF Export Endpoints
 
         [HttpGet]
-        [Authorize(Roles = "Admin,Manager")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> ExportSalaryDetailPdf(int salaryId)
         {
             try
@@ -350,7 +444,7 @@ namespace GymManagement.Web.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "Admin,Manager")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> ExportMonthlyReportPdf(string month)
         {
             try
@@ -420,7 +514,7 @@ namespace GymManagement.Web.Controllers
         #region Enhanced Reporting Endpoints
 
         [HttpGet]
-        [Authorize(Roles = "Admin,Manager")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetDetailedCommissionBreakdown(int trainerId, string month)
         {
             try
@@ -452,7 +546,7 @@ namespace GymManagement.Web.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "Admin,Manager")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetSalaryComparison(int trainerId, string month1, string month2)
         {
             try
@@ -483,5 +577,15 @@ namespace GymManagement.Web.Controllers
         }
 
         #endregion
+    }
+
+    public class DeleteSalaryRequest
+    {
+        public int Id { get; set; }
+    }
+
+    public class GenerateSalaryRequest
+    {
+        public string Month { get; set; }
     }
 }

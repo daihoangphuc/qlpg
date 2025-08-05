@@ -10,9 +10,11 @@ namespace GymManagement.Web.Services
         Task<DangKy> UpdateAsync(DangKy dangKy);
         Task<bool> DeleteAsync(int id);
         Task<IEnumerable<DangKy>> GetByMemberIdAsync(int memberId);
+        Task<IEnumerable<DangKy>> GetRegistrationsByMemberIdAsync(int memberId);
         Task<IEnumerable<DangKy>> GetActiveRegistrationsAsync();
         Task<IEnumerable<DangKy>> GetExpiredRegistrationsAsync();
         Task<bool> RegisterPackageAsync(int nguoiDungId, int goiTapId, int thoiHanThang);
+        Task<bool> RegisterPackageAsync(int nguoiDungId, int goiTapId, int thoiHanThang, int? khuyenMaiId);
         Task<bool> RegisterClassAsync(int nguoiDungId, int lopHocId, DateTime ngayBatDau, DateTime ngayKetThuc);
         Task<bool> RegisterFixedClassAsync(int nguoiDungId, int lopHocId);
         Task<bool> ExtendRegistrationAsync(int dangKyId, int additionalMonths);

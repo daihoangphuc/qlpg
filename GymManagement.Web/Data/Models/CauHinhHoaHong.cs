@@ -5,25 +5,19 @@ namespace GymManagement.Web.Data.Models
 {
     public class CauHinhHoaHong
     {
+        [Key]
         public int CauHinhHoaHongId { get; set; }
-        
+
         public int? GoiTapId { get; set; }
-        
-        public int? LopHocId { get; set; }
-        
+
         [Required]
         [Range(0, 100)]
-        public int PhanTramHoaHong { get; set; } // Basic commission percentage
-
-        public bool KichHoat { get; set; } = true;
+        public decimal PhanTramHoaHong { get; set; }
 
         public DateTime NgayTao { get; set; } = DateTime.Now;
 
-        [StringLength(500)]
-        public string? MoTa { get; set; }
-
         // Navigation properties
+        [ForeignKey("GoiTapId")]
         public virtual GoiTap? GoiTap { get; set; }
-        public virtual LopHoc? LopHoc { get; set; }
     }
 }

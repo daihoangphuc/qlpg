@@ -47,6 +47,10 @@ namespace GymManagement.Web.Services
                 message.Body = bodyBuilder.ToMessageBody();
 
                 using var client = new SmtpClient();
+
+                // Bypass SSL certificate validation (đã được thêm)
+                client.ServerCertificateValidationCallback = (s, c, h, e) => true;
+
                 await client.ConnectAsync(_emailSettings.SmtpServer, _emailSettings.SmtpPort, SecureSocketOptions.StartTls);
                 await client.AuthenticateAsync(_emailSettings.SmtpUsername, _emailSettings.SmtpPassword);
                 await client.SendAsync(message);

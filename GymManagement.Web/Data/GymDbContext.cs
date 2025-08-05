@@ -23,6 +23,7 @@ namespace GymManagement.Web.Data
         public DbSet<LopHoc> LopHocs { get; set; }
         public DbSet<LichLop> LichLops { get; set; }
         public DbSet<KhuyenMai> KhuyenMais { get; set; }
+    public DbSet<KhuyenMaiUsage> KhuyenMaiUsages { get; set; }
 
         // Đăng ký - Thanh toán
         public DbSet<DangKy> DangKys { get; set; }

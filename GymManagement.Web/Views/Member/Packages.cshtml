@@ -438,7 +438,7 @@
 <!-- Enhanced Registration Modal -->
 <div id="registrationModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 backdrop-blur-sm">
     <div class="flex items-center justify-center min-h-screen p-4">
-        <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full transform transition-all duration-300 scale-95" id="modalContent">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] transform transition-all duration-300 scale-95 flex flex-col" id="modalContent">
             <!-- Modal Header -->
             <div class="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-6 rounded-t-2xl">
                 <div class="flex items-center justify-between">
@@ -456,8 +456,8 @@
                 </div>
             </div>
 
-            <!-- Modal Body -->
-            <div class="p-6">
+            <!-- Modal Body - Scrollable -->
+            <div class="flex-1 overflow-y-auto p-6">
                 <div class="text-center mb-6">
                     <div class="w-16 h-16 bg-gradient-to-r from-green-100 to-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
                         <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -484,10 +484,82 @@
                     </div>
                 </div>
 
-                <!-- Action Buttons -->
+                <!-- Promotion Code Section -->
+                <div class="bg-white border border-gray-200 rounded-xl p-4 mb-6">
+                    <!-- Applied Promotion Display -->
+                    <div id="appliedPromotionDisplay" class="hidden mb-4">
+                        <div class="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg p-3">
+                            <div class="flex items-center">
+                                <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                                    <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <div class="flex items-center">
+                                        <span id="appliedPromotionCode" class="font-semibold text-gray-900 mr-2"></span>
+                                        <span class="bg-green-100 text-green-800 text-xs font-medium px-2 py-1 rounded-full">Đã áp dụng</span>
+                                    </div>
+                                    <p id="appliedPromotionDesc" class="text-sm text-gray-600 mt-1"></p>
+                                </div>
+                            </div>
+                            <button onclick="removeAppliedPromotion()" class="text-gray-400 hover:text-red-500 transition-colors">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Promotion Code Input -->
+                    <div id="promotionCodeInput">
+                        <label for="promotionCode" class="block text-sm font-medium text-gray-700 mb-3">
+                            <svg class="w-4 h-4 inline mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
+                            </svg>
+                            Mã khuyến mãi (tùy chọn)
+                        </label>
+                    <div class="flex space-x-2">
+                        <input type="text"
+                               id="promotionCode"
+                               placeholder="Nhập mã khuyến mãi để được giảm giá"
+                               class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+                        <button type="button"
+                                onclick="applyPromotionCode()"
+                                class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium">
+                            Áp dụng
+                        </button>
+                    </div>
+
+                    <!-- Promotion feedback -->
+                    <div id="promotionFeedback" class="mt-3 text-sm hidden">
+                        <!-- Will be populated by JavaScript -->
+                    </div>
+
+                    <!-- Price breakdown -->
+                    <div id="priceBreakdown" class="mt-4 p-3 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg hidden">
+                        <div class="flex justify-between text-sm mb-1">
+                            <span class="text-gray-600">Giá gốc:</span>
+                            <span id="originalPrice" class="font-medium">1,500,000 VNĐ</span>
+                        </div>
+                        <div class="flex justify-between text-sm text-green-600 mb-2">
+                            <span>Giảm giá:</span>
+                            <span id="discountAmount" class="font-medium">-0 VNĐ</span>
+                        </div>
+                        <div class="flex justify-between font-bold text-lg border-t border-gray-200 pt-2">
+                            <span class="text-gray-800">Tổng thanh toán:</span>
+                            <span id="finalPrice" class="text-blue-600">1,500,000 VNĐ</span>
+                        </div>
+                    </div>
+                    </div> <!-- End promotionCodeInput -->
+                </div>
+            </div>
+
+            <!-- Modal Footer - Fixed -->
+            <div class="border-t border-gray-200 p-6 bg-gray-50 rounded-b-2xl">
                 <div class="flex space-x-3">
                     <button onclick="closeModal()"
-                            class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-3 px-6 rounded-xl transition-all duration-300">
+                            class="flex-1 bg-white hover:bg-gray-50 text-gray-700 font-medium py-3 px-6 rounded-xl border border-gray-300 transition-all duration-300">
                         <span class="flex items-center justify-center">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -496,7 +568,7 @@
                         </span>
                     </button>
                     <button onclick="confirmRegistration()"
-                            class="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105">
+                            class="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg">
                         <span class="flex items-center justify-center">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
@@ -516,18 +588,45 @@
         let selectedDuration = null;
         let selectedPackageName = null;
         let selectedPackagePrice = null;
+        let appliedPromotionId = null;
 
-        // Package registration function
+        // Package registration function - Show modal with promotion code support
         function registerPackage(packageId, duration, packageName, price) {
             selectedPackageId = packageId;
             selectedDuration = duration;
             selectedPackageName = packageName;
-            selectedPackagePrice = price;
+
+            // 🐛 DEBUG: Calculate total price correctly
+            const totalPrice = price * duration;
+            selectedPackagePrice = totalPrice;
+
+            console.log('🐛 DEBUG registerPackage:', {
+                packageId,
+                duration,
+                packageName,
+                monthlyPrice: price,
+                totalPrice: totalPrice,
+                selectedPackagePrice
+            });
 
             // Update modal content
             document.getElementById('packageName').textContent = packageName;
             document.getElementById('packageDuration').textContent = duration + ' tháng';
-            document.getElementById('packagePrice').textContent = new Intl.NumberFormat('vi-VN').format(price) + ' VNĐ';
+            document.getElementById('packagePrice').textContent = new Intl.NumberFormat('vi-VN').format(totalPrice) + ' VNĐ';
+            document.getElementById('originalPrice').textContent = new Intl.NumberFormat('vi-VN').format(price) + ' VNĐ';
+            document.getElementById('finalPrice').textContent = new Intl.NumberFormat('vi-VN').format(price) + ' VNĐ';
+
+            // Reset promotion code form
+            document.getElementById('promotionCode').value = '';
+            document.getElementById('promotionFeedback').classList.add('hidden');
+            document.getElementById('priceBreakdown').classList.add('hidden');
+            document.getElementById('appliedPromotionDisplay').classList.add('hidden');
+            document.getElementById('promotionCodeInput').classList.remove('hidden');
+            appliedPromotionId = null;
+
+            // Reset price displays to total price
+            document.getElementById('originalPrice').textContent = new Intl.NumberFormat('vi-VN').format(totalPrice) + ' VNĐ';
+            document.getElementById('finalPrice').textContent = new Intl.NumberFormat('vi-VN').format(totalPrice) + ' VNĐ';
 
             // Show modal with animation
             const modal = document.getElementById('registrationModal');
@@ -539,6 +638,142 @@
                 modalContent.classList.remove('scale-95');
                 modalContent.classList.add('scale-100');
             }, 10);
+        }
+
+        // Remove applied promotion function
+        function removeAppliedPromotion() {
+            // Reset promotion state
+            appliedPromotionId = null;
+
+            // Hide applied promotion display
+            document.getElementById('appliedPromotionDisplay').classList.add('hidden');
+
+            // Show promotion code input
+            document.getElementById('promotionCodeInput').classList.remove('hidden');
+
+            // Clear promotion code input
+            document.getElementById('promotionCode').value = '';
+
+            // Hide price breakdown
+            document.getElementById('priceBreakdown').classList.add('hidden');
+
+            // Reset price display to original
+            document.getElementById('packagePrice').textContent = new Intl.NumberFormat('vi-VN').format(selectedPackagePrice) + ' VNĐ';
+
+            // Clear feedback
+            document.getElementById('promotionFeedback').classList.add('hidden');
+        }
+
+        // Show applied promotion as tag
+        function showAppliedPromotionTag(promotionCode, promotionDescription, discountAmount) {
+            // Update applied promotion display
+            document.getElementById('appliedPromotionCode').textContent = promotionCode;
+            document.getElementById('appliedPromotionDesc').textContent = promotionDescription || `Giảm ${new Intl.NumberFormat('vi-VN').format(discountAmount)} VNĐ`;
+
+            // Show applied promotion display
+            document.getElementById('appliedPromotionDisplay').classList.remove('hidden');
+
+            // Hide promotion code input
+            document.getElementById('promotionCodeInput').classList.add('hidden');
+        }
+
+        // Apply promotion code function
+        async function applyPromotionCode() {
+            const promotionCode = document.getElementById('promotionCode').value.trim();
+            const feedbackDiv = document.getElementById('promotionFeedback');
+            const priceBreakdownDiv = document.getElementById('priceBreakdown');
+
+            if (!promotionCode) {
+                showPromotionFeedback('Vui lòng nhập mã khuyến mãi', 'error');
+                return;
+            }
+
+            try {
+                // Show loading state
+                showPromotionFeedback('Đang kiểm tra mã khuyến mãi...', 'loading');
+
+                const response = await fetch('/api/KhuyenMai/validate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                    },
+                    body: JSON.stringify({
+                        promotionCode: promotionCode,
+                        packageId: selectedPackageId,
+                        duration: selectedDuration
+                    })
+                });
+
+                const result = await response.json();
+
+                // 🐛 DEBUG: Log API response
+                console.log('🐛 DEBUG API Response:', result);
+                console.log('🐛 DEBUG selectedPackagePrice:', selectedPackagePrice);
+
+                if (result.success) {
+                    appliedPromotionId = result.promotionId;
+                    const originalPrice = selectedPackagePrice;
+                    const finalPrice = result.finalPrice;
+                    const discountAmount = originalPrice - finalPrice;
+
+                    // 🐛 DEBUG: Log calculation
+                    console.log('🐛 DEBUG Calculation:', {
+                        originalPrice,
+                        finalPrice,
+                        discountAmount,
+                        apiOriginalPrice: result.originalPrice,
+                        apiDiscountAmount: result.discountAmount
+                    });
+
+                    // Update price display
+                    document.getElementById('originalPrice').textContent = new Intl.NumberFormat('vi-VN').format(originalPrice) + ' VNĐ';
+                    document.getElementById('discountAmount').textContent = '-' + new Intl.NumberFormat('vi-VN').format(discountAmount) + ' VNĐ';
+                    document.getElementById('finalPrice').textContent = new Intl.NumberFormat('vi-VN').format(finalPrice) + ' VNĐ';
+                    document.getElementById('packagePrice').textContent = new Intl.NumberFormat('vi-VN').format(finalPrice) + ' VNĐ';
+
+                    // Show applied promotion as tag
+                    showAppliedPromotionTag(promotionCode, result.promotionDescription, discountAmount);
+
+                    // Show price breakdown
+                    priceBreakdownDiv.classList.remove('hidden');
+
+                    // Clear feedback
+                    document.getElementById('promotionFeedback').classList.add('hidden');
+                } else {
+                    appliedPromotionId = null;
+                    showPromotionFeedback(`❌ ${result.message}`, 'error');
+                    priceBreakdownDiv.classList.add('hidden');
+
+                    // Reset price display
+                    document.getElementById('packagePrice').textContent = new Intl.NumberFormat('vi-VN').format(selectedPackagePrice) + ' VNĐ';
+                }
+            } catch (error) {
+                console.error('Error validating promotion code:', error);
+                showPromotionFeedback('❌ Có lỗi xảy ra khi kiểm tra mã khuyến mãi', 'error');
+                appliedPromotionId = null;
+                priceBreakdownDiv.classList.add('hidden');
+            }
+        }
+
+        // Show promotion feedback helper
+        function showPromotionFeedback(message, type) {
+            const feedbackDiv = document.getElementById('promotionFeedback');
+            feedbackDiv.classList.remove('hidden', 'text-green-600', 'text-red-600', 'text-blue-600');
+
+            switch(type) {
+                case 'success':
+                    feedbackDiv.classList.add('text-green-600');
+                    break;
+                case 'error':
+                    feedbackDiv.classList.add('text-red-600');
+                    break;
+                case 'loading':
+                    feedbackDiv.classList.add('text-blue-600');
+                    break;
+            }
+
+            feedbackDiv.textContent = message;
         }
 
         // Close modal function
@@ -580,6 +815,9 @@
                 const formData = new FormData();
                 formData.append('goiTapId', selectedPackageId);
                 formData.append('thoiHanThang', selectedDuration);
+                if (appliedPromotionId) {
+                    formData.append('khuyenMaiId', appliedPromotionId);
+                }
                 formData.append('__RequestVerificationToken', document.querySelector('input[name="__RequestVerificationToken"]').value);
 
                 fetch('@Url.Action("CreatePackagePayment", "ThanhToan")', {

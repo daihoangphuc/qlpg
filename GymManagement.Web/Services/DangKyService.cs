@@ -341,6 +341,16 @@ namespace GymManagement.Web.Services
                 .ToListAsync();
         }
 
+        public async Task<IEnumerable<DangKy>> GetRegistrationsByMemberIdAsync(int memberId)
+        {
+            return await _unitOfWork.Context.DangKys
+                .Include(d => d.GoiTap)
+                .Include(d => d.LopHoc)
+                .Include(d => d.NguoiDung)
+                .Where(d => d.NguoiDungId == memberId)
+                .ToListAsync();
+        }
+
         /// <summary>
         /// Kiểm tra xung đột thời gian giữa hai lớp học
         /// </summary>

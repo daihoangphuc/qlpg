@@ -52,20 +52,26 @@ namespace GymManagement.Web.Controllers
 
                 var memberId = int.Parse(nguoiDungIdClaim);
 
-                // Lấy danh sách gói đã đăng ký ACTIVE của member
-                var userRegistrations = await _dangKyService.GetActiveRegistrationsByMemberIdAsync(memberId);
+                // Lấy danh sách gói đã đăng ký (bao gồm cả ACTIVE và PENDING)
+                var userRegistrations = await _dangKyService.GetRegistrationsByMemberIdAsync(memberId);
                 var registeredPackageIds = userRegistrations
-                    .Where(r => r.GoiTapId.HasValue &&
-                               r.TrangThai == "ACTIVE" &&
-                               r.NgayKetThuc >= DateOnly.FromDateTime(DateTime.Today))
+                    .Where(r => r.GoiTapId.HasValue && (
+                        // ACTIVE registrations that haven't expired
+                        (r.TrangThai == "ACTIVE" && r.NgayKetThuc >= DateOnly.FromDateTime(DateTime.Today)) ||
+                        // PENDING registrations (awaiting payment)
+                        r.TrangThai == "PENDING"
+                    ))
                     .Select(r => r.GoiTapId!.Value)
                     .ToHashSet();
 
-                // Lọc ra những gói chưa đăng ký
+                // Lọc ra những gói chưa đăng ký (loại bỏ cả ACTIVE và PENDING)
                 var availablePackages = allPackages.Where(p => !registeredPackageIds.Contains(p.GoiTapId)).ToList();
 
-                // 🔒 CHÍNH SÁCH: Mỗi thành viên chỉ có thể sở hữu một gói tập tại một thời điểm
-                var hasActivePackage = registeredPackageIds.Any();
+                // Check if user has any active package (only ACTIVE, not PENDING)
+                var hasActivePackage = userRegistrations.Any(r =>
+                    r.GoiTapId.HasValue &&
+                    r.TrangThai == "ACTIVE" &&
+                    r.NgayKetThuc >= DateOnly.FromDateTime(DateTime.Today));
 
                 ViewBag.TotalPackages = allPackages.Count();
                 ViewBag.HasActivePackage = hasActivePackage;
