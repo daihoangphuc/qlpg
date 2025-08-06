@@ -244,6 +244,69 @@ namespace GymManagement.Web.Services
             return true;
         }
 
+        // New methods for renewal functionality
+        public async Task<decimal> CalculateRenewalFeeAsync(int dangKyId, int renewalMonths)
+        {
+            var dangKy = await _dangKyRepository.GetByIdAsync(dangKyId);
+            if (dangKy?.GoiTap == null) return 0;
+
+            // Use current package price (not the original price when registered)
+            var currentPackage = await _goiTapRepository.GetByIdAsync(dangKy.GoiTapId.Value);
+            if (currentPackage == null) return 0;
+
+            // Calculate based on monthly rate
+            var monthlyRate = currentPackage.Gia / currentPackage.ThoiHanThang;
+            return monthlyRate * renewalMonths;
+        }
+
+        public async Task<bool> CanRenewRegistrationAsync(int dangKyId)
+        {
+            var dangKy = await _dangKyRepository.GetByIdAsync(dangKyId);
+            if (dangKy == null) return false;
+
+            // Can renew if:
+            // 1. It's a package registration (not class)
+            // 2. Status is ACTIVE or EXPIRED within 30 days
+            return dangKy.IsPackageRegistration &&
+                   (dangKy.TrangThai == "ACTIVE" ||
+                    (dangKy.TrangThai == "EXPIRED" && dangKy.NgayKetThuc >= DateOnly.FromDateTime(DateTime.Today.AddDays(-30))));
+        }
+
+        public async Task<bool> ProcessRenewalPaymentAsync(int dangKyId, int thanhToanId, int renewalMonths)
+        {
+            // Verify payment exists and is successful
+            var thanhToan = await _unitOfWork.Context.ThanhToans.FindAsync(thanhToanId);
+            if (thanhToan == null || thanhToan.TrangThai != "SUCCESS") return false;
+
+            // Get registration
+            var dangKy = await _dangKyRepository.GetByIdAsync(dangKyId);
+            if (dangKy == null || !await CanRenewRegistrationAsync(dangKyId)) return false;
+
+            // If expired, reactivate and extend from today
+            if (dangKy.TrangThai == "EXPIRED")
+            {
+                dangKy.TrangThai = "ACTIVE";
+                dangKy.NgayKetThuc = DateOnly.FromDateTime(DateTime.Today.AddMonths(renewalMonths));
+            }
+            else
+            {
+                // If still active, extend from current expiry date
+                dangKy.NgayKetThuc = dangKy.NgayKetThuc.AddMonths(renewalMonths);
+            }
+
+            await _unitOfWork.SaveChangesAsync();
+
+            // Send notification
+            await _thongBaoService.CreateNotificationAsync(
+                dangKy.NguoiDungId,
+                "Gia hạn gói tập thành công",
+                $"Gói tập {dangKy.GoiTap?.TenGoi} đã được gia hạn thêm {renewalMonths} tháng. Ngày hết hạn mới: {dangKy.NgayKetThuc:dd/MM/yyyy}",
+                "APP"
+            );
+
+            return true;
+        }
+
         public async Task<bool> CancelRegistrationAsync(int dangKyId, string reason)
         {
             var dangKy = await _dangKyRepository.GetByIdAsync(dangKyId);

@@ -57,6 +57,41 @@ namespace GymManagement.Web.Data.Models
         [NotMapped]
         public string DisplayType => IsClassRegistration ? "Lớp học" : "Gói tập";
 
+        // Computed properties for renewal
+        [NotMapped]
+        public bool IsExpiringSoon => TrangThai == "ACTIVE" && NgayKetThuc <= DateOnly.FromDateTime(DateTime.Today.AddDays(7));
+
+        [NotMapped]
+        public bool IsExpired => TrangThai == "ACTIVE" && NgayKetThuc < DateOnly.FromDateTime(DateTime.Today);
+
+        [NotMapped]
+        public bool CanRenew => IsPackageRegistration && (TrangThai == "ACTIVE" || (TrangThai == "EXPIRED" && NgayKetThuc >= DateOnly.FromDateTime(DateTime.Today.AddDays(-30))));
+
+        [NotMapped]
+        public int DaysUntilExpiry => (NgayKetThuc.ToDateTime(TimeOnly.MinValue) - DateTime.Today).Days;
+
+        [NotMapped]
+        public string ExpiryStatus
+        {
+            get
+            {
+                if (IsExpired) return "Đã hết hạn";
+                if (IsExpiringSoon) return "Sắp hết hạn";
+                return "Còn hiệu lực";
+            }
+        }
+
+        [NotMapped]
+        public string ExpiryBadgeClass
+        {
+            get
+            {
+                if (IsExpired) return "bg-red-100 text-red-800";
+                if (IsExpiringSoon) return "bg-yellow-100 text-yellow-800";
+                return "bg-green-100 text-green-800";
+            }
+        }
+
         // Navigation properties
         public virtual NguoiDung NguoiDung { get; set; } = null!;
         public virtual GoiTap? GoiTap { get; set; }

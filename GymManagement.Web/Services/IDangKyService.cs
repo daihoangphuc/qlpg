@@ -33,5 +33,10 @@ namespace GymManagement.Web.Services
         Task<IEnumerable<DangKy>> GetActiveRegistrationsByMemberIdAsync(int nguoiDungId);
         Task<int> GetActiveClassRegistrationCountAsync(int lopHocId);
         Task<bool> CanRegisterClassAsync(int nguoiDungId, int lopHocId);
+
+        // Renewal methods
+        Task<decimal> CalculateRenewalFeeAsync(int dangKyId, int renewalMonths);
+        Task<bool> CanRenewRegistrationAsync(int dangKyId);
+        Task<bool> ProcessRenewalPaymentAsync(int dangKyId, int thanhToanId, int renewalMonths);
     }
 }

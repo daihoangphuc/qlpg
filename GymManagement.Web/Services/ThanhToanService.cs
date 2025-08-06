@@ -403,7 +403,35 @@ namespace GymManagement.Web.Services
             }
         }
 
+        // Method for renewal payment
+        public async Task<ThanhToan> CreatePaymentForRenewalAsync(int dangKyId, int renewalMonths, string phuongThuc)
+        {
+            // Get registration and calculate fee
+            var dangKy = await _unitOfWork.Context.DangKys
+                .Include(d => d.GoiTap)
+                .FirstOrDefaultAsync(d => d.DangKyId == dangKyId);
 
+            if (dangKy?.GoiTap == null) throw new ArgumentException("Đăng ký không tồn tại");
+
+            // Calculate renewal fee based on current package price
+            var monthlyRate = dangKy.GoiTap.Gia / dangKy.GoiTap.ThoiHanThang;
+            var renewalFee = monthlyRate * renewalMonths;
+
+            var thanhToan = new ThanhToan
+            {
+                DangKyId = dangKyId,
+                SoTien = renewalFee,
+                PhuongThuc = phuongThuc,
+                TrangThai = "PENDING",
+                NgayThanhToan = DateTime.Now,
+                GhiChu = $"Gia hạn gói tập {dangKy.GoiTap.TenGoi} - {renewalMonths} tháng"
+            };
+
+            var created = await _thanhToanRepository.AddAsync(thanhToan);
+            await _unitOfWork.SaveChangesAsync();
+
+            return created;
+        }
 
         // HMAC method moved to VNPay Area
     }

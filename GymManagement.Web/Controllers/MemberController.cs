@@ -420,5 +420,74 @@ namespace GymManagement.Web.Controllers
                 return Json(new { success = false, message = "Có lỗi xảy ra khi hủy đăng ký." });
             }
         }
+
+        // Renewal functionality
+        [HttpPost]
+        public async Task<IActionResult> GetRenewalInfo(int dangKyId, int renewalMonths)
+        {
+            try
+            {
+                var canRenew = await _dangKyService.CanRenewRegistrationAsync(dangKyId);
+                if (!canRenew)
+                {
+                    return Json(new { success = false, message = "Không thể gia hạn đăng ký này." });
+                }
+
+                var renewalFee = await _dangKyService.CalculateRenewalFeeAsync(dangKyId, renewalMonths);
+
+                return Json(new {
+                    success = true,
+                    renewalFee = renewalFee,
+                    renewalFeeFormatted = renewalFee.ToString("N0") + " VNĐ",
+                    renewalMonths = renewalMonths
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting renewal info for DangKyId: {DangKyId}", dangKyId);
+                return Json(new { success = false, message = "Có lỗi xảy ra khi tính phí gia hạn." });
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> CreateRenewalPayment(int dangKyId, int renewalMonths)
+        {
+            try
+            {
+                var user = await _userSessionService.GetCurrentUserAsync();
+                if (user?.NguoiDungId == null)
+                {
+                    return Json(new { success = false, message = "Vui lòng đăng nhập để tiếp tục." });
+                }
+
+                // Verify user owns this registration
+                var dangKy = await _dangKyService.GetByIdAsync(dangKyId);
+                if (dangKy == null || dangKy.NguoiDungId != user.NguoiDungId.Value)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy đăng ký hoặc bạn không có quyền truy cập." });
+                }
+
+                var canRenew = await _dangKyService.CanRenewRegistrationAsync(dangKyId);
+                if (!canRenew)
+                {
+                    return Json(new { success = false, message = "Không thể gia hạn đăng ký này." });
+                }
+
+                // Create payment for renewal
+                var thanhToanService = HttpContext.RequestServices.GetRequiredService<IThanhToanService>();
+                var payment = await thanhToanService.CreatePaymentForRenewalAsync(dangKyId, renewalMonths, "VNPAY");
+
+                return Json(new {
+                    success = true,
+                    thanhToanId = payment.ThanhToanId,
+                    message = "Đã tạo thanh toán gia hạn thành công!"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating renewal payment for DangKyId: {DangKyId}", dangKyId);
+                return Json(new { success = false, message = "Có lỗi xảy ra khi tạo thanh toán gia hạn." });
+            }
+        }
     }
 }

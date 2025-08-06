@@ -245,36 +245,102 @@
 
                                 <!-- Status & Actions -->
                                 <div class="ml-6 text-right">
-                                    <!-- Status Badge -->
+                                    <!-- Status Badge with Expiry Info -->
                                     <div class="mb-4">
-                                        @switch (registration.TrangThai)
+                                        @if (registration.IsPackageRegistration)
                                         {
-                                            case "ACTIVE":
-                                                <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                                                    ✅ Đang hoạt động
-                                                </span>
-                                                break;
-                                            case "PENDING_PAYMENT":
-                                                <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
-                                                    💳 Chờ thanh toán
-                                                </span>
-                                                break;
-                                            case "EXPIRED":
-                                                <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-red-100 text-red-800">
-                                                    ⏰ Đã hết hạn
-                                                </span>
-                                                break;
-                                            case "CANCELED":
-                                            case "CANCELLED":
-                                                <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
-                                                    ❌ Đã hủy
-                                                </span>
-                                                break;
-                                            default:
-                                                <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
-                                                    @registration.TrangThai
-                                                </span>
-                                                break;
+                                            <!-- Package status with expiry info -->
+                                            <div class="space-y-2">
+                                                @if (registration.TrangThai == "ACTIVE")
+                                                {
+                                                    <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium @registration.ExpiryBadgeClass">
+                                                        @if (registration.IsExpired)
+                                                        {
+                                                            <span>⏰ @registration.ExpiryStatus</span>
+                                                        }
+                                                        else if (registration.IsExpiringSoon)
+                                                        {
+                                                            <span>⚠️ @registration.ExpiryStatus</span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span>✅ @registration.ExpiryStatus</span>
+                                                        }
+                                                    </span>
+                                                    @if (registration.DaysUntilExpiry >= 0)
+                                                    {
+                                                        <div class="text-xs text-gray-500">
+                                                            Còn @registration.DaysUntilExpiry ngày
+                                                        </div>
+                                                    }
+                                                    else
+                                                    {
+                                                        <div class="text-xs text-red-500">
+                                                            Quá hạn @Math.Abs(registration.DaysUntilExpiry) ngày
+                                                        </div>
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    @switch (registration.TrangThai)
+                                                    {
+                                                        case "PENDING_PAYMENT":
+                                                            <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
+                                                                💳 Chờ thanh toán
+                                                            </span>
+                                                            break;
+                                                        case "EXPIRED":
+                                                            <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-red-100 text-red-800">
+                                                                ⏰ Đã hết hạn
+                                                            </span>
+                                                            break;
+                                                        case "CANCELED":
+                                                        case "CANCELLED":
+                                                            <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
+                                                                ❌ Đã hủy
+                                                            </span>
+                                                            break;
+                                                        default:
+                                                            <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
+                                                                @registration.TrangThai
+                                                            </span>
+                                                            break;
+                                                    }
+                                                }
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <!-- Class registration status (unchanged) -->
+                                            @switch (registration.TrangThai)
+                                            {
+                                                case "ACTIVE":
+                                                    <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                                                        ✅ Đang hoạt động
+                                                    </span>
+                                                    break;
+                                                case "PENDING_PAYMENT":
+                                                    <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
+                                                        💳 Chờ thanh toán
+                                                    </span>
+                                                    break;
+                                                case "EXPIRED":
+                                                    <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-red-100 text-red-800">
+                                                        ⏰ Đã hết hạn
+                                                    </span>
+                                                    break;
+                                                case "CANCELED":
+                                                case "CANCELLED":
+                                                    <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
+                                                        ❌ Đã hủy
+                                                    </span>
+                                                    break;
+                                                default:
+                                                    <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
+                                                        @registration.TrangThai
+                                                    </span>
+                                                    break;
+                                            }
                                         }
                                     </div>
 
@@ -290,6 +356,19 @@
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
                                                 </svg>
                                                 Thanh toán ngay
+                                            </button>
+                                        }
+
+                                        @* Renewal button for packages that can be renewed *@
+                                        @if (registration.CanRenew)
+                                        {
+                                            <button type="button"
+                                                    onclick="showRenewalModal(@registration.DangKyId, '@(registration.GoiTap?.TenGoi ?? "Gói tập")')"
+                                                    class="inline-flex items-center px-4 py-2 border border-orange-300 text-sm font-medium rounded-lg text-orange-700 bg-orange-50 hover:bg-orange-100 transition-colors duration-200">
+                                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                                </svg>
+                                                🔄 Gia hạn
                                             </button>
                                         }
 
@@ -636,6 +715,101 @@
             document.body.appendChild(form);
             form.submit();
         }
+
+        // Renewal Modal Functions
+        let currentRenewalDangKyId = null;
+
+        function showRenewalModal(dangKyId, packageName) {
+            currentRenewalDangKyId = dangKyId;
+            document.getElementById('renewalPackageName').textContent = packageName;
+            document.getElementById('renewalModal').classList.remove('hidden');
+            updateRenewalFee(); // Calculate initial fee
+        }
+
+        function hideRenewalModal() {
+            document.getElementById('renewalModal').classList.add('hidden');
+            currentRenewalDangKyId = null;
+        }
+
+        function updateRenewalFee() {
+            if (!currentRenewalDangKyId) return;
+
+            const renewalMonths = document.getElementById('renewalDuration').value;
+            const renewalFeeElement = document.getElementById('renewalFee');
+
+            renewalFeeElement.textContent = 'Đang tính...';
+
+            fetch('@Url.Action("GetRenewalInfo", "Member")', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                },
+                body: `dangKyId=${currentRenewalDangKyId}&renewalMonths=${renewalMonths}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    renewalFeeElement.textContent = data.renewalFeeFormatted;
+                } else {
+                    renewalFeeElement.textContent = 'Lỗi tính phí';
+                    alert(data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                renewalFeeElement.textContent = 'Lỗi tính phí';
+            });
+        }
+
+        function processRenewal() {
+            if (!currentRenewalDangKyId) return;
+
+            const renewalMonths = document.getElementById('renewalDuration').value;
+            const submitBtn = document.getElementById('renewalSubmitBtn');
+            const originalText = submitBtn.textContent;
+
+            submitBtn.textContent = 'Đang xử lý...';
+            submitBtn.disabled = true;
+
+            // Create renewal payment
+            fetch('@Url.Action("CreateRenewalPayment", "Member")', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                },
+                body: `dangKyId=${currentRenewalDangKyId}&renewalMonths=${renewalMonths}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Redirect to VNPay payment
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = '@Url.Action("CreatePayment", "Home", new { area = "VNPayAPI" })';
+
+                    const thanhToanIdInput = document.createElement('input');
+                    thanhToanIdInput.type = 'hidden';
+                    thanhToanIdInput.name = 'ThanhToanId';
+                    thanhToanIdInput.value = data.thanhToanId;
+                    form.appendChild(thanhToanIdInput);
+
+                    document.body.appendChild(form);
+                    form.submit();
+                } else {
+                    alert(data.message);
+                    submitBtn.textContent = originalText;
+                    submitBtn.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Có lỗi xảy ra khi tạo thanh toán gia hạn.');
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+            });
+        }
     </script>
 }
 
@@ -735,6 +909,74 @@
                         onclick="confirmCancel()"
                         class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-200 font-medium">
                     Xác nhận hủy
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Renewal Modal -->
+<div id="renewalModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-xl shadow-xl max-w-md w-full">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between p-6 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900">🔄 Gia hạn gói tập</h3>
+                <button type="button"
+                        onclick="hideRenewalModal()"
+                        class="text-gray-400 hover:text-gray-600 transition-colors duration-200">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="p-6">
+                <div class="mb-4">
+                    <p class="text-gray-600 mb-2">Gói tập: <span id="renewalPackageName" class="font-semibold text-gray-900"></span></p>
+                </div>
+
+                <div class="mb-4">
+                    <label for="renewalDuration" class="block text-sm font-medium text-gray-700 mb-2">Chọn thời hạn gia hạn:</label>
+                    <select id="renewalDuration"
+                            onchange="updateRenewalFee()"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200">
+                        <option value="1">1 tháng</option>
+                        <option value="3">3 tháng</option>
+                        <option value="6">6 tháng</option>
+                        <option value="12">12 tháng</option>
+                    </select>
+                </div>
+
+                <div class="mb-4 p-4 bg-blue-50 rounded-lg">
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-medium text-blue-700">Phí gia hạn:</span>
+                        <span id="renewalFee" class="text-lg font-bold text-blue-900">Đang tính...</span>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Phương thức thanh toán:</label>
+                    <div class="flex items-center p-3 border border-gray-300 rounded-lg bg-gray-50">
+                        <img src="https://vnpay.vn/s1/statics.vnpay.vn/2023/6/0oxhzjmxbksr1686814746087.png" alt="VNPay" class="w-8 h-8 mr-3">
+                        <span class="text-sm font-medium text-gray-700">VNPay</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="flex justify-end space-x-3 p-6 border-t border-gray-200">
+                <button type="button"
+                        onclick="hideRenewalModal()"
+                        class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors duration-200 font-medium">
+                    Hủy bỏ
+                </button>
+                <button type="button"
+                        id="renewalSubmitBtn"
+                        onclick="processRenewal()"
+                        class="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors duration-200 font-medium">
+                    Thanh toán gia hạn
                 </button>
             </div>
         </div>

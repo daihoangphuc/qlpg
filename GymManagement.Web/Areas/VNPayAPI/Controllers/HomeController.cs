@@ -162,16 +162,34 @@ namespace GymManagement.Web.Areas.VNPayAPI.Controllers
                     gateway.ThanhToan.TrangThai = "SUCCESS";
                     gateway.GatewayMessage = isSimulation ? "Thanh toán thành công (Mô phỏng)" : "Thanh toán thành công";
 
-                    // Activate pending registration if exists
+                    // Process payment based on type (new registration or renewal)
                     if (gateway.ThanhToan.DangKyId.HasValue)
                     {
                         var registration = await _context.DangKys
                             .FirstOrDefaultAsync(d => d.DangKyId == gateway.ThanhToan.DangKyId.Value);
-                        
-                        if (registration != null && registration.TrangThai == "PENDING_PAYMENT")
+
+                        if (registration != null)
                         {
-                            registration.TrangThai = "ACTIVE";
-                            registration.TrangThaiChiTiet = isSimulation ? "Thanh toán thành công (Mô phỏng)" : "Thanh toán thành công";
+                            // Check if this is a renewal payment (based on GhiChu)
+                            if (gateway.ThanhToan.GhiChu?.Contains("Gia hạn") == true)
+                            {
+                                // This is a renewal payment - process renewal
+                                var dangKyService = HttpContext.RequestServices.GetRequiredService<IDangKyService>();
+
+                                // Extract renewal months from GhiChu (format: "Gia hạn gói tập ... - X tháng")
+                                var ghiChu = gateway.ThanhToan.GhiChu;
+                                var monthsMatch = System.Text.RegularExpressions.Regex.Match(ghiChu, @"(\d+)\s+tháng");
+                                if (monthsMatch.Success && int.TryParse(monthsMatch.Groups[1].Value, out int renewalMonths))
+                                {
+                                    await dangKyService.ProcessRenewalPaymentAsync(registration.DangKyId, gateway.ThanhToanId, renewalMonths);
+                                }
+                            }
+                            else if (registration.TrangThai == "PENDING_PAYMENT")
+                            {
+                                // This is a new registration payment
+                                registration.TrangThai = "ACTIVE";
+                                registration.TrangThaiChiTiet = isSimulation ? "Thanh toán thành công (Mô phỏng)" : "Thanh toán thành công";
+                            }
                         }
                     }
 

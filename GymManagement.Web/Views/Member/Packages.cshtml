@@ -136,7 +136,7 @@
                 <div class="package-card relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 overflow-hidden border border-gray-100 flex flex-col h-full"
                      data-price="@package.Gia" data-duration="@package.ThoiHanThang">
 
-                    <!-- Popular Badge -->
+                    @* <!-- Popular Badge -->
                     @if (package.ThoiHanThang == 6)
                     {
                         <div class="absolute top-4 right-4 z-10">
@@ -152,7 +152,7 @@
                                 👑 VIP
                             </div>
                         </div>
-                    }
+                    } *@
 
                     <!-- Package Header -->
                     <div class="relative overflow-hidden">
@@ -596,23 +596,23 @@
             selectedDuration = duration;
             selectedPackageName = packageName;
 
-            // 🐛 DEBUG: Calculate total price correctly
-            const totalPrice = price * duration;
-            selectedPackagePrice = totalPrice;
+            // ✅ FIXED: price is already the total price for the entire package duration
+            // No need to multiply by duration since Gia in database is total package price
+            selectedPackagePrice = price;
 
-            console.log('🐛 DEBUG registerPackage:', {
+            console.log('✅ FIXED registerPackage:', {
                 packageId,
                 duration,
                 packageName,
-                monthlyPrice: price,
-                totalPrice: totalPrice,
+                totalPackagePrice: price,
+                monthlyRate: (price / duration).toFixed(0),
                 selectedPackagePrice
             });
 
             // Update modal content
             document.getElementById('packageName').textContent = packageName;
             document.getElementById('packageDuration').textContent = duration + ' tháng';
-            document.getElementById('packagePrice').textContent = new Intl.NumberFormat('vi-VN').format(totalPrice) + ' VNĐ';
+            document.getElementById('packagePrice').textContent = new Intl.NumberFormat('vi-VN').format(price) + ' VNĐ';
             document.getElementById('originalPrice').textContent = new Intl.NumberFormat('vi-VN').format(price) + ' VNĐ';
             document.getElementById('finalPrice').textContent = new Intl.NumberFormat('vi-VN').format(price) + ' VNĐ';
 
@@ -624,9 +624,9 @@
             document.getElementById('promotionCodeInput').classList.remove('hidden');
             appliedPromotionId = null;
 
-            // Reset price displays to total price
-            document.getElementById('originalPrice').textContent = new Intl.NumberFormat('vi-VN').format(totalPrice) + ' VNĐ';
-            document.getElementById('finalPrice').textContent = new Intl.NumberFormat('vi-VN').format(totalPrice) + ' VNĐ';
+            // Reset price displays to package price
+            document.getElementById('originalPrice').textContent = new Intl.NumberFormat('vi-VN').format(price) + ' VNĐ';
+            document.getElementById('finalPrice').textContent = new Intl.NumberFormat('vi-VN').format(price) + ' VNĐ';
 
             // Show modal with animation
             const modal = document.getElementById('registrationModal');
