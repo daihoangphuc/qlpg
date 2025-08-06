@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using GymManagement.Web.Data;
 using GymManagement.Web.Data.Models;
+using GymManagement.Web.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace GymManagement.Web.Areas.VNPayAPI.Controllers
@@ -11,12 +12,14 @@ namespace GymManagement.Web.Areas.VNPayAPI.Controllers
         private readonly IConfiguration _configuration;
         private readonly GymDbContext _context;
         private readonly ILogger<HomeController> _logger;
+        private readonly VietQRService _vietQRService;
 
-        public HomeController(IConfiguration configuration, GymDbContext context, ILogger<HomeController> logger)
+        public HomeController(IConfiguration configuration, GymDbContext context, ILogger<HomeController> logger, VietQRService vietQRService)
         {
             _configuration = configuration;
             _context = context;
             _logger = logger;
+            _vietQRService = vietQRService;
         }
 
         [HttpPost]
@@ -40,27 +43,30 @@ namespace GymManagement.Web.Areas.VNPayAPI.Controllers
                 // Build VNPay payment URL
                 var vnpay = new VnPayLibrary();
 
-                // Required parameters
-                vnpay.AddRequestData("vnp_Version", "2.1.0");
+                // Build URL for VNPAY - following official sample
+                var createDate = DateTime.Now;
+                var orderId = DateTime.Now.Ticks; // Use ticks like official sample
+
+                vnpay.AddRequestData("vnp_Version", VnPayLibrary.VERSION);
                 vnpay.AddRequestData("vnp_Command", "pay");
                 vnpay.AddRequestData("vnp_TmnCode", vnp_TmnCode);
-                vnpay.AddRequestData("vnp_Amount", ((long)(payment.SoTien * 100)).ToString());
-                vnpay.AddRequestData("vnp_CreateDate", DateTime.Now.ToString("yyyyMMddHHmmss"));
+                vnpay.AddRequestData("vnp_Amount", ((long)(payment.SoTien * 100)).ToString()); // Amount in cents
+                vnpay.AddRequestData("vnp_CreateDate", createDate.ToString("yyyyMMddHHmmss"));
                 vnpay.AddRequestData("vnp_CurrCode", "VND");
                 vnpay.AddRequestData("vnp_IpAddr", Utils.GetIpAddress(HttpContext));
                 vnpay.AddRequestData("vnp_Locale", "vn");
-                vnpay.AddRequestData("vnp_OrderInfo", $"Thanh toan gym {payment.ThanhToanId}");
-                vnpay.AddRequestData("vnp_OrderType", "other");
-                vnpay.AddRequestData("vnp_ReturnUrl", request.ReturnUrl);
-                vnpay.AddRequestData("vnp_TxnRef", $"GYM{payment.ThanhToanId}{DateTime.Now:yyyyMMddHHmmss}");
+                vnpay.AddRequestData("vnp_OrderInfo", $"Thanh toan don hang:{payment.ThanhToanId}");
+                vnpay.AddRequestData("vnp_OrderType", "other"); // default value: other
+                var returnUrl = vnpayConfig["ReturnUrl"] ?? "http://localhost:5003/VNPayAPI/Home/PaymentConfirm";
+                vnpay.AddRequestData("vnp_ReturnUrl", returnUrl);
+                vnpay.AddRequestData("vnp_TxnRef", orderId.ToString()); // Unique transaction reference
 
                 // Create payment gateway record
-                var orderId = $"GYM{payment.ThanhToanId}{DateTime.Now:yyyyMMddHHmmss}";
                 var gateway = new ThanhToanGateway
                 {
                     ThanhToanId = payment.ThanhToanId,
                     GatewayTen = "VNPAY",
-                    GatewayOrderId = orderId,
+                    GatewayOrderId = orderId.ToString(),
                     GatewayAmount = payment.SoTien,
                     ThoiGianCallback = DateTime.Now
                 };
@@ -70,9 +76,26 @@ namespace GymManagement.Web.Areas.VNPayAPI.Controllers
 
                 var paymentUrl = vnpay.CreateRequestUrl(vnp_Url, vnp_HashSecret);
 
+                // Generate VietQR for banking apps
+                var orderInfo = $"Thanh toan gym {payment.ThanhToanId}";
+                var vietQRInfo = _vietQRService.GetVietQRInfo(payment.SoTien, orderInfo, orderId.ToString());
+
                 _logger.LogInformation($"VNPay payment URL created for ThanhToanId: {payment.ThanhToanId}");
-                
-                return Json(new { success = true, paymentUrl = paymentUrl });
+                _logger.LogInformation($"VietQR URL generated: {vietQRInfo.QRImageUrl}");
+
+                return Json(new {
+                    success = true,
+                    paymentUrl = paymentUrl,
+                    qrCodeData = vietQRInfo.QRData, // VietQR data for QR code generation
+                    qrImageUrl = vietQRInfo.QRImageUrl, // Direct VietQR image URL
+                    orderId = orderId,
+                    amount = payment.SoTien,
+                    bankInfo = new {
+                        bankId = vietQRInfo.BankId,
+                        accountNo = vietQRInfo.AccountNo,
+                        accountName = vietQRInfo.AccountName
+                    }
+                });
             }
             catch (Exception ex)
             {
@@ -106,7 +129,10 @@ namespace GymManagement.Web.Areas.VNPayAPI.Controllers
                 var vnp_HashSecret = _configuration.GetSection("VnPay")["HashSecret"];
                 bool checkSignature = vnpay.ValidateSignature(vnp_SecureHash, vnp_HashSecret);
 
-                if (!checkSignature)
+                // Kiểm tra nếu là môi trường simulation - bỏ qua validation signature
+                var isSimulation = _configuration.GetValue<bool>("VnPay:EnableSimulation", false);
+
+                if (!checkSignature && !isSimulation)
                 {
                     _logger.LogError("VNPay signature validation failed");
                     return Redirect("/Member/MyRegistrations?paymentStatus=error&message=Chữ+ký+không+hợp+lệ");
@@ -128,10 +154,13 @@ namespace GymManagement.Web.Areas.VNPayAPI.Controllers
                 gateway.GatewayRespCode = vnp_ResponseCode;
                 gateway.ThoiGianCallback = DateTime.Now;
 
-                if (vnp_ResponseCode == "00") // Success
+                // Trong môi trường simulation, coi mọi response code đều là thành công (kể cả khi user hủy)
+                bool isPaymentSuccess = (vnp_ResponseCode == "00") || isSimulation;
+
+                if (isPaymentSuccess) // Success hoặc simulation
                 {
                     gateway.ThanhToan.TrangThai = "SUCCESS";
-                    gateway.GatewayMessage = "Thanh toán thành công";
+                    gateway.GatewayMessage = isSimulation ? "Thanh toán thành công (Mô phỏng)" : "Thanh toán thành công";
 
                     // Activate pending registration if exists
                     if (gateway.ThanhToan.DangKyId.HasValue)
@@ -142,14 +171,15 @@ namespace GymManagement.Web.Areas.VNPayAPI.Controllers
                         if (registration != null && registration.TrangThai == "PENDING_PAYMENT")
                         {
                             registration.TrangThai = "ACTIVE";
-                            registration.TrangThaiChiTiet = "Thanh toán thành công";
+                            registration.TrangThaiChiTiet = isSimulation ? "Thanh toán thành công (Mô phỏng)" : "Thanh toán thành công";
                         }
                     }
 
                     await _context.SaveChangesAsync();
                     
-                    _logger.LogInformation($"VNPay payment successful for order: {vnp_OrderId}");
-                    return Redirect("/Member/MyRegistrations?paymentStatus=success&message=Thanh+toán+thành+công");
+                    _logger.LogInformation($"VNPay payment successful for order: {vnp_OrderId}" + (isSimulation ? " (Simulation)" : ""));
+                    var successMessage = isSimulation ? "Mô+phỏng+thanh+toán+thành+công" : "Thanh+toán+thành+công";
+                    return Redirect($"/Member/MyRegistrations?paymentStatus=success&message={successMessage}");
                 }
                 else
                 {
@@ -181,6 +211,8 @@ namespace GymManagement.Web.Areas.VNPayAPI.Controllers
                 return Redirect("/Member/MyRegistrations?paymentStatus=error&message=Có+lỗi+xảy+ra+khi+xử+lý+thanh+toán");
             }
         }
+
+
     }
 
     public class PaymentRequest

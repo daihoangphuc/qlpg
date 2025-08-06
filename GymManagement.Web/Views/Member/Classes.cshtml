@@ -610,10 +610,18 @@
                         .then(response => response.json())
                         .then(vnpayData => {
                             if (vnpayData.success) {
-                                showNotification('✅ Chuyển hướng đến cổng thanh toán...', 'success');
-                        setTimeout(() => {
-                                    window.location.href = vnpayData.paymentUrl;
-                                }, 1000);
+                                showNotification('✅ Đã tạo thanh toán thành công!', 'success');
+                                // Show QR Payment Modal instead of direct redirect
+                                showQRPaymentModal({
+                                    paymentUrl: vnpayData.paymentUrl,
+                                    qrCodeData: vnpayData.qrCodeData,
+                                    qrImageUrl: vnpayData.qrImageUrl,
+                                    orderId: vnpayData.orderId,
+                                    amount: vnpayData.amount,
+                                    bankInfo: vnpayData.bankInfo
+                                });
+                                button.innerHTML = originalText;
+                                button.disabled = false;
                             } else {
                                 showNotification('❌ ' + vnpayData.message, 'error');
                                 button.innerHTML = originalText;
@@ -897,3 +905,6 @@
 
 <!-- Anti-forgery token -->
 @Html.AntiForgeryToken()
+
+@* Include QR Payment Modal *@
+@await Html.PartialAsync("_QRPaymentModal")

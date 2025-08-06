@@ -139,6 +139,7 @@ builder.Services.AddScoped<IPdfExportService, PdfExportService>();
 builder.Services.AddScoped<IAdvancedAnalyticsService, AdvancedAnalyticsService>();
 builder.Services.AddScoped<IAuditLogService, AuditLogService>();
 builder.Services.AddScoped<IKhuyenMaiService, KhuyenMaiService>();
+builder.Services.AddScoped<VietQRService>();
 
 // Add Memory Cache
 builder.Services.AddMemoryCache();

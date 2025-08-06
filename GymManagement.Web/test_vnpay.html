@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test VNPay URL</title>
+</head>
+<body>
+    <h1>Test VNPay URL Generation</h1>
+    <button onclick="testVNPay()">Test VNPay Payment</button>
+    <div id="result"></div>
+
+    <script>
+        async function testVNPay() {
+            try {
+                // Test data
+                const testData = {
+                    paymentId: 45,
+                    amount: 3600000,
+                    orderInfo: "Thanh toan gym 45",
+                    returnUrl: "http://localhost:5003/VNPayAPI/Home/PaymentConfirm"
+                };
+
+                const response = await fetch('/VNPayAPI/Home/CreatePayment', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(testData)
+                });
+
+                const result = await response.json();
+                console.log('VNPay Response:', result);
+                
+                document.getElementById('result').innerHTML = `
+                    <h3>VNPay Response:</h3>
+                    <p><strong>Success:</strong> ${result.success}</p>
+                    <p><strong>Payment URL:</strong> <a href="${result.paymentUrl}" target="_blank">${result.paymentUrl}</a></p>
+                    <p><strong>VietQR URL:</strong> <a href="${result.vietQrUrl}" target="_blank">${result.vietQrUrl}</a></p>
+                    <p><strong>Order ID:</strong> ${result.orderId}</p>
+                    <p><strong>Amount:</strong> ${result.amount}</p>
+                `;
+
+                // Test the VNPay URL directly
+                if (result.paymentUrl) {
+                    console.log('Opening VNPay URL:', result.paymentUrl);
+                    // window.open(result.paymentUrl, '_blank');
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('result').innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

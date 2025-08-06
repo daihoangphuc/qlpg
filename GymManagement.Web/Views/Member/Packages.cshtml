@@ -843,10 +843,13 @@
                         .then(response => response.json())
                         .then(vnpayData => {
                             if (vnpayData.success) {
-                                showNotification('✅ Chuyển hướng đến cổng thanh toán...', 'success');
-                        setTimeout(() => {
+                                showNotification('✅ Đang chuyển đến trang thanh toán...', 'success');
+                                // Redirect trực tiếp đến VNPay thay vì hiển thị modal
+                                setTimeout(() => {
                                     window.location.href = vnpayData.paymentUrl;
                                 }, 1000);
+                                button.innerHTML = originalText;
+                                button.disabled = false;
                             } else {
                                 showNotification('❌ ' + vnpayData.message, 'error');
                                 button.innerHTML = originalText;
@@ -1091,3 +1094,6 @@
 
 <!-- Anti-forgery token -->
 @Html.AntiForgeryToken()
+
+@* Include QR Payment Modal *@
+@await Html.PartialAsync("_QRPaymentModal")

@@ -7,12 +7,13 @@ namespace GymManagement.Web.Areas.VNPayAPI
 {
     public class VnPayLibrary
     {
-        private readonly SortedList<string, string> _requestData = new SortedList<string, string>(new VnPayCompare());
-        private readonly SortedList<string, string> _responseData = new SortedList<string, string>(new VnPayCompare());
+        public const string VERSION = "2.1.0";
+        private SortedList<string, string> _requestData = new SortedList<string, string>(new VnPayCompare());
+        private SortedList<string, string> _responseData = new SortedList<string, string>(new VnPayCompare());
 
         public void AddRequestData(string key, string value)
         {
-            if (!string.IsNullOrEmpty(value))
+            if (!String.IsNullOrEmpty(value))
             {
                 _requestData.Add(key, value);
             }
@@ -20,7 +21,7 @@ namespace GymManagement.Web.Areas.VNPayAPI
 
         public void AddResponseData(string key, string value)
         {
-            if (!string.IsNullOrEmpty(value))
+            if (!String.IsNullOrEmpty(value))
             {
                 _responseData.Add(key, value);
             }
@@ -28,81 +29,101 @@ namespace GymManagement.Web.Areas.VNPayAPI
 
         public string GetResponseData(string key)
         {
-            return _responseData.TryGetValue(key, out var value) ? value : string.Empty;
+            string retValue;
+            if (_responseData.TryGetValue(key, out retValue))
+            {
+                return retValue;
+            }
+            else
+            {
+                return string.Empty;
+            }
         }
+
+        #region Request
 
         public string CreateRequestUrl(string baseUrl, string vnp_HashSecret)
         {
-            var data = new StringBuilder();
-            foreach (var kv in _requestData)
+            StringBuilder data = new StringBuilder();
+            foreach (KeyValuePair<string, string> kv in _requestData)
             {
-                if (!string.IsNullOrEmpty(kv.Value))
+                if (!String.IsNullOrEmpty(kv.Value))
                 {
                     data.Append(WebUtility.UrlEncode(kv.Key) + "=" + WebUtility.UrlEncode(kv.Value) + "&");
                 }
             }
+            string queryString = data.ToString();
 
-            var queryString = data.ToString();
-            
-            var signData = queryString;
+            baseUrl += "?" + queryString;
+            String signData = queryString;
             if (signData.Length > 0)
             {
-                signData = signData.Remove(data.Length - 1, 1);
+                signData = signData.Remove(signData.Length - 1, 1);
             }
 
-            var vnpSecureHash = Utils.HmacSHA512(vnp_HashSecret, signData);
-            var paymentUrl = $"{baseUrl}?{signData}&vnp_SecureHash={vnpSecureHash}";
+            Console.WriteLine($"VNPay Sign Data: {signData}");
+            Console.WriteLine($"VNPay Hash Secret: {vnp_HashSecret}");
 
-            return paymentUrl;
+            string vnp_SecureHash = Utils.HmacSHA512(vnp_HashSecret, signData);
+            Console.WriteLine($"VNPay Secure Hash: {vnp_SecureHash}");
+
+            baseUrl += "vnp_SecureHash=" + vnp_SecureHash;
+
+            Console.WriteLine($"VNPay Payment URL: {baseUrl}");
+
+            return baseUrl;
         }
+
+        #endregion
+
+        #region Response process
 
         public bool ValidateSignature(string inputHash, string secretKey)
         {
-            var rspRaw = GetResponseData();
-            var myChecksum = Utils.HmacSHA512(secretKey, rspRaw);
+            string rspRaw = GetResponseData();
+            string myChecksum = Utils.HmacSHA512(secretKey, rspRaw);
             return myChecksum.Equals(inputHash, StringComparison.InvariantCultureIgnoreCase);
         }
 
         private string GetResponseData()
         {
-            var data = new StringBuilder();
+            StringBuilder data = new StringBuilder();
             if (_responseData.ContainsKey("vnp_SecureHashType"))
             {
                 _responseData.Remove("vnp_SecureHashType");
             }
-
             if (_responseData.ContainsKey("vnp_SecureHash"))
             {
                 _responseData.Remove("vnp_SecureHash");
             }
-
-            foreach (var kv in _responseData)
+            foreach (KeyValuePair<string, string> kv in _responseData)
             {
-                if (!string.IsNullOrEmpty(kv.Value))
+                if (!String.IsNullOrEmpty(kv.Value))
                 {
                     data.Append(WebUtility.UrlEncode(kv.Key) + "=" + WebUtility.UrlEncode(kv.Value) + "&");
                 }
             }
-
+            //remove last '&'
             if (data.Length > 0)
             {
                 data.Remove(data.Length - 1, 1);
             }
-
             return data.ToString();
         }
+
+        #endregion
     }
 
     public class Utils
     {
-        public static string HmacSHA512(string key, string inputData)
+        public static String HmacSHA512(string key, String inputData)
         {
             var hash = new StringBuilder();
-            var keyBytes = Encoding.UTF8.GetBytes(key);
-            var inputBytes = Encoding.UTF8.GetBytes(inputData);
+            byte[] keyBytes = Encoding.UTF8.GetBytes(key);
+            byte[] inputBytes = Encoding.UTF8.GetBytes(inputData);
             using (var hmac = new HMACSHA512(keyBytes))
             {
-                var hashValue = hmac.ComputeHash(inputBytes);
+                byte[] hashValue = hmac.ComputeHash(inputBytes);
                 foreach (var theByte in hashValue)
                 {
                     hash.Append(theByte.ToString("x2"));
@@ -115,7 +136,7 @@ namespace GymManagement.Web.Areas.VNPayAPI
 
     public class VnPayCompare : IComparer<string>
     {
-        public int Compare(string? x, string? y)
+        public int Compare(string x, string y)
         {
             if (x == y) return 0;
             if (x == null) return -1;
