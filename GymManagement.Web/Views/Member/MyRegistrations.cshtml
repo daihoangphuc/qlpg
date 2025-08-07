@@ -784,19 +784,35 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Redirect to VNPay payment
-                    const form = document.createElement('form');
-                    form.method = 'POST';
-                    form.action = '@Url.Action("CreatePayment", "Home", new { area = "VNPayAPI" })';
-
-                    const thanhToanIdInput = document.createElement('input');
-                    thanhToanIdInput.type = 'hidden';
-                    thanhToanIdInput.name = 'ThanhToanId';
-                    thanhToanIdInput.value = data.thanhToanId;
-                    form.appendChild(thanhToanIdInput);
-
-                    document.body.appendChild(form);
-                    form.submit();
+                    // ✅ FIXED: Send JSON to VNPayAPI instead of form data
+                    fetch('@Url.Action("CreatePayment", "Home", new { area = "VNPayAPI" })', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                        },
+                        body: JSON.stringify({
+                            ThanhToanId: data.thanhToanId,
+                            ReturnUrl: window.location.origin + '/Member/MyRegistrations'
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(vnpayData => {
+                        if (vnpayData.success) {
+                            // Redirect to VNPay payment URL
+                            window.location.href = vnpayData.paymentUrl;
+                        } else {
+                            alert(vnpayData.message || 'Có lỗi xảy ra khi tạo thanh toán VNPay.');
+                            submitBtn.textContent = originalText;
+                            submitBtn.disabled = false;
+                        }
+                    })
+                    .catch(error => {
+                        console.error('VNPay Error:', error);
+                        alert('Có lỗi xảy ra khi kết nối VNPay.');
+                        submitBtn.textContent = originalText;
+                        submitBtn.disabled = false;
+                    });
                 } else {
                     alert(data.message);
                     submitBtn.textContent = originalText;

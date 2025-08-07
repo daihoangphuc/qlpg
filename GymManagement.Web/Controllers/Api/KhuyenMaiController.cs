@@ -106,7 +106,7 @@ namespace GymManagement.Web.Controllers.Api
                         name = package.TenGoi,
                         monthlyPrice = package.Gia,
                         duration = duration,
-                        totalPrice = package.Gia * duration,
+                        totalPrice = originalPrice, // ✅ FIXED: Use calculated price instead of multiplication
                         calculatedPrice = originalPrice
                     },
                     promotion = promotion != null ? new

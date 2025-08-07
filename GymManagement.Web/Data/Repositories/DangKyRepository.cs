@@ -91,5 +91,15 @@ namespace GymManagement.Web.Data.Repositories
                 .OrderByDescending(d => d.NgayBatDau)
                 .ToListAsync();
         }
+
+        // Override GetByIdAsync to include navigation properties
+        public override async Task<DangKy?> GetByIdAsync(int id)
+        {
+            return await _context.DangKys
+                .Include(d => d.NguoiDung)
+                .Include(d => d.GoiTap)
+                .Include(d => d.LopHoc)
+                .FirstOrDefaultAsync(d => d.DangKyId == id);
+        }
     }
 }

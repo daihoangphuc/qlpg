@@ -263,14 +263,13 @@
                 <div class="flex items-center">
                     <div class="flex items-center ms-3">
                         <!-- Notifications -->
-                        <button type="button"
-                            class="p-2 text-gray-500 rounded-lg hover:text-gray-900 hover:bg-gray-100 me-3">
+                        <button type="button" id="notificationBtn" onclick="openNotificationModal()"
+                            class="relative p-2 text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 rounded-full me-3">
                             <span class="sr-only">View notifications</span>
-                            <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
-                                fill="currentColor" viewBox="0 0 14 20">
-                                <path
-                                    d="M12.133 10.632v-1.8A5.406 5.406 0 0 0 7.979 3.57.946.946 0 0 0 8 3.464V1.1a1 1 0 0 0-2 0v2.364a.946.946 0 0 0 .021.106 5.406 5.406 0 0 0-4.154 5.262v1.8C1.867 13.018 0 13.614 0 14.807 0 15.4 0 16 .538 16h12.924C14 16 14 15.4 14 14.807c0-1.193-1.867-1.789-1.867-4.175ZM3.823 17a3.453 3.453 0 0 0 6.354 0H3.823Z" />
-                            </svg>
+                            <!-- Bell Icon -->
+                            <span class="text-xl">🔔</span>
+                            <!-- Notification Badge -->
+                            <span id="notificationBadge" class="absolute -top-1 -right-1 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-600 rounded-full hidden"></span>
                         </button>
 
                         <!-- Dark mode toggle -->
@@ -462,6 +461,317 @@
     <script src="~/js/real-time-updates.js"></script>
 
     @await RenderSectionAsync("Scripts", required: false)
+
+    <!-- Notification Modal -->
+    <div id="notificationModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg shadow-xl w-full max-w-md h-96 flex flex-col">
+                <!-- Modal Header -->
+                <div class="flex justify-between items-center p-4 border-b border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+                        <svg class="w-5 h-5 mr-2 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z"/>
+                        </svg>
+                        Thông báo
+                    </h3>
+                    <button type="button" onclick="closeNotificationModal()" class="text-gray-400 hover:text-gray-600 transition-colors duration-200">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Modal Body -->
+                <div class="flex-1 overflow-y-auto p-4" id="notificationContent">
+                    <div class="flex items-center justify-center h-full">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    </div>
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="border-t border-gray-200 p-4 space-y-2">
+                    <button id="loadAllNotificationsBtn" onclick="loadAllNotifications()"
+                        class="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200">
+                        📋 Xem tất cả thông báo
+                    </button>
+                    <button id="markAllReadBtn" onclick="markAllAsRead()"
+                        class="w-full bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors duration-200">
+                        ✅ Đánh dấu tất cả đã đọc
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification JavaScript -->
+    <script>
+        let currentNotifications = [];
+        let showingAllNotifications = false;
+
+        // Open notification modal
+        async function openNotificationModal() {
+            document.getElementById('notificationModal').classList.remove('hidden');
+            await loadUnreadNotifications();
+        }
+
+        // Close notification modal
+        function closeNotificationModal() {
+            document.getElementById('notificationModal').classList.add('hidden');
+            showingAllNotifications = false;
+        }
+
+        // Load unread notifications
+        async function loadUnreadNotifications() {
+            try {
+                console.log('Loading unread notifications...'); // Debug log
+                showLoading();
+
+                const response = await fetch('/api/thongbao/unread', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                    }
+                });
+
+                console.log('Unread response status:', response.status); // Debug log
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('Unread response data:', data); // Debug log
+
+                if (data.success && data.notifications) {
+                    currentNotifications = data.notifications;
+                    displayNotifications(currentNotifications);
+                    updateNotificationBadge(data.count);
+
+                    // Reset button state
+                    const btn = document.getElementById('loadAllNotificationsBtn');
+                    btn.innerHTML = '📋 Xem tất cả thông báo';
+                    btn.disabled = false;
+                    btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    showingAllNotifications = false;
+                } else {
+                    console.error('Unread API returned error:', data);
+                    showError(data.message || 'Không thể tải thông báo');
+                }
+            } catch (error) {
+                console.error('Error loading unread notifications:', error);
+                showError('Có lỗi xảy ra khi tải thông báo: ' + error.message);
+            }
+        }
+
+        // Load all notifications
+        async function loadAllNotifications() {
+            try {
+                console.log('Loading all notifications...'); // Debug log
+                showLoading();
+
+                const response = await fetch('/api/thongbao/all?page=1&pageSize=50', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                    }
+                });
+
+                console.log('Response status:', response.status); // Debug log
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('Response data:', data); // Debug log
+
+                if (data.success && data.notifications) {
+                    currentNotifications = data.notifications;
+                    displayNotifications(currentNotifications);
+                    showingAllNotifications = true;
+
+                    // Update button text
+                    const btn = document.getElementById('loadAllNotificationsBtn');
+                    btn.innerHTML = '📋 Đang hiển thị tất cả (' + data.notifications.length + ')';
+                    btn.disabled = true;
+                    btn.classList.add('opacity-50', 'cursor-not-allowed');
+
+                    showNotificationToast(`Đã tải ${data.notifications.length} thông báo`, 'success');
+                } else {
+                    console.error('API returned error:', data);
+                    showError(data.message || 'Không thể tải thông báo');
+                }
+            } catch (error) {
+                console.error('Error loading all notifications:', error);
+                showError('Có lỗi xảy ra khi tải thông báo: ' + error.message);
+            }
+        }
+
+        // Display notifications
+        function displayNotifications(notifications) {
+            const content = document.getElementById('notificationContent');
+
+            if (notifications.length === 0) {
+                content.innerHTML = `
+                    <div class="text-center text-gray-500 h-full flex items-center justify-center">
+                        <div>
+                            <svg class="w-12 h-12 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-5 5-5-5h5v-12h5v12z"/>
+                            </svg>
+                            <p>Không có thông báo nào</p>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            const notificationHtml = notifications.map(notification => `
+                <div class="notification-item ${!notification.daDoc ? 'bg-blue-50 border-l-4 border-blue-400' : 'bg-white'} p-3 mb-3 rounded-lg border border-gray-200 hover:shadow-md transition-shadow duration-200">
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0 mr-3">
+                            <span class="text-xl">${notification.icon}</span>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <h4 class="text-sm font-medium text-gray-900 mb-1">${notification.tieuDe}</h4>
+                            <p class="text-sm text-gray-600 mb-2">${notification.noiDung}</p>
+                            <p class="text-xs text-gray-400">${formatTimeAgo(notification.thoiGianTao)}</p>
+                        </div>
+                        ${!notification.daDoc ? '<div class="flex-shrink-0"><div class="w-2 h-2 bg-blue-600 rounded-full"></div></div>' : ''}
+                    </div>
+                </div>
+            `).join('');
+
+            content.innerHTML = notificationHtml;
+        }
+
+        // Mark all as read
+        async function markAllAsRead() {
+            try {
+                const response = await fetch('/api/thongbao/mark-all-read', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                    }
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    // Update UI
+                    currentNotifications = currentNotifications.map(n => ({...n, daDoc: true}));
+                    displayNotifications(currentNotifications);
+                    updateNotificationBadge(0);
+
+                    // Show success message
+                    showNotificationToast('Đã đánh dấu tất cả thông báo là đã đọc', 'success');
+                } else {
+                    showNotificationToast('Có lỗi xảy ra', 'error');
+                }
+            } catch (error) {
+                console.error('Error marking all as read:', error);
+                showNotificationToast('Có lỗi xảy ra', 'error');
+            }
+        }
+
+        // Update notification badge
+        function updateNotificationBadge(count) {
+            const badge = document.getElementById('notificationBadge');
+            if (count > 0) {
+                badge.textContent = count > 99 ? '99+' : count;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+
+        // Format time ago
+        function formatTimeAgo(dateString) {
+            const now = new Date();
+            const date = new Date(dateString);
+            const diffInSeconds = Math.floor((now - date) / 1000);
+
+            if (diffInSeconds < 60) return 'Vừa xong';
+            if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} phút trước`;
+            if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} giờ trước`;
+            if (diffInSeconds < 2592000) return `${Math.floor(diffInSeconds / 86400)} ngày trước`;
+
+            return date.toLocaleDateString('vi-VN');
+        }
+
+        // Show loading
+        function showLoading() {
+            document.getElementById('notificationContent').innerHTML = `
+                <div class="flex items-center justify-center h-full">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                </div>
+            `;
+        }
+
+        // Show error
+        function showError(message) {
+            document.getElementById('notificationContent').innerHTML = `
+                <div class="text-center text-red-500 h-full flex items-center justify-center">
+                    <div>
+                        <svg class="w-12 h-12 mx-auto mb-4 text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <p>${message}</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Show notification toast
+        function showNotificationToast(message, type = 'info') {
+            const typeClasses = {
+                success: 'bg-green-500',
+                error: 'bg-red-500',
+                warning: 'bg-yellow-500',
+                info: 'bg-blue-500'
+            };
+
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 z-50 ${typeClasses[type]} text-white px-6 py-3 rounded-lg shadow-lg transform transition-all duration-300 translate-x-full`;
+            notification.textContent = message;
+
+            document.body.appendChild(notification);
+
+            // Animate in
+            setTimeout(() => {
+                notification.classList.remove('translate-x-full');
+            }, 100);
+
+            // Remove after 3 seconds
+            setTimeout(() => {
+                notification.classList.add('translate-x-full');
+                setTimeout(() => {
+                    notification.remove();
+                }, 300);
+            }, 3000);
+        }
+
+        // Load notification count on page load
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                const response = await fetch('/api/thongbao/unread');
+                const data = await response.json();
+                if (data.success) {
+                    updateNotificationBadge(data.count);
+                }
+            } catch (error) {
+                console.error('Error loading notification count:', error);
+            }
+        });
+
+        // Close modal when clicking outside
+        document.getElementById('notificationModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeNotificationModal();
+            }
+        });
+    </script>
 </body>
 
 </html>

@@ -331,7 +331,20 @@ namespace GymManagement.Web.Services
             var goiTap = await _goiTapRepository.GetByIdAsync(goiTapId);
             if (goiTap == null) return 0;
 
-            decimal totalFee = goiTap.Gia * thoiHanThang;
+            // ✅ FIXED: goiTap.Gia is already the total price for the entire package duration
+            // For custom duration, calculate based on monthly rate
+            decimal totalFee;
+            if (thoiHanThang == goiTap.ThoiHanThang)
+            {
+                // Standard package duration - use package price directly
+                totalFee = goiTap.Gia;
+            }
+            else
+            {
+                // Custom duration - calculate based on monthly rate
+                var monthlyRate = goiTap.Gia / goiTap.ThoiHanThang;
+                totalFee = monthlyRate * thoiHanThang;
+            }
 
             // Apply discount if available
             if (khuyenMaiId.HasValue)

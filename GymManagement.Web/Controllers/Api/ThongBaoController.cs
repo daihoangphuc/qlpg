@@ -237,5 +237,7 @@ namespace GymManagement.Web.Controllers.Api
             
             return "🔔";
         }
+
+
     }
-} 
+}
