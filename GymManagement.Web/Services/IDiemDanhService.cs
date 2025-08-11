@@ -14,6 +14,8 @@ namespace GymManagement.Web.Services
         Task<DiemDanh?> GetLatestAttendanceAsync(int thanhVienId);
         Task<bool> CheckInAsync(int thanhVienId, string? anhMinhChung = null);
         Task<bool> CheckInWithFaceRecognitionAsync(int thanhVienId, byte[] faceImage);
+        Task<bool> CheckOutAsync(int diemDanhId);
+        Task<DiemDanh?> GetActiveSessionAsync(int thanhVienId);
         Task<bool> HasCheckedInTodayAsync(int thanhVienId);
         Task<int> GetTodayAttendanceCountAsync();
         Task<int> GetMemberAttendanceCountAsync(int thanhVienId, DateTime startDate, DateTime endDate);

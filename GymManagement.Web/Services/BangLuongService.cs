@@ -1,9 +1,14 @@
 using GymManagement.Web.Data;
 using GymManagement.Web.Data.Models;
 using GymManagement.Web.Data.Repositories;
+using GymManagement.Web.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using System.Text.Encodings.Web;
 using Microsoft.Extensions.Caching.Memory;
+using System.Collections.Concurrent;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 
 namespace GymManagement.Web.Services
 {
@@ -16,6 +21,11 @@ namespace GymManagement.Web.Services
         private readonly IEmailService _emailService;
         private readonly IMemoryCache _cache;
         private readonly IAuditLogService _auditLog;
+        private readonly CommissionConfiguration _commissionConfig;
+        private readonly ILogger<BangLuongService> _logger;
+
+        // Concurrency control for salary generation
+        private static readonly ConcurrentDictionary<string, SemaphoreSlim> _salaryGenerationLocks = new();
 
         public BangLuongService(
             IUnitOfWork unitOfWork,
@@ -24,7 +34,9 @@ namespace GymManagement.Web.Services
             IThongBaoService thongBaoService,
             IEmailService emailService,
             IMemoryCache cache,
-            IAuditLogService auditLog)
+            IAuditLogService auditLog,
+            IOptions<CommissionConfiguration> commissionConfig,
+            ILogger<BangLuongService> logger)
         {
             _unitOfWork = unitOfWork;
             _bangLuongRepository = bangLuongRepository;
@@ -33,6 +45,8 @@ namespace GymManagement.Web.Services
             _emailService = emailService;
             _cache = cache;
             _auditLog = auditLog;
+            _commissionConfig = commissionConfig.Value;
+            _logger = logger;
         }
 
         public async Task<IEnumerable<BangLuong>> GetAllAsync()
@@ -101,13 +115,32 @@ namespace GymManagement.Web.Services
             return await _bangLuongRepository.GetUnpaidSalariesAsync();
         }
 
-        // 🚀 IMPROVED & SIMPLIFIED METHOD
+        // 🚀 IMPROVED & SIMPLIFIED METHOD WITH TRANSACTION SCOPE AND CONCURRENCY CONTROL
         public async Task<bool> GenerateMonthlySalariesAsync(string thang)
         {
+            // Get or create a semaphore for this month to prevent concurrent salary generation
+            var lockKey = $"salary_generation_{thang}";
+            var semaphore = _salaryGenerationLocks.GetOrAdd(lockKey, _ => new SemaphoreSlim(1, 1));
+
+            // Wait for exclusive access to salary generation for this month
+            await semaphore.WaitAsync();
+
             try
             {
-                // Validate month format
-                if (!IsValidMonthFormat(thang))
+                // Double-check if salaries already exist after acquiring lock
+                var existingSalariesCount = await _bangLuongRepository.GetSalaryCountByMonthAsync(thang);
+                if (existingSalariesCount > 0)
+                {
+                    throw new InvalidOperationException($"Bảng lương cho tháng {thang} đã được tạo trước đó. Không thể tạo lại.");
+                }
+
+                // Use database transaction to ensure atomicity
+                using var transaction = await _unitOfWork.Context.Database.BeginTransactionAsync();
+
+                try
+                {
+                    // Validate month format
+                    if (!IsValidMonthFormat(thang))
                 {
                     throw new ArgumentException("Định dạng tháng không hợp lệ. Vui lòng sử dụng định dạng YYYY-MM (ví dụ: 2024-12) và đảm bảo tháng không quá xa trong tương lai.");
                 }
@@ -120,7 +153,10 @@ namespace GymManagement.Web.Services
                 }
 
                 var successCount = 0;
-                
+                var salariesToCreate = new List<BangLuong>();
+                var notificationsToSend = new List<(NguoiDung trainer, BangLuong salary, CommissionBreakdown breakdown)>();
+
+                // Phase 1: Validate and prepare all salary records
                 foreach (var trainer in trainers)
                 {
                     try
@@ -144,25 +180,8 @@ namespace GymManagement.Web.Services
                             TienHoaHong = commissionBreakdown.TotalCommission
                         };
 
-                        await _bangLuongRepository.AddAsync(bangLuong);
-
-                        // Send notification
-                        await _thongBaoService.CreateNotificationAsync(
-                            trainer.NguoiDungId,
-                            "Bảng lương tháng mới",
-                            $"Bảng lương tháng {thang} đã được tạo.\n" +
-                            $"Lương cơ bản: {baseSalary:N0} VNĐ\n" +
-                            $"Hoa hồng: {commissionBreakdown.TotalCommission:N0} VNĐ\n" +
-                            $"Tổng cộng: {bangLuong.TongThanhToan:N0} VNĐ",
-                            "APP"
-                        );
-
-                        // Send email if available
-                        if (!string.IsNullOrEmpty(trainer.Email))
-                        {
-                            await SendSimplifiedSalaryEmailAsync(trainer, bangLuong, commissionBreakdown, thang);
-                        }
-
+                        salariesToCreate.Add(bangLuong);
+                        notificationsToSend.Add((trainer, bangLuong, commissionBreakdown));
                         successCount++;
                     }
                     catch (Exception ex)
@@ -173,17 +192,87 @@ namespace GymManagement.Web.Services
                     }
                 }
 
-                await _unitOfWork.SaveChangesAsync();
+                // Phase 2: Bulk insert salary records within transaction
+                if (salariesToCreate.Any())
+                {
+                    foreach (var salary in salariesToCreate)
+                    {
+                        await _bangLuongRepository.AddAsync(salary);
+                    }
+
+                    // Save all salary records in one transaction
+                    await _unitOfWork.SaveChangesAsync();
+
+                    // Commit transaction for salary creation
+                    await transaction.CommitAsync();
+                }
+                else
+                {
+                    // No salaries to create, rollback transaction
+                    await transaction.RollbackAsync();
+                    return false;
+                }
+
+                // Phase 3: Send notifications and emails (outside transaction)
+                // These are non-critical operations that shouldn't rollback salary creation
+                foreach (var (trainer, salary, breakdown) in notificationsToSend)
+                {
+                    try
+                    {
+                        // Send notification
+                        await _thongBaoService.CreateNotificationAsync(
+                            trainer.NguoiDungId,
+                            "Bảng lương tháng mới",
+                            $"Bảng lương tháng {thang} đã được tạo.\n" +
+                            $"Lương cơ bản: {salary.LuongCoBan:N0} VNĐ\n" +
+                            $"Hoa hồng: {breakdown.TotalCommission:N0} VNĐ\n" +
+                            $"Tổng cộng: {salary.TongThanhToan:N0} VNĐ",
+                            "APP"
+                        );
+
+                        // Send email if available
+                        if (!string.IsNullOrEmpty(trainer.Email))
+                        {
+                            await SendSimplifiedSalaryEmailAsync(trainer, salary, breakdown, thang);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        // Log notification/email errors but don't fail the whole operation
+                        // Salary creation has already been committed successfully
+                        continue;
+                    }
+                }
 
                 // Invalidate cache for this month
                 InvalidateMonthCache(thang);
 
                 return successCount > 0;
+                }
+                catch (Exception ex)
+                {
+                    // Rollback transaction on any error
+                    await transaction.RollbackAsync();
+                    throw new Exception($"Lỗi khi tạo bảng lương tháng {thang}: {ex.Message}", ex);
+                }
             }
-            catch (Exception ex)
+            finally
             {
-                // Log general error
-                throw new Exception($"Lỗi khi tạo bảng lương tháng {thang}: {ex.Message}", ex);
+                // Always release the semaphore to allow other operations
+                semaphore.Release();
+
+                // Clean up old semaphores to prevent memory leaks
+                if (_salaryGenerationLocks.Count > 100) // Arbitrary threshold
+                {
+                    var keysToRemove = _salaryGenerationLocks.Keys.Take(50).ToList();
+                    foreach (var key in keysToRemove)
+                    {
+                        if (_salaryGenerationLocks.TryRemove(key, out var oldSemaphore))
+                        {
+                            oldSemaphore.Dispose();
+                        }
+                    }
+                }
             }
         }
 
@@ -238,6 +327,7 @@ namespace GymManagement.Web.Services
         }
 
         // Simplified commission calculation
+        // 🚀 ENHANCED COMMISSION CALCULATION WITH CONFIGURABLE RATES
         private async Task<CommissionBreakdown> CalculateSimplifiedCommissionAsync(int hlvId, string thang)
         {
             // Parse month
@@ -247,50 +337,226 @@ namespace GymManagement.Web.Services
             var monthEnd = monthStart.AddMonths(1).AddDays(-1);
             var breakdown = new CommissionBreakdown();
 
-            // 1. Basic commission from registrations (simplified)
-            breakdown.PackageCommission = await CalculateBasicCommissionAsync(hlvId, monthStart, monthEnd);
+            // 1. Calculate different types of commission with configurable rates and validation
+            breakdown.PackageCommission = ValidateCommissionAmount(
+                await CalculatePackageCommissionAsync(hlvId, monthStart, monthEnd), "Package Commission");
+            breakdown.ClassCommission = ValidateCommissionAmount(
+                await CalculateClassCommissionAsync(hlvId, monthStart, monthEnd), "Class Commission");
+            breakdown.PersonalCommission = ValidateCommissionAmount(
+                await CalculatePersonalTrainingCommissionAsync(hlvId, monthStart, monthEnd), "Personal Training Commission");
 
-            // 2. Performance bonus (simplified)
-            breakdown.PerformanceBonus = await CalculateSimplifiedPerformanceBonusAsync(hlvId, monthStart, monthEnd);
+            // 2. Calculate performance and attendance bonuses with validation
+            breakdown.PerformanceBonus = ValidateCommissionAmount(
+                await CalculatePerformanceBonusAsync(hlvId, monthStart, monthEnd), "Performance Bonus");
+            breakdown.AttendanceBonus = ValidateCommissionAmount(
+                await CalculateAttendanceBonusAsync(hlvId, monthStart, monthEnd), "Attendance Bonus");
 
-            // 3. Populate basic metrics
+            // 3. Apply tier-based commission calculation
+            var totalRevenue = breakdown.PackageCommission + breakdown.ClassCommission + breakdown.PersonalCommission;
+            var tierBonus = CalculateTierBasedCommission(totalRevenue);
+            breakdown.PerformanceBonus += tierBonus;
+
+            // 4. Apply commission cap
+            var totalCommission = breakdown.TotalCommission;
+            if (totalCommission > _commissionConfig.MaxCommissionPerMonth)
+            {
+                var reductionFactor = _commissionConfig.MaxCommissionPerMonth / totalCommission;
+                breakdown.PackageCommission *= reductionFactor;
+                breakdown.ClassCommission *= reductionFactor;
+                breakdown.PersonalCommission *= reductionFactor;
+                breakdown.PerformanceBonus *= reductionFactor;
+                breakdown.AttendanceBonus *= reductionFactor;
+            }
+
+            // 5. Populate metrics
             await PopulateBasicMetricsAsync(breakdown, hlvId, monthStart, monthEnd);
+
+            // 6. Log commission calculation for debugging
+            _logger.LogInformation($"Commission calculated for Trainer {hlvId} - Month {thang}: " +
+                $"Package: {breakdown.PackageCommission:C}, " +
+                $"Class: {breakdown.ClassCommission:C}, " +
+                $"Personal: {breakdown.PersonalCommission:C}, " +
+                $"Performance: {breakdown.PerformanceBonus:C}, " +
+                $"Attendance: {breakdown.AttendanceBonus:C}, " +
+                $"Total: {breakdown.TotalCommission:C}");
 
             return breakdown;
         }
 
-        // Optimized commission calculation - single query approach
-        private async Task<decimal> CalculateBasicCommissionAsync(int hlvId, DateTime monthStart, DateTime monthEnd)
+        // 🚀 ENHANCED COMMISSION CALCULATION METHODS WITH CONFIGURABLE RATES
+
+        /// <summary>
+        /// 🔧 FIXED: Calculate package commission for trainer
+        /// Logic: Commission from package sales where trainer is involved in member's training
+        /// Fixed Issue: Removed incorrect requirement for LopHocId in package commission
+        /// </summary>
+        /// <param name="hlvId">Trainer ID</param>
+        /// <param name="monthStart">Start of calculation period</param>
+        /// <param name="monthEnd">End of calculation period</param>
+        /// <returns>Package commission amount</returns>
+        private async Task<decimal> CalculatePackageCommissionAsync(int hlvId, DateTime monthStart, DateTime monthEnd)
         {
-            // Single optimized query to calculate commission
-            var commissionData = await _unitOfWork.Context.DangKys
+            // 🔧 FIXED: Package commission should be based on package sales attributed to trainer
+            // Logic: Calculate commission for packages sold where trainer is involved in member's training
+
+            // Method 1: Direct package sales where trainer is assigned as primary trainer
+            var directPackageRevenue = await _unitOfWork.Context.DangKys
+                .Where(d => d.NgayTao >= monthStart && d.NgayTao <= monthEnd)
+                .Where(d => d.GoiTapId.HasValue && d.GoiTap != null)
+                .Where(d => d.LoaiDangKy == "PACKAGE") // Only package registrations
+                .Where(d => d.ThanhToans.Any(t => t.TrangThai == "SUCCESS"))
+                // Check if member has any active class with this trainer in the same period
+                .Where(d => _unitOfWork.Context.DangKys
+                    .Any(classReg => classReg.NguoiDungId == d.NguoiDungId &&
+                                   classReg.LopHocId.HasValue &&
+                                   classReg.LopHoc != null &&
+                                   classReg.LopHoc.HlvId == hlvId &&
+                                   classReg.NgayBatDau <= d.NgayKetThuc &&
+                                   classReg.NgayKetThuc >= d.NgayBatDau &&
+                                   classReg.TrangThai == "ACTIVE"))
+                .SumAsync(d => d.GoiTap!.Gia);
+
+            return directPackageRevenue * _commissionConfig.PackageCommissionRate;
+        }
+
+        private async Task<decimal> CalculateClassCommissionAsync(int hlvId, DateTime monthStart, DateTime monthEnd)
+        {
+            // 🔧 IMPROVED: Class commission for standalone class registrations (not part of package)
+            var classRevenue = await _unitOfWork.Context.DangKys
+                .Where(d => d.NgayTao >= monthStart && d.NgayTao <= monthEnd)
+                .Where(d => d.LopHocId.HasValue && d.LopHoc != null && d.LopHoc.HlvId == hlvId)
+                .Where(d => d.GoiTapId == null) // Class-only registrations (no package)
+                .Where(d => d.LoaiDangKy == "CLASS") // Only class registrations
+                .Where(d => d.ThanhToans.Any(t => t.TrangThai == "SUCCESS"))
+                .Where(d => d.TrangThai == "ACTIVE") // Only active registrations
+                .SumAsync(d => d.LopHoc!.GiaTuyChinh ?? 0);
+
+            return classRevenue * _commissionConfig.ClassCommissionRate;
+        }
+
+        private async Task<decimal> CalculatePersonalTrainingCommissionAsync(int hlvId, DateTime monthStart, DateTime monthEnd)
+        {
+            // 🔧 IMPROVED: Personal training commission calculation
+            // Method 1: From class registrations marked as personal training
+            var personalClassRevenue = await _unitOfWork.Context.DangKys
+                .Where(d => d.NgayTao >= monthStart && d.NgayTao <= monthEnd)
+                .Where(d => d.LopHocId.HasValue && d.LopHoc != null && d.LopHoc.HlvId == hlvId)
+                .Where(d => d.LopHoc.SucChua <= 2 ||
+                           d.LopHoc.TenLop.ToLower().Contains("personal") ||
+                           d.LopHoc.TenLop.ToLower().Contains("pt") ||
+                           d.LopHoc.TenLop.ToLower().Contains("riêng"))
+                .Where(d => d.ThanhToans.Any(t => t.TrangThai == "SUCCESS"))
+                .Where(d => d.TrangThai == "ACTIVE")
+                .SumAsync(d => d.LopHoc!.GiaTuyChinh ?? 0);
+
+            // Method 2: From confirmed bookings for personal training sessions
+            var personalBookingRevenue = await _unitOfWork.Context.Bookings
+                .Where(b => b.NgayDat.ToDateTime(TimeOnly.MinValue) >= monthStart &&
+                           b.NgayDat.ToDateTime(TimeOnly.MinValue) <= monthEnd)
+                .Where(b => b.LopHoc != null && b.LopHoc.HlvId == hlvId)
+                .Where(b => b.LopHoc.SucChua <= 2 ||
+                           b.LopHoc.TenLop.ToLower().Contains("personal") ||
+                           b.LopHoc.TenLop.ToLower().Contains("pt") ||
+                           b.LopHoc.TenLop.ToLower().Contains("riêng"))
+                .Where(b => b.TrangThai == "CONFIRMED")
+                .SumAsync(b => b.LopHoc!.GiaTuyChinh ?? 0);
+
+            var totalPersonalRevenue = personalClassRevenue + personalBookingRevenue;
+            return totalPersonalRevenue * _commissionConfig.PersonalTrainingRate;
+        }
+
+        private async Task<decimal> CalculatePerformanceBonusAsync(int hlvId, DateTime monthStart, DateTime monthEnd)
+        {
+            var studentCount = await _unitOfWork.Context.DangKys
                 .Where(d => d.NgayTao >= monthStart && d.NgayTao <= monthEnd)
                 .Where(d => d.LopHocId.HasValue && d.LopHoc != null && d.LopHoc.HlvId == hlvId)
                 .Where(d => d.ThanhToans.Any(t => t.TrangThai == "SUCCESS"))
-                .Select(d => new
-                {
-                    PackagePrice = d.GoiTap != null ? d.GoiTap.Gia : 0,
-                    ClassPrice = d.LopHoc != null && d.LopHoc.GiaTuyChinh.HasValue ? d.LopHoc.GiaTuyChinh.Value : 0
-                })
-                .ToListAsync();
+                .CountAsync();
 
-            // Calculate total commission (5% rate)
-            const decimal commissionRate = 0.05m;
-            decimal totalCommission = 0;
-
-            foreach (var data in commissionData)
+            if (studentCount >= _commissionConfig.MinStudentCountForBonus)
             {
-                if (data.PackagePrice > 0)
+                var totalRevenue = await _unitOfWork.Context.DangKys
+                    .Where(d => d.NgayTao >= monthStart && d.NgayTao <= monthEnd)
+                    .Where(d => d.LopHocId.HasValue && d.LopHoc != null && d.LopHoc.HlvId == hlvId)
+                    .Where(d => d.ThanhToans.Any(t => t.TrangThai == "SUCCESS"))
+                    .SumAsync(d => (d.GoiTap != null ? d.GoiTap.Gia : 0) + (d.LopHoc!.GiaTuyChinh ?? 0));
+
+                return totalRevenue * _commissionConfig.PerformanceBonusRate;
+            }
+
+            return 0;
+        }
+
+        /// <summary>
+        /// 🔧 ADDED: Helper method to validate commission calculations and prevent negative values
+        /// </summary>
+        private decimal ValidateCommissionAmount(decimal amount, string commissionType)
+        {
+            if (amount < 0)
+            {
+                _logger.LogWarning($"Negative commission detected for {commissionType}: {amount}. Setting to 0.");
+                return 0;
+            }
+
+            if (amount > _commissionConfig.MaxCommissionPerMonth)
+            {
+                _logger.LogWarning($"Commission amount {amount} exceeds maximum {_commissionConfig.MaxCommissionPerMonth} for {commissionType}. Capping to maximum.");
+                return _commissionConfig.MaxCommissionPerMonth;
+            }
+
+            return Math.Round(amount, 2); // Round to 2 decimal places for currency
+        }
+
+        private async Task<decimal> CalculateAttendanceBonusAsync(int hlvId, DateTime monthStart, DateTime monthEnd)
+        {
+            // Calculate attendance rate for trainer's classes using LichLop
+            var totalSessions = await _unitOfWork.Context.LichLops
+                .Where(ll => ll.LopHoc != null && ll.LopHoc.HlvId == hlvId)
+                .Where(ll => ll.Ngay.ToDateTime(TimeOnly.MinValue) >= monthStart && ll.Ngay.ToDateTime(TimeOnly.MinValue) <= monthEnd)
+                .CountAsync();
+
+            if (totalSessions == 0) return 0;
+
+            var attendedSessions = await _unitOfWork.Context.DiemDanhs
+                .Where(dd => dd.LichLop != null && dd.LichLop.LopHoc != null && dd.LichLop.LopHoc.HlvId == hlvId)
+                .Where(dd => dd.ThoiGian >= monthStart && dd.ThoiGian <= monthEnd)
+                .Where(dd => dd.TrangThai == "Present")
+                .CountAsync();
+
+            var attendanceRate = (decimal)attendedSessions / totalSessions;
+
+            if (attendanceRate >= _commissionConfig.MinAttendanceRateForBonus)
+            {
+                var totalRevenue = await _unitOfWork.Context.DangKys
+                    .Where(d => d.NgayTao >= monthStart && d.NgayTao <= monthEnd)
+                    .Where(d => d.LopHocId.HasValue && d.LopHoc != null && d.LopHoc.HlvId == hlvId)
+                    .Where(d => d.ThanhToans.Any(t => t.TrangThai == "SUCCESS"))
+                    .SumAsync(d => (d.GoiTap != null ? d.GoiTap.Gia : 0) + (d.LopHoc!.GiaTuyChinh ?? 0));
+
+                return totalRevenue * _commissionConfig.AttendanceBonusRate;
+            }
+
+            return 0;
+        }
+
+        private decimal CalculateTierBasedCommission(decimal totalRevenue)
+        {
+            decimal tierBonus = 0;
+            decimal processedRevenue = 0;
+
+            foreach (var tier in _commissionConfig.CommissionTiers.OrderBy(t => t.MinRevenue))
+            {
+                if (totalRevenue <= processedRevenue) break;
+
+                var tierRevenue = Math.Min(totalRevenue - processedRevenue, tier.MaxRevenue - tier.MinRevenue);
+                if (tierRevenue > 0)
                 {
-                    totalCommission += data.PackagePrice * commissionRate;
-                }
-                else if (data.ClassPrice > 0)
-                {
-                    totalCommission += data.ClassPrice * commissionRate;
+                    tierBonus += tierRevenue * (tier.Rate - _commissionConfig.PackageCommissionRate); // Additional bonus over base rate
+                    processedRevenue += tierRevenue;
                 }
             }
 
-            return totalCommission;
+            return tierBonus;
         }
 
         // Simplified performance bonus

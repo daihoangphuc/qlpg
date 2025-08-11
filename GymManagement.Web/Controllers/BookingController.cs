@@ -1,5 +1,6 @@
 using GymManagement.Web.Data.Models;
 using GymManagement.Web.Services;
+using GymManagement.Web.Authorization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -15,6 +16,8 @@ namespace GymManagement.Web.Controllers
         private readonly INguoiDungService _nguoiDungService;
         private readonly IAuthService _authService;
         private readonly IEmailService _emailService;
+        private readonly IAuthorizationService _authorizationService;
+        private readonly IMemberBenefitService _memberBenefitService;
         private readonly ILogger<BookingController> _logger;
 
         public BookingController(
@@ -23,6 +26,8 @@ namespace GymManagement.Web.Controllers
             INguoiDungService nguoiDungService,
             IAuthService authService,
             IEmailService emailService,
+            IAuthorizationService authorizationService,
+            IMemberBenefitService memberBenefitService,
             ILogger<BookingController> logger)
         {
             _bookingService = bookingService;
@@ -30,6 +35,8 @@ namespace GymManagement.Web.Controllers
             _nguoiDungService = nguoiDungService;
             _authService = authService;
             _emailService = emailService;
+            _authorizationService = authorizationService;
+            _memberBenefitService = memberBenefitService;
             _logger = logger;
         }
 
@@ -43,11 +50,39 @@ namespace GymManagement.Web.Controllers
             return await _authService.GetUserByIdAsync(userId);
         }
 
+        // Helper method to get booking with authorization check
+        private async Task<(Booking? booking, bool authorized)> GetAuthorizedBookingAsync(int bookingId, string operation)
+        {
+            var booking = await _bookingService.GetByIdAsync(bookingId);
+            if (booking == null)
+                return (null, false);
+
+            var authorizationResult = operation switch
+            {
+                "Read" => await _authorizationService.AuthorizeAsync(User, booking, BookingOperations.Read),
+                "Update" => await _authorizationService.AuthorizeAsync(User, booking, BookingOperations.Update),
+                "Cancel" => await _authorizationService.AuthorizeAsync(User, booking, BookingOperations.Cancel),
+                "Delete" => await _authorizationService.AuthorizeAsync(User, booking, BookingOperations.Delete),
+                _ => AuthorizationResult.Failed()
+            };
+
+            return (booking, authorizationResult.Succeeded);
+        }
+
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Index()
         {
             try
             {
+                // 🔒 IMPROVED: Additional authorization check
+                var authorizationResult = await _authorizationService.AuthorizeAsync(
+                    User, null, BookingOperations.ViewAll);
+
+                if (!authorizationResult.Succeeded)
+                {
+                    return Forbid();
+                }
+
                 var bookings = await _bookingService.GetAllAsync();
                 return View(bookings);
             }
@@ -70,8 +105,14 @@ namespace GymManagement.Web.Controllers
                     return RedirectToAction("Login", "Auth");
                 }
 
+                // 🔒 IMPROVED: Ensure user can only see their own bookings
                 var bookings = await _bookingService.GetByMemberIdAsync(user.NguoiDungId.Value);
-                return View(bookings);
+
+                // Additional security: Filter bookings to ensure they belong to current user
+                var filteredBookings = bookings.Where(b =>
+                    b.ThanhVien?.TaiKhoan?.Id == User.FindFirst(ClaimTypes.NameIdentifier)?.Value).ToList();
+
+                return View(filteredBookings);
             }
             catch (Exception ex)
             {
@@ -96,23 +137,68 @@ namespace GymManagement.Web.Controllers
             {
                 if (ModelState.IsValid)
                 {
+                    var user = await GetCurrentUserAsync();
+
                     // If no member is selected, use current user
                     if (booking.ThanhVienId == null)
                     {
-                        var user = await GetCurrentUserAsync();
                         if (user?.NguoiDungId != null)
                         {
                             booking.ThanhVienId = user.NguoiDungId.Value;
                         }
                     }
 
-                    var createdBooking = await _bookingService.CreateAsync(booking);
-                    
-                    // Send booking confirmation email
-                    await SendBookingConfirmationEmailAsync(createdBooking);
-                    
-                    TempData["SuccessMessage"] = "Đặt lịch thành công!";
-                    return RedirectToAction(nameof(MyBookings));
+                    // 🔒 IMPROVED: Authorization check - Members can only create bookings for themselves
+                    if (User.IsInRole("Member") && user?.NguoiDungId != booking.ThanhVienId)
+                    {
+                        ModelState.AddModelError("", "Bạn chỉ có thể đặt lịch cho chính mình.");
+                        await LoadSelectLists();
+                        return View(booking);
+                    }
+
+                    // Validate required fields
+                    if (booking.ThanhVienId == null || booking.LopHocId == null)
+                    {
+                        ModelState.AddModelError("", "Thông tin thành viên và lớp học là bắt buộc.");
+                        await LoadSelectLists();
+                        return View(booking);
+                    }
+
+                    // 🚀 IMPROVED: Use transaction-safe booking method
+                    var bookingDate = booking.Ngay.ToDateTime(TimeOnly.MinValue);
+                    var (success, errorMessage) = await _bookingService.BookClassWithTransactionAsync(
+                        booking.ThanhVienId.Value,
+                        booking.LopHocId.Value,
+                        bookingDate,
+                        booking.GhiChu);
+
+                    if (success)
+                    {
+                        // Send booking confirmation email (async, non-blocking)
+                        _ = Task.Run(async () =>
+                        {
+                            try
+                            {
+                                await SendClassBookingConfirmationEmailAsync(
+                                    booking.ThanhVienId.Value,
+                                    booking.LopHocId.Value,
+                                    bookingDate);
+                            }
+                            catch (Exception emailEx)
+                            {
+                                _logger.LogWarning(emailEx, "Failed to send booking confirmation email");
+                            }
+                        });
+
+                        TempData["SuccessMessage"] = "Đặt lịch thành công!";
+                        return RedirectToAction(nameof(MyBookings));
+                    }
+                    else
+                    {
+                        ModelState.AddModelError("", errorMessage);
+                        await LoadSelectLists();
+                        return View(booking);
+                    }
                 }
                 await LoadSelectLists();
                 return View(booking);
@@ -123,6 +209,42 @@ namespace GymManagement.Web.Controllers
                 ModelState.AddModelError("", "Có lỗi xảy ra khi đặt lịch.");
                 await LoadSelectLists();
                 return View(booking);
+            }
+        }
+
+        /// <summary>
+        /// API kiểm tra phí booking lớp học - Logic đơn giản và rõ ràng
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> CheckBookingFee(int classId)
+        {
+            try
+            {
+                var user = await GetCurrentUserAsync();
+                if (user?.NguoiDungId == null)
+                {
+                    return Json(new { success = false, message = "Vui lòng đăng nhập." });
+                }
+
+                // Sử dụng service mới để kiểm tra phí
+                var (canBook, isFree, fee, reason) = await _memberBenefitService.CanBookClassAsync(
+                    user.NguoiDungId.Value, classId);
+
+                return Json(new
+                {
+                    success = true,
+                    canBook = canBook,
+                    isFree = isFree,
+                    fee = fee,
+                    feeText = fee > 0 ? $"{fee:N0} VNĐ" : "Miễn phí",
+                    reason = reason,
+                    message = canBook ? reason : "Không thể đặt lịch"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error checking booking fee for class {ClassId}", classId);
+                return Json(new { success = false, message = "Có lỗi xảy ra khi kiểm tra phí." });
             }
         }
 
@@ -137,17 +259,30 @@ namespace GymManagement.Web.Controllers
                     return Json(new { success = false, message = "Vui lòng đăng nhập để đặt lịch." });
                 }
 
-                var result = await _bookingService.BookClassAsync(user.NguoiDungId.Value, classId, date, note);
-                if (result)
+                // 🚀 IMPROVED: Use transaction-safe booking method
+                var (success, errorMessage) = await _bookingService.BookClassWithTransactionAsync(
+                    user.NguoiDungId.Value, classId, date, note);
+
+                if (success)
                 {
-                    // Send booking confirmation email for class booking
-                    await SendClassBookingConfirmationEmailAsync(user.NguoiDungId.Value, classId, date);
-                    
+                    // Send booking confirmation email for class booking (async, non-blocking)
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            await SendClassBookingConfirmationEmailAsync(user.NguoiDungId.Value, classId, date);
+                        }
+                        catch (Exception emailEx)
+                        {
+                            _logger.LogWarning(emailEx, "Failed to send booking confirmation email");
+                        }
+                    });
+
                     return Json(new { success = true, message = "Đặt lịch thành công!" });
                 }
                 else
                 {
-                    return Json(new { success = false, message = "Không thể đặt lịch. Lớp có thể đã đầy hoặc bạn đã đặt lịch rồi." });
+                    return Json(new { success = false, message = errorMessage });
                 }
             }
             catch (Exception ex)
@@ -190,12 +325,35 @@ namespace GymManagement.Web.Controllers
         {
             try
             {
+                // 🔒 IMPROVED: Resource-based authorization using helper method
+                var (booking, authorized) = await GetAuthorizedBookingAsync(id, "Cancel");
+
+                if (booking == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy đặt lịch." });
+                }
+
+                if (!authorized)
+                {
+                    return Json(new { success = false, message = "Bạn không có quyền hủy đặt lịch này." });
+                }
+
                 var result = await _bookingService.CancelBookingAsync(id);
                 if (result)
                 {
-                    // Send cancellation email
-                    await SendBookingCancellationEmailAsync(id);
-                    
+                    // Send cancellation email (async, non-blocking)
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            await SendBookingCancellationEmailAsync(id);
+                        }
+                        catch (Exception emailEx)
+                        {
+                            _logger.LogWarning(emailEx, "Failed to send cancellation email for booking {BookingId}", id);
+                        }
+                    });
+
                     return Json(new { success = true, message = "Hủy đặt lịch thành công!" });
                 }
                 else
@@ -242,6 +400,15 @@ namespace GymManagement.Web.Controllers
         {
             try
             {
+                // 🔒 IMPROVED: Additional authorization check
+                var authorizationResult = await _authorizationService.AuthorizeAsync(
+                    User, null, BookingOperations.ViewAll);
+
+                if (!authorizationResult.Succeeded)
+                {
+                    return Forbid();
+                }
+
                 var bookings = await _bookingService.GetTodayBookingsAsync();
                 return View(bookings);
             }

@@ -13,6 +13,7 @@ namespace GymManagement.Web.Services
         Task<IEnumerable<Booking>> GetByClassIdAsync(int lopHocId);
         Task<IEnumerable<Booking>> GetTodayBookingsAsync();
         Task<bool> BookClassAsync(int thanhVienId, int lopHocId, DateTime date, string? ghiChu = null);
+        Task<(bool Success, string ErrorMessage)> BookClassWithTransactionAsync(int thanhVienId, int lopHocId, DateTime date, string? ghiChu = null);
         Task<bool> BookScheduleAsync(int thanhVienId, int lichLopId);
         Task<bool> CancelBookingAsync(int bookingId);
         Task<bool> CanBookAsync(int thanhVienId, int lopHocId, DateTime date);

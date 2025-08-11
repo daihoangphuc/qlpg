@@ -241,5 +241,30 @@
                 }
             }
         });
+
+        // ✅ ENHANCED: Real-time notifications for dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            // Listen for notification actions
+            document.addEventListener('notificationAction', function(event) {
+                const { notificationId, actionId } = event.detail;
+
+                if (actionId === 'viewRevenue') {
+                    window.location.href = '/BaoCao/Revenue';
+                } else if (actionId === 'viewPayments') {
+                    window.location.href = '/ThanhToan';
+                }
+            });
+
+            // Show welcome notification for admin
+            if (typeof notificationManager !== 'undefined') {
+                setTimeout(() => {
+                    notificationManager.show(
+                        'Chào mừng bạn đến với Dashboard Admin! Hệ thống đang hoạt động bình thường.',
+                        'info',
+                        4000
+                    );
+                }, 1000);
+            }
+        });
     </script>
 }

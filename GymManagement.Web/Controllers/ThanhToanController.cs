@@ -398,16 +398,23 @@ namespace GymManagement.Web.Controllers
         {
             try
             {
+                // ✅ INPUT VALIDATION: Validate date parameters
+                var validationResult = ValidateDateRange(startDate, endDate);
+                if (!validationResult.IsValid)
+                {
+                    return Json(new { success = false, message = validationResult.ErrorMessage });
+                }
+
                 var revenue = await _thanhToanService.GetTotalRevenueAsync(startDate, endDate);
-                return Json(new { 
-                    success = true, 
+                return Json(new {
+                    success = true,
                     revenue = revenue,
                     formattedRevenue = revenue.ToString("N0") + " VNĐ"
                 });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while getting revenue");
+                _logger.LogError(ex, "Error occurred while getting revenue for range {StartDate} to {EndDate}", startDate, endDate);
                 return Json(new { success = false, message = "Có lỗi xảy ra khi tính doanh thu." });
             }
         }
@@ -470,5 +477,47 @@ namespace GymManagement.Web.Controllers
                 return Json(new { success = false, message = "Có lỗi xảy ra khi tải lịch sử thanh toán." });
             }
         }
+
+        #region ✅ INPUT VALIDATION HELPERS
+
+        /// <summary>
+        /// Validates date range parameters
+        /// </summary>
+        private (bool IsValid, string ErrorMessage) ValidateDateRange(DateTime startDate, DateTime endDate)
+        {
+            // Check if dates are valid
+            if (startDate == default || endDate == default)
+            {
+                return (false, "Ngày bắt đầu và ngày kết thúc không được để trống.");
+            }
+
+            // Check if start date is not after end date
+            if (startDate > endDate)
+            {
+                return (false, "Ngày bắt đầu không được lớn hơn ngày kết thúc.");
+            }
+
+            // Check if date range is not too far in the future
+            if (startDate > DateTime.Today.AddDays(1))
+            {
+                return (false, "Ngày bắt đầu không được vượt quá ngày mai.");
+            }
+
+            // Check if date range is not too far in the past (5 years)
+            if (startDate < DateTime.Today.AddYears(-5))
+            {
+                return (false, "Ngày bắt đầu không được quá 5 năm trước.");
+            }
+
+            // Check if date range is not too large (max 2 years)
+            if ((endDate - startDate).TotalDays > 730)
+            {
+                return (false, "Khoảng thời gian không được vượt quá 2 năm.");
+            }
+
+            return (true, string.Empty);
+        }
+
+        #endregion
     }
 }

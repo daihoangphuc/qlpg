@@ -12,5 +12,6 @@ namespace GymManagement.Web.Data.Repositories
         Task<decimal> GetTotalSalaryByMonthAsync(string thang);
         Task<decimal> GetTotalCommissionByMonthAsync(string thang);
         Task<IEnumerable<BangLuong>> GetSalariesByDateRangeAsync(DateTime startDate, DateTime endDate);
+        Task<int> GetSalaryCountByMonthAsync(string thang);
     }
 }

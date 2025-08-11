@@ -29,6 +29,11 @@
             }
         </div>
 
+        <!-- Thông tin quyền lợi member -->
+        <div id="memberBenefitCard" class="mb-8">
+            <!-- Card sẽ được load bằng JavaScript -->
+        </div>
+
         <!-- Policy Notice -->
         <div class="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6 mb-8">
             <div class="flex items-start">
@@ -901,6 +906,140 @@
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
         }
     </style>
+}
+
+@section Scripts {
+    <script>
+        // Load thông tin quyền lợi member khi trang load
+        document.addEventListener('DOMContentLoaded', async function() {
+            await loadMemberBenefits();
+        });
+
+        // Function load thông tin quyền lợi member
+        async function loadMemberBenefits() {
+            try {
+                const response = await fetch('/Member/GetMemberBenefits');
+                const result = await response.json();
+
+                if (result.success) {
+                    const benefits = result.data;
+                    displayMemberBenefitCard(benefits);
+                } else {
+                    console.error('Failed to load member benefits:', result.message);
+                }
+            } catch (error) {
+                console.error('Error loading member benefits:', error);
+            }
+        }
+
+        // Function hiển thị card quyền lợi
+        function displayMemberBenefitCard(benefits) {
+            const cardContainer = document.getElementById('memberBenefitCard');
+            if (!cardContainer) return;
+
+            const cardClass = benefits.hasActivePackage ? 'border-green-200 bg-green-50' : 'border-orange-200 bg-orange-50';
+            const iconClass = benefits.hasActivePackage ? 'text-green-600' : 'text-orange-600';
+            const statusClass = benefits.hasActivePackage ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800';
+
+            cardContainer.innerHTML = `
+                <div class="${cardClass} border rounded-xl p-6 shadow-sm">
+                    <div class="flex items-start justify-between">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 ${iconClass} bg-white rounded-lg flex items-center justify-center mr-4 shadow-sm">
+                                ${benefits.hasActivePackage ?
+                                    '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>' :
+                                    '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path></svg>'
+                                }
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-900">${benefits.statusText}</h3>
+                                <p class="text-sm text-gray-600">
+                                    ${benefits.hasActivePackage ?
+                                        `<strong>${benefits.packageName || 'Gói tập'}</strong>${benefits.packageExpiry ? ` - Hết hạn: ${new Date(benefits.packageExpiry).toLocaleDateString('vi-VN')}` : ''}` :
+                                        'Mua gói tập để được nhiều ưu đãi hơn'
+                                    }
+                                </p>
+                            </div>
+                        </div>
+                        <span class="${statusClass} px-3 py-1 rounded-full text-sm font-medium">
+                            ${benefits.hasActivePackage ? '✅ Có gói tập' : '⚠️ Chưa có gói'}
+                        </span>
+                    </div>
+
+                    <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Quyền vào gym -->
+                        <div class="flex items-center p-3 bg-white rounded-lg border">
+                            <div class="w-8 h-8 flex items-center justify-center mr-3">
+                                <span class="${benefits.canAccessGym ? 'text-green-600' : 'text-gray-400'} text-xl">🏋️</span>
+                            </div>
+                            <div class="flex-1">
+                                <p class="font-medium text-gray-900">Tập gym</p>
+                                <p class="text-sm ${benefits.canAccessGym ? 'text-green-600' : 'text-gray-500'}">
+                                    ${benefits.gymAccessText}
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Quyền booking lớp học -->
+                        <div class="flex items-center p-3 bg-white rounded-lg border">
+                            <div class="w-8 h-8 flex items-center justify-center mr-3">
+                                <span class="${benefits.canBookClassesFree ? 'text-green-600' : 'text-orange-600'} text-xl">🎓</span>
+                            </div>
+                            <div class="flex-1">
+                                <p class="font-medium text-gray-900">Lớp học</p>
+                                <p class="text-sm ${benefits.canBookClassesFree ? 'text-green-600' : 'text-orange-600'}">
+                                    ${benefits.classAccessText}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    ${!benefits.hasActivePackage ? `
+                        <div class="mt-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-200">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h4 class="font-semibold text-gray-900">🎯 Mua gói tập ngay!</h4>
+                                    <p class="text-sm text-gray-600 mt-1">Tiết kiệm chi phí và được nhiều ưu đãi hơn</p>
+                                </div>
+                                <a href="/Member/Packages" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                                    Xem gói tập
+                                </a>
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        // Function kiểm tra phí booking trước khi đặt lịch
+        async function checkBookingFeeBeforeRegister(classId, className) {
+            try {
+                const response = await fetch(`/Booking/CheckBookingFee?classId=${classId}`);
+                const data = await response.json();
+
+                if (data.success && data.canBook) {
+                    const message = data.isFree
+                        ? `✅ Miễn phí với gói tập\n\nBạn có muốn đăng ký lớp "${className}" không?`
+                        : `💰 Phí: ${data.feeText}\n\n${data.reason}\n\nBạn có muốn tiếp tục không?`;
+
+                    if (confirm(message)) {
+                        if (data.isFree) {
+                            // Proceed with registration
+                            registerClass(classId);
+                        } else {
+                            alert('Vui lòng thanh toán trước khi đăng ký lớp học.');
+                            // Có thể redirect đến trang thanh toán
+                        }
+                    }
+                } else {
+                    alert(data.message || 'Không thể đăng ký lớp học này.');
+                }
+            } catch (error) {
+                console.error('Error checking booking fee:', error);
+                alert('Có lỗi xảy ra khi kiểm tra phí.');
+            }
+        }
+    </script>
 }
 
 <!-- Anti-forgery token -->

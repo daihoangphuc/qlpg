@@ -49,10 +49,26 @@ namespace GymManagement.Web.Services
             return await _thanhToanRepository.GetTotalRevenueByDateRangeAsync(startDate, endDate);
         }
 
-        public async Task<Dictionary<string, decimal>> GetRevenueByDateRangeAsync(DateTime startDate, DateTime endDate)
+        public async Task<Dictionary<string, decimal>> GetRevenueByDateRangeAsync(DateTime startDate, DateTime endDate, string source = "all")
         {
             var payments = await _thanhToanRepository.GetPaymentsByDateRangeAsync(startDate, endDate);
             var successfulPayments = payments.Where(p => p.TrangThai == "SUCCESS");
+
+            // Filter by source if specified
+            if (source != "all")
+            {
+                successfulPayments = successfulPayments.Where(p =>
+                {
+                    if (p.DangKy?.NguoiDung?.LoaiNguoiDung == null) return false;
+
+                    return source.ToLower() switch
+                    {
+                        "member" => p.DangKy.NguoiDung.LoaiNguoiDung == "THANHVIEN",
+                        "walkin" => p.DangKy.NguoiDung.LoaiNguoiDung == "VANGLAI",
+                        _ => true
+                    };
+                });
+            }
 
             var result = new Dictionary<string, decimal>();
             var currentDate = startDate.Date;
@@ -70,10 +86,26 @@ namespace GymManagement.Web.Services
             return result;
         }
 
-        public async Task<Dictionary<string, decimal>> GetRevenueByPaymentMethodAsync(DateTime startDate, DateTime endDate)
+        public async Task<Dictionary<string, decimal>> GetRevenueByPaymentMethodAsync(DateTime startDate, DateTime endDate, string source = "all")
         {
             var payments = await _thanhToanRepository.GetPaymentsByDateRangeAsync(startDate, endDate);
             var successfulPayments = payments.Where(p => p.TrangThai == "SUCCESS");
+
+            // Filter by source if specified
+            if (source != "all")
+            {
+                successfulPayments = successfulPayments.Where(p =>
+                {
+                    if (p.DangKy?.NguoiDung?.LoaiNguoiDung == null) return false;
+
+                    return source.ToLower() switch
+                    {
+                        "member" => p.DangKy.NguoiDung.LoaiNguoiDung == "THANHVIEN",
+                        "walkin" => p.DangKy.NguoiDung.LoaiNguoiDung == "VANGLAI",
+                        _ => true
+                    };
+                });
+            }
 
             return successfulPayments
                 .GroupBy(p => p.PhuongThuc ?? "Unknown")

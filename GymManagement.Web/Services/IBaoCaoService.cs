@@ -6,8 +6,8 @@ namespace GymManagement.Web.Services
         Task<decimal> GetDailyRevenueAsync(DateTime date);
         Task<decimal> GetMonthlyRevenueAsync(int year, int month);
         Task<decimal> GetYearlyRevenueAsync(int year);
-        Task<Dictionary<string, decimal>> GetRevenueByDateRangeAsync(DateTime startDate, DateTime endDate);
-        Task<Dictionary<string, decimal>> GetRevenueByPaymentMethodAsync(DateTime startDate, DateTime endDate);
+        Task<Dictionary<string, decimal>> GetRevenueByDateRangeAsync(DateTime startDate, DateTime endDate, string source = "all");
+        Task<Dictionary<string, decimal>> GetRevenueByPaymentMethodAsync(DateTime startDate, DateTime endDate, string source = "all");
 
         // Membership Reports
         Task<int> GetTotalActiveMembersAsync();

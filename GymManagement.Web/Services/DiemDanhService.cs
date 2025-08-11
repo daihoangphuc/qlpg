@@ -314,5 +314,43 @@ namespace GymManagement.Web.Services
 
             return lichLop?.LopHoc?.HlvId == trainerId;
         }
+
+        // Face Recognition specific methods
+        public async Task<bool> CheckOutAsync(int diemDanhId)
+        {
+            try
+            {
+                var diemDanh = await _diemDanhRepository.GetByIdAsync(diemDanhId);
+                if (diemDanh == null)
+                    return false;
+
+                diemDanh.ThoiGianCheckOut = DateTime.Now;
+                await _diemDanhRepository.UpdateAsync(diemDanh);
+                await _unitOfWork.SaveChangesAsync();
+
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        public async Task<DiemDanh?> GetActiveSessionAsync(int thanhVienId)
+        {
+            try
+            {
+                return await _unitOfWork.Context.DiemDanhs
+                    .Where(d => d.ThanhVienId == thanhVienId &&
+                               d.ThoiGianCheckIn.Date == DateTime.Today &&
+                               d.ThoiGianCheckOut == null)
+                    .OrderByDescending(d => d.ThoiGianCheckIn)
+                    .FirstOrDefaultAsync();
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
     }
 }

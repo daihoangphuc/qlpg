@@ -13,6 +13,7 @@ namespace GymManagement.Web.Controllers
         private readonly ILopHocService _lopHocService;
         private readonly IDangKyService _dangKyService;
         private readonly INguoiDungService _nguoiDungService;
+        private readonly IMemberBenefitService _memberBenefitService;
 
         public MemberController(
             IUserSessionService userSessionService,
@@ -20,12 +21,44 @@ namespace GymManagement.Web.Controllers
             IGoiTapService goiTapService,
             ILopHocService lopHocService,
             IDangKyService dangKyService,
-            INguoiDungService nguoiDungService) : base(userSessionService, logger)
+            INguoiDungService nguoiDungService,
+            IMemberBenefitService memberBenefitService) : base(userSessionService, logger)
         {
             _goiTapService = goiTapService;
             _lopHocService = lopHocService;
             _dangKyService = dangKyService;
             _nguoiDungService = nguoiDungService;
+            _memberBenefitService = memberBenefitService;
+        }
+
+        /// <summary>
+        /// API lấy thông tin quyền lợi của member - Logic đơn giản
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> GetMemberBenefits()
+        {
+            try
+            {
+                var nguoiDungIdClaim = User.FindFirst("NguoiDungId")?.Value;
+                if (string.IsNullOrEmpty(nguoiDungIdClaim))
+                {
+                    return Json(new { success = false, message = "Không tìm thấy thông tin người dùng." });
+                }
+
+                var memberId = int.Parse(nguoiDungIdClaim);
+                var benefits = await _memberBenefitService.GetMemberBenefitsAsync(memberId);
+
+                return Json(new
+                {
+                    success = true,
+                    data = benefits
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting member benefits");
+                return Json(new { success = false, message = "Có lỗi xảy ra khi lấy thông tin quyền lợi." });
+            }
         }
 
 

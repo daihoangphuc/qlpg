@@ -79,5 +79,12 @@ namespace GymManagement.Web.Data.Repositories
                 .OrderByDescending(b => b.NgayThanhToan)
                 .ToListAsync();
         }
+
+        public async Task<int> GetSalaryCountByMonthAsync(string thang)
+        {
+            return await _context.BangLuongs
+                .Where(bl => bl.Thang == thang)
+                .CountAsync();
+        }
     }
 }

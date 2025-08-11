@@ -2,8 +2,11 @@ using GymManagement.Web.Data;
 using GymManagement.Web.Data.Repositories;
 using GymManagement.Web.Services;
 using GymManagement.Web.Middleware;
+using GymManagement.Web.Models;
+using GymManagement.Web.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Authorization;
 using GymManagement.Web.Data.Models;
 using Serilog;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -22,6 +25,9 @@ builder.Host.UseSerilog((context, services, configuration) => configuration
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+
+// ✅ ENHANCED: Add HttpClientFactory for notifications
+builder.Services.AddHttpClient();
 
 // Add Antiforgery services
 builder.Services.AddAntiforgery(options =>
@@ -109,6 +115,10 @@ builder.Services.AddAuthorization(options =>
         policy.RequireRole("Admin"));
 });
 
+// Add Authorization Handlers
+builder.Services.AddScoped<IAuthorizationHandler, BookingAuthorizationHandler>();
+builder.Services.AddScoped<IAuthorizationHandler, BookingOperationAuthorizationHandler>();
+
 // Add Repository pattern
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<INguoiDungRepository, NguoiDungRepository>();
@@ -118,6 +128,7 @@ builder.Services.AddScoped<IDangKyRepository, DangKyRepository>();
 builder.Services.AddScoped<IThanhToanRepository, ThanhToanRepository>();
 builder.Services.AddScoped<IBookingRepository, BookingRepository>();
 builder.Services.AddScoped<IDiemDanhRepository, DiemDanhRepository>();
+builder.Services.AddScoped<IMauMatRepository, MauMatRepository>();
 builder.Services.AddScoped<IBangLuongRepository, BangLuongRepository>();
 builder.Services.AddScoped<IThongBaoRepository, ThongBaoRepository>();
 builder.Services.AddScoped<ITinTucRepository, TinTucRepository>();
@@ -141,8 +152,18 @@ builder.Services.AddScoped<IAuditLogService, AuditLogService>();
 builder.Services.AddScoped<IKhuyenMaiService, KhuyenMaiService>();
 builder.Services.AddScoped<VietQRService>();
 
+// Add Walk-In Services
+builder.Services.AddScoped<IWalkInService, WalkInService>();
+
+// Add Face Recognition Services
+builder.Services.AddScoped<IFaceRecognitionService, FaceRecognitionService>();
+
 // Add Memory Cache
 builder.Services.AddMemoryCache();
+
+// Configure Commission Settings
+builder.Services.Configure<CommissionConfiguration>(
+    builder.Configuration.GetSection("CommissionSettings"));
 
 // Add Session Support
 builder.Services.AddSession(options =>
@@ -158,6 +179,9 @@ builder.Services.AddHttpContextAccessor();
 
 // Add User Session Service
 builder.Services.AddScoped<IUserSessionService, UserSessionService>();
+
+// Add Member Benefit Service - Logic đơn giản cho quyền lợi member
+builder.Services.AddScoped<IMemberBenefitService, MemberBenefitService>();
 
 // Add Health Checks
 builder.Services.AddHealthChecks()
@@ -231,3 +255,6 @@ finally
 {
     Log.CloseAndFlush();
 }
+
+// Make Program class accessible for integration tests
+public partial class Program { }

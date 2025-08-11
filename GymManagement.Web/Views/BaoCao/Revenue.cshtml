@@ -58,18 +58,28 @@
                 Bộ lọc dữ liệu
             </h3>
             
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                 <!-- Date Range -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Từ ngày</label>
                     <input type="date" id="startDate" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
                 </div>
-                
+
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Đến ngày</label>
                     <input type="date" id="endDate" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
                 </div>
-                
+
+                <!-- Source Filter -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Nguồn khách</label>
+                    <select id="sourceFilter" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                        <option value="all">🏢 Tất cả</option>
+                        <option value="member">👥 Thành viên</option>
+                        <option value="walkin">🚶 Khách vãng lai</option>
+                    </select>
+                </div>
+
                 <!-- Group By -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Nhóm theo</label>
@@ -79,7 +89,7 @@
                         <option value="month">Tháng</option>
                     </select>
                 </div>
-                
+
                 <!-- Apply Button -->
                 <div class="flex items-end">
                     <button id="applyFilters" class="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-300">
@@ -230,6 +240,8 @@
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/date-fns@2.29.3/index.min.js"></script>
+    <!-- ✅ Loading Manager -->
+    <script src="~/js/loading-manager.js"></script>
 
     <script>
         // Global variables
@@ -264,12 +276,14 @@
             document.getElementById('endDate').value = today.toISOString().split('T')[0];
         }
 
-        // Load revenue data
+        // ✅ ENHANCED: Load revenue data with comprehensive loading states
         function loadRevenueData() {
             const startDate = document.getElementById('startDate').value;
             const endDate = document.getElementById('endDate').value;
             const groupBy = document.getElementById('groupBy').value;
+            const source = document.getElementById('sourceFilter').value;
 
+            // ✅ CLIENT-SIDE VALIDATION
             if (!startDate || !endDate) {
                 showNotification('Vui lòng chọn khoảng thời gian', 'error');
                 return;
@@ -280,13 +294,22 @@
                 return;
             }
 
-            // Show loading
-            showLoading(true);
+            // ✅ SHOW LOADING STATES
+            loadingManager.showButtonLoading('applyFilters', 'Đang tải...');
+            loadingManager.showChartLoading('revenueChart', 'Đang tải biểu đồ doanh thu...');
+            loadingManager.showChartLoading('paymentMethodChart', 'Đang tải biểu đồ phương thức...');
+            loadingManager.showTableLoading('revenueTable', 'Đang tải bảng dữ liệu...');
+
+            // Show loading for summary cards
+            document.getElementById('totalRevenue').textContent = '...';
+            document.getElementById('avgDaily').textContent = '...';
+            document.getElementById('highestAmount').textContent = '...';
+            document.getElementById('growthRate').textContent = '...';
 
             // Load revenue data
             Promise.all([
-                fetch(`@Url.Action("GetRevenueData", "BaoCao")?startDate=${startDate}&endDate=${endDate}&groupBy=${groupBy}`),
-                fetch(`@Url.Action("GetRevenueByPaymentMethod", "BaoCao")?startDate=${startDate}&endDate=${endDate}`)
+                fetch(`@Url.Action("GetRevenueData", "BaoCao")?startDate=${startDate}&endDate=${endDate}&groupBy=${groupBy}&source=${source}`),
+                fetch(`@Url.Action("GetRevenueByPaymentMethod", "BaoCao")?startDate=${startDate}&endDate=${endDate}&source=${source}`)
             ])
             .then(responses => Promise.all(responses.map(r => r.json())))
             .then(([revenueData, paymentData]) => {
@@ -303,16 +326,24 @@
                     updateRevenueChart(revenueData.data);
                     updatePaymentMethodChart(paymentData.data);
                     updateRevenueTable(revenueData.data);
+
+                    showNotification('Dữ liệu đã được cập nhật thành công', 'success');
                 } else {
-                    showNotification('Có lỗi khi tải dữ liệu', 'error');
+                    const errorMsg = revenueData.message || paymentData.message || 'Có lỗi khi tải dữ liệu';
+                    showNotification(errorMsg, 'error');
+
+                    // Show error state in charts
+                    showErrorInCharts();
                 }
             })
             .catch(error => {
                 console.error('Error loading revenue data:', error);
-                showNotification('Có lỗi khi tải dữ liệu', 'error');
+                showNotification('Có lỗi kết nối khi tải dữ liệu', 'error');
+                showErrorInCharts();
             })
             .finally(() => {
-                showLoading(false);
+                // ✅ HIDE LOADING STATES
+                loadingManager.hideButtonLoading('applyFilters');
             });
         }
 
@@ -637,6 +668,36 @@
                     element.innerHTML = '<div class="animate-pulse bg-gray-200 h-6 rounded"></div>';
                 }
             });
+        }
+
+        // ✅ NEW: Show error state in charts
+        function showErrorInCharts() {
+            const revenueChartContainer = document.getElementById('revenueChart').parentElement;
+            const paymentChartContainer = document.getElementById('paymentMethodChart').parentElement;
+
+            revenueChartContainer.innerHTML = `
+                <div class="flex items-center justify-center h-80">
+                    <div class="text-center">
+                        <div class="text-red-500 text-4xl mb-3">⚠️</div>
+                        <p class="text-gray-600">Không thể tải biểu đồ doanh thu</p>
+                        <button onclick="loadRevenueData()" class="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                            Thử lại
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            paymentChartContainer.innerHTML = `
+                <div class="flex items-center justify-center h-80">
+                    <div class="text-center">
+                        <div class="text-red-500 text-4xl mb-3">⚠️</div>
+                        <p class="text-gray-600">Không thể tải biểu đồ phương thức</p>
+                        <button onclick="loadRevenueData()" class="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                            Thử lại
+                        </button>
+                    </div>
+                </div>
+            `;
         }
 
         function showNotification(message, type = 'info') {

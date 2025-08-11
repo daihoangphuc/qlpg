@@ -2,8 +2,9 @@ using GymManagement.Web.Data;
 using GymManagement.Web.Data.Models;
 using GymManagement.Web.Data.Repositories;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Cryptography;
+using System.Text.Json;
 using System.Text;
+using System.Security.Cryptography;
 using System.Web;
 
 namespace GymManagement.Web.Services
@@ -17,6 +18,7 @@ namespace GymManagement.Web.Services
         private readonly IEmailService _emailService;
         private readonly IConfiguration _configuration;
         private readonly ILogger<ThanhToanService> _logger;
+        private readonly IHttpClientFactory _httpClientFactory;
 
         public ThanhToanService(
             IThanhToanRepository thanhToanRepository,
@@ -25,7 +27,8 @@ namespace GymManagement.Web.Services
             IThongBaoService thongBaoService,
             IEmailService emailService,
             IConfiguration configuration,
-            ILogger<ThanhToanService> logger)
+            ILogger<ThanhToanService> logger,
+            IHttpClientFactory httpClientFactory)
         {
             _thanhToanRepository = thanhToanRepository;
             _dangKyRepository = dangKyRepository;
@@ -34,6 +37,7 @@ namespace GymManagement.Web.Services
             _emailService = emailService;
             _configuration = configuration;
             _logger = logger;
+            _httpClientFactory = httpClientFactory;
         }
 
         public async Task<IEnumerable<ThanhToan>> GetAllAsync()
@@ -125,6 +129,9 @@ namespace GymManagement.Web.Services
 
             thanhToan.TrangThai = "SUCCESS";
             thanhToan.NgayThanhToan = DateTime.Now;
+
+            // ✅ SEND REAL-TIME NOTIFICATION
+            await SendPaymentNotificationAsync(thanhToan);
 
             // Activate pending registration if exists
             if (thanhToan.DangKyId.HasValue)
@@ -447,5 +454,84 @@ namespace GymManagement.Web.Services
         }
 
         // HMAC method moved to VNPay Area
+
+        #region ✅ REAL-TIME NOTIFICATIONS
+
+        /// <summary>
+        /// Send real-time payment notification
+        /// </summary>
+        private async Task SendPaymentNotificationAsync(ThanhToan payment)
+        {
+            try
+            {
+                var httpClient = _httpClientFactory.CreateClient();
+
+                var notificationData = new
+                {
+                    Amount = payment.SoTien,
+                    Method = payment.PhuongThuc ?? "Unknown",
+                    CustomerName = payment.DangKy?.NguoiDung?.Ho + " " + payment.DangKy?.NguoiDung?.Ten ?? "Unknown"
+                };
+
+                var json = JsonSerializer.Serialize(notificationData);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                // Send to notification API (fire and forget)
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await httpClient.PostAsync("/api/notifications/payment", content);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Failed to send payment notification");
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Error preparing payment notification");
+            }
+        }
+
+        /// <summary>
+        /// Send real-time revenue notification
+        /// </summary>
+        private async Task SendRevenueNotificationAsync(decimal amount, string period = "hôm nay")
+        {
+            try
+            {
+                var httpClient = _httpClientFactory.CreateClient();
+
+                var notificationData = new
+                {
+                    Amount = amount,
+                    Period = period
+                };
+
+                var json = JsonSerializer.Serialize(notificationData);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                // Send to notification API (fire and forget)
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await httpClient.PostAsync("/api/notifications/revenue", content);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Failed to send revenue notification");
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Error preparing revenue notification");
+            }
+        }
+
+        #endregion
     }
 }

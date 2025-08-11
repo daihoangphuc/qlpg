@@ -166,6 +166,51 @@
                             <span class="flex-1 ms-3 whitespace-nowrap">✅ Quản lý điểm danh</span>
                         </a>
                     </li>
+                    <li>
+                        <a asp-controller="Reception" asp-action="Station"
+                            class="flex items-center p-3 text-gray-900 rounded-lg hover:bg-gray-100 group @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Reception" ? "bg-gray-100 " : "")">
+                            <svg class="flex-shrink-0 w-5 h-5 text-gray-500 transition duration-75 group-hover:text-gray-900"
+                                aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor"
+                                viewBox="0 0 20 20">
+                                <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                <path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                            </svg>
+                            <span class="flex-1 ms-3 whitespace-nowrap">👁️ Reception Station</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a asp-controller="WalkIn" asp-action="Dashboard"
+                            class="flex items-center p-3 text-gray-900 rounded-lg hover:bg-gray-100 group @(ViewContext.RouteData.Values["Controller"]?.ToString() == "WalkIn" ? "bg-gray-100 " : "")">
+                            <svg class="flex-shrink-0 w-5 h-5 text-gray-500 transition duration-75 group-hover:text-gray-900"
+                                aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor"
+                                viewBox="0 0 20 20">
+                                <path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m3 5.197H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            <span class="flex-1 ms-3 whitespace-nowrap">🚶 Quản lý khách vãng lai</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a asp-controller="FaceManagement" asp-action="AdminManage"
+                            class="flex items-center p-3 text-gray-900 rounded-lg hover:bg-gray-100 group @(ViewContext.RouteData.Values["Controller"]?.ToString() == "FaceManagement" ? "bg-gray-100 " : "")">
+                            <svg class="flex-shrink-0 w-5 h-5 text-gray-500 transition duration-75 group-hover:text-gray-900"
+                                aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor"
+                                viewBox="0 0 20 20">
+                                <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                            </svg>
+                            <span class="flex-1 ms-3 whitespace-nowrap">👥 Quản lý khuôn mặt</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a asp-controller="FaceTest" asp-action="Index"
+                            class="flex items-center p-3 text-gray-900 rounded-lg hover:bg-gray-100 group @(ViewContext.RouteData.Values["Controller"]?.ToString() == "FaceTest" ? "bg-gray-100 " : "")">
+                            <svg class="flex-shrink-0 w-5 h-5 text-gray-500 transition duration-75 group-hover:text-gray-900"
+                                aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor"
+                                viewBox="0 0 20 20">
+                                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <span class="flex-1 ms-3 whitespace-nowrap">🧪 Face Recognition Test</span>
+                        </a>
+                    </li>
 
                     <li>
                         <a asp-controller="BangLuong" asp-action="Index"
@@ -772,6 +817,17 @@
             }
         });
     </script>
+
+    <!-- ✅ Enhanced System Components -->
+    <script src="~/js/loading-manager.js" asp-append-version="true"></script>
+    <script src="~/js/notification-manager.js" asp-append-version="true"></script>
+
+    <!-- ✅ User Authentication Meta for SSE -->
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        <meta name="user-authenticated" content="true" />
+        <meta name="user-id" content="@User.Identity.Name" />
+    }
 </body>
 
 </html>

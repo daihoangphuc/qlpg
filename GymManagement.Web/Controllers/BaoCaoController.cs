@@ -8,11 +8,13 @@ namespace GymManagement.Web.Controllers
     public class BaoCaoController : Controller
     {
         private readonly IBaoCaoService _baoCaoService;
+        private readonly IWalkInService _walkInService;
         private readonly ILogger<BaoCaoController> _logger;
 
-        public BaoCaoController(IBaoCaoService baoCaoService, ILogger<BaoCaoController> logger)
+        public BaoCaoController(IBaoCaoService baoCaoService, IWalkInService walkInService, ILogger<BaoCaoController> logger)
         {
             _baoCaoService = baoCaoService;
+            _walkInService = walkInService;
             _logger = logger;
         }
 
@@ -37,31 +39,63 @@ namespace GymManagement.Web.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetRevenueData(DateTime startDate, DateTime endDate, string groupBy = "day")
+        public async Task<IActionResult> GetRevenueData(DateTime startDate, DateTime endDate, string groupBy = "day", string source = "all")
         {
             try
             {
-                var data = await _baoCaoService.GetRevenueByDateRangeAsync(startDate, endDate);
+                // ✅ INPUT VALIDATION: Validate date parameters
+                var validationResult = ValidateDateRange(startDate, endDate);
+                if (!validationResult.IsValid)
+                {
+                    return Json(new { success = false, message = validationResult.ErrorMessage });
+                }
+
+                // ✅ VALIDATE: groupBy parameter
+                if (!IsValidGroupBy(groupBy))
+                {
+                    return Json(new { success = false, message = "Tham số nhóm dữ liệu không hợp lệ." });
+                }
+
+                // ✅ VALIDATE: source parameter
+                if (!IsValidSource(source))
+                {
+                    return Json(new { success = false, message = "Tham số nguồn dữ liệu không hợp lệ." });
+                }
+
+                var data = await _baoCaoService.GetRevenueByDateRangeAsync(startDate, endDate, source);
                 return Json(new { success = true, data = data });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while getting revenue data");
+                _logger.LogError(ex, "Error occurred while getting revenue data for range {StartDate} to {EndDate}", startDate, endDate);
                 return Json(new { success = false, message = "Có lỗi xảy ra khi tải dữ liệu doanh thu." });
             }
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetRevenueByPaymentMethod(DateTime startDate, DateTime endDate)
+        public async Task<IActionResult> GetRevenueByPaymentMethod(DateTime startDate, DateTime endDate, string source = "all")
         {
             try
             {
-                var data = await _baoCaoService.GetRevenueByPaymentMethodAsync(startDate, endDate);
+                // ✅ INPUT VALIDATION: Validate date parameters
+                var validationResult = ValidateDateRange(startDate, endDate);
+                if (!validationResult.IsValid)
+                {
+                    return Json(new { success = false, message = validationResult.ErrorMessage });
+                }
+
+                // ✅ VALIDATE: source parameter
+                if (!IsValidSource(source))
+                {
+                    return Json(new { success = false, message = "Tham số nguồn dữ liệu không hợp lệ." });
+                }
+
+                var data = await _baoCaoService.GetRevenueByPaymentMethodAsync(startDate, endDate, source);
                 return Json(new { success = true, data = data });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while getting revenue by payment method");
+                _logger.LogError(ex, "Error occurred while getting revenue by payment method for range {StartDate} to {EndDate}", startDate, endDate);
                 return Json(new { success = false, message = "Có lỗi xảy ra khi tải dữ liệu doanh thu theo phương thức." });
             }
         }
@@ -350,5 +384,105 @@ namespace GymManagement.Web.Controllers
                 return View();
             }
         }
+
+        #region Walk-In Reports
+
+        /// <summary>
+        /// Lấy thống kê khách vãng lai
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> GetWalkInStats(DateTime startDate, DateTime endDate)
+        {
+            try
+            {
+                var stats = await _walkInService.GetWalkInStatsAsync(startDate, endDate);
+                return Json(new { success = true, data = stats });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while getting walk-in stats");
+                return Json(new { success = false, message = "Có lỗi xảy ra khi tải thống kê khách vãng lai." });
+            }
+        }
+
+        /// <summary>
+        /// Lấy danh sách khách vãng lai theo ngày
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> GetWalkInSessions(DateTime? date = null)
+        {
+            try
+            {
+                var sessions = await _walkInService.GetTodayWalkInsAsync(date);
+                return Json(new { success = true, data = sessions });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while getting walk-in sessions");
+                return Json(new { success = false, message = "Có lỗi xảy ra khi tải danh sách khách vãng lai." });
+            }
+        }
+
+        #endregion
+
+        #region ✅ INPUT VALIDATION HELPERS
+
+        /// <summary>
+        /// Validates date range parameters
+        /// </summary>
+        private (bool IsValid, string ErrorMessage) ValidateDateRange(DateTime startDate, DateTime endDate)
+        {
+            // Check if dates are valid
+            if (startDate == default || endDate == default)
+            {
+                return (false, "Ngày bắt đầu và ngày kết thúc không được để trống.");
+            }
+
+            // Check if start date is not after end date
+            if (startDate > endDate)
+            {
+                return (false, "Ngày bắt đầu không được lớn hơn ngày kết thúc.");
+            }
+
+            // Check if date range is not too far in the future
+            if (startDate > DateTime.Today.AddDays(1))
+            {
+                return (false, "Ngày bắt đầu không được vượt quá ngày mai.");
+            }
+
+            // Check if date range is not too far in the past (5 years)
+            if (startDate < DateTime.Today.AddYears(-5))
+            {
+                return (false, "Ngày bắt đầu không được quá 5 năm trước.");
+            }
+
+            // Check if date range is not too large (max 2 years)
+            if ((endDate - startDate).TotalDays > 730)
+            {
+                return (false, "Khoảng thời gian không được vượt quá 2 năm.");
+            }
+
+            return (true, string.Empty);
+        }
+
+        /// <summary>
+        /// Validates groupBy parameter
+        /// </summary>
+        private bool IsValidGroupBy(string groupBy)
+        {
+            var validGroupBy = new[] { "day", "week", "month", "year" };
+            return validGroupBy.Contains(groupBy?.ToLower());
+        }
+
+        /// <summary>
+        /// Validates source parameter
+        /// </summary>
+        private bool IsValidSource(string source)
+        {
+            var validSources = new[] { "all", "member", "walkin" };
+            return validSources.Contains(source?.ToLower());
+        }
+
+        #endregion
     }
 }

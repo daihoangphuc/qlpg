@@ -31,7 +31,7 @@ namespace GymManagement.Web.Data.Models
         public string? LyDoHuy { get; set; }
 
         [StringLength(20)]
-        public string LoaiDangKy { get; set; } = "PACKAGE"; // PACKAGE hoặc CLASS
+        public string LoaiDangKy { get; set; } = "PACKAGE"; // PACKAGE, CLASS, DAYPASS, HOURPASS
 
         [StringLength(50)]
         public string? TrangThaiChiTiet { get; set; }
@@ -51,11 +51,15 @@ namespace GymManagement.Web.Data.Models
         public bool IsPackageRegistration => GoiTapId.HasValue;
 
         [NotMapped]
+        public bool IsWalkInRegistration => LoaiDangKy == "DAYPASS" || LoaiDangKy == "HOURPASS";
+
+        [NotMapped]
         public bool CanCancel => TrangThai == "ACTIVE" &&
             (IsPackageRegistration || (IsClassRegistration && NgayBatDau > DateOnly.FromDateTime(DateTime.Today.AddDays(1))));
 
         [NotMapped]
-        public string DisplayType => IsClassRegistration ? "Lớp học" : "Gói tập";
+        public string DisplayType => IsClassRegistration ? "Lớp học" :
+                                    IsWalkInRegistration ? "Vé lẻ" : "Gói tập";
 
         // Computed properties for renewal
         [NotMapped]

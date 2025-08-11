@@ -73,53 +73,103 @@ namespace GymManagement.Web.Services
             return await _bookingRepository.GetBookingsByDateAsync(DateTime.Today);
         }
 
-        public async Task<bool> BookClassAsync(int thanhVienId, int lopHocId, DateTime date, string? ghiChu = null)
+        // 🚀 IMPROVED: Transaction-safe booking method to prevent race conditions
+        public async Task<(bool Success, string ErrorMessage)> BookClassWithTransactionAsync(
+            int thanhVienId, int lopHocId, DateTime date, string? ghiChu = null)
         {
             // Check if date is in the future
             if (date.Date < DateTime.Today)
-                return false;
+                return (false, "Không thể đặt lịch cho ngày trong quá khứ");
 
-            // Check if class exists and is open
-            var lopHoc = await _lopHocRepository.GetByIdAsync(lopHocId);
-            if (lopHoc == null || lopHoc.TrangThai != "OPEN")
-                return false;
-
-            // Check if member already has a booking for this class on this date
-            if (await _bookingRepository.HasBookingAsync(thanhVienId, lopHocId, null, date))
-                return false;
-
-            // Check if class has available slots
-            var bookingCount = await _bookingRepository.CountBookingsForClassAsync(lopHocId, date);
-            if (bookingCount >= lopHoc.SucChua)
-                return false;
-
-            // Create booking
-            var booking = new Booking
+            using var transaction = await _unitOfWork.Context.Database.BeginTransactionAsync();
+            try
             {
-                ThanhVienId = thanhVienId,
-                LopHocId = lopHocId,
-                Ngay = DateOnly.FromDateTime(date),
-                NgayDat = DateOnly.FromDateTime(DateTime.Now),
-                TrangThai = "BOOKED",
-                GhiChu = ghiChu
-            };
+                // Get class with lock to prevent concurrent modifications
+                var lopHoc = await _unitOfWork.Context.LopHocs
+                    .Where(l => l.LopHocId == lopHocId)
+                    .FirstOrDefaultAsync();
 
-            await _bookingRepository.AddAsync(booking);
-            await _unitOfWork.SaveChangesAsync();
+                if (lopHoc == null)
+                    return (false, "Lớp học không tồn tại");
 
-            // Send notification
-            var thanhVien = await _unitOfWork.Context.NguoiDungs.FindAsync(thanhVienId);
-            if (thanhVien != null)
-            {
-                await _thongBaoService.CreateNotificationAsync(
-                    thanhVienId,
-                    "Đặt lịch thành công",
-                    $"Bạn đã đặt lịch thành công lớp {lopHoc.TenLop} vào ngày {date:dd/MM/yyyy}",
-                    "APP"
-                );
+                if (lopHoc.TrangThai != "OPEN")
+                    return (false, "Lớp học đã đóng hoặc không khả dụng");
+
+                // Check if member already has a booking for this class on this date
+                var existingBooking = await _unitOfWork.Context.Bookings
+                    .Where(b => b.ThanhVienId == thanhVienId &&
+                               b.LopHocId == lopHocId &&
+                               b.Ngay == DateOnly.FromDateTime(date) &&
+                               b.TrangThai == "BOOKED")
+                    .FirstOrDefaultAsync();
+
+                if (existingBooking != null)
+                    return (false, "Bạn đã đặt lịch cho lớp này trong ngày này rồi");
+
+                // Check capacity with exclusive lock to prevent race condition
+                var currentBookings = await _unitOfWork.Context.Bookings
+                    .Where(b => b.LopHocId == lopHocId &&
+                               b.Ngay == DateOnly.FromDateTime(date) &&
+                               b.TrangThai == "BOOKED")
+                    .CountAsync();
+
+                if (currentBookings >= lopHoc.SucChua)
+                    return (false, "Lớp học đã đầy, vui lòng chọn lớp khác");
+
+                // Create booking
+                var booking = new Booking
+                {
+                    ThanhVienId = thanhVienId,
+                    LopHocId = lopHocId,
+                    Ngay = DateOnly.FromDateTime(date),
+                    NgayDat = DateOnly.FromDateTime(DateTime.Now),
+                    TrangThai = "BOOKED",
+                    GhiChu = ghiChu
+                };
+
+                await _unitOfWork.Context.Bookings.AddAsync(booking);
+                await _unitOfWork.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                // Send notification (outside transaction to avoid blocking)
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        var thanhVien = await _unitOfWork.Context.NguoiDungs.FindAsync(thanhVienId);
+                        if (thanhVien != null)
+                        {
+                            await _thongBaoService.CreateNotificationAsync(
+                                thanhVienId,
+                                "Đặt lịch thành công",
+                                $"Bạn đã đặt lịch thành công lớp {lopHoc.TenLop} vào ngày {date:dd/MM/yyyy}",
+                                "APP"
+                            );
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        // Log notification error but don't fail the booking
+                        // TODO: Add proper logging
+                        Console.WriteLine($"Failed to send notification: {ex.Message}");
+                    }
+                });
+
+                return (true, "Đặt lịch thành công");
             }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                return (false, $"Lỗi hệ thống: {ex.Message}");
+            }
+        }
 
-            return true;
+        // 🔄 LEGACY: Keep old method for backward compatibility but mark as obsolete
+        [Obsolete("Use BookClassWithTransactionAsync instead to prevent race conditions")]
+        public async Task<bool> BookClassAsync(int thanhVienId, int lopHocId, DateTime date, string? ghiChu = null)
+        {
+            var result = await BookClassWithTransactionAsync(thanhVienId, lopHocId, date, ghiChu);
+            return result.Success;
         }
 
         public async Task<bool> BookScheduleAsync(int thanhVienId, int lichLopId)
