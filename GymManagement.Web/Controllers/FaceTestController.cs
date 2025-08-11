@@ -13,17 +13,47 @@ namespace GymManagement.Web.Controllers
         private readonly INguoiDungService _nguoiDungService;
         private readonly IAuthService _authService;
         private readonly ILogger<FaceTestController> _logger;
+        private readonly IWebHostEnvironment _webHostEnvironment;
 
         public FaceTestController(
             IFaceRecognitionService faceRecognitionService,
             INguoiDungService nguoiDungService,
             IAuthService authService,
-            ILogger<FaceTestController> logger)
+            ILogger<FaceTestController> logger,
+            IWebHostEnvironment webHostEnvironment)
         {
             _faceRecognitionService = faceRecognitionService;
             _nguoiDungService = nguoiDungService;
             _authService = authService;
             _logger = logger;
+            _webHostEnvironment = webHostEnvironment;
+        }
+
+        [HttpGet("~/FaceTest/models/{fileName}")]
+        public IActionResult GetModel(string fileName)
+        {
+            try
+            {
+                var modelsPath = Path.Combine(_webHostEnvironment.WebRootPath, "lib", "face-api", "models");
+                var filePath = Path.Combine(modelsPath, fileName);
+
+                if (!System.IO.File.Exists(filePath))
+                {
+                    return NotFound();
+                }
+
+                var fileBytes = System.IO.File.ReadAllBytes(filePath);
+
+                // Set appropriate content type based on file extension
+                var contentType = fileName.EndsWith(".json") ? "application/json" : "application/octet-stream";
+
+                return File(fileBytes, contentType, fileName);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error serving model file: {FileName}", fileName);
+                return NotFound();
+            }
         }
 
         // Main test dashboard
@@ -53,6 +83,14 @@ namespace GymManagement.Web.Controllers
         {
             try
             {
+                // Manual CSRF validation for AJAX requests
+                var token = Request.Headers["RequestVerificationToken"].FirstOrDefault();
+                if (string.IsNullOrEmpty(token))
+                {
+                    _logger.LogWarning("CSRF token missing in face registration request");
+                    return Json(new { success = false, message = "Token bảo mật không hợp lệ" });
+                }
+
                 if (request?.Descriptor == null || request.Descriptor.Length != 128)
                 {
                     return Json(new { success = false, message = "Dữ liệu khuôn mặt không hợp lệ" });

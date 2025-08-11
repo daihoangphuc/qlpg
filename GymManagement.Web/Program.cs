@@ -213,10 +213,25 @@ app.UseForwardedHeaders();
 app.UseGlobalExceptionHandling();
 
 app.UseHttpsRedirection();
-app.UseStaticFiles();
+
+// Configure static files with custom MIME types for Face-API.js models
+app.UseStaticFiles(new StaticFileOptions
+{
+    OnPrepareResponse = ctx =>
+    {
+        var path = ctx.File.Name.ToLower();
+        if (path.Contains("shard") || path.Contains("model"))
+        {
+            ctx.Context.Response.Headers.Append("Content-Type", "application/octet-stream");
+        }
+    }
+});
 
 app.UseRouting();
 app.UseSession();
+
+// Rate limiting for face recognition endpoints
+app.UseMiddleware<RateLimitingMiddleware>();
 
 app.UseAuthentication();
 app.UseUserSession(); // Custom middleware for user session management

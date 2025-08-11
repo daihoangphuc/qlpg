@@ -40,9 +40,6 @@ namespace GymManagement.Web.Migrations
                     b.Property<decimal>("LuongCoBan")
                         .HasColumnType("decimal(12,2)");
 
-                    b.Property<DateTime>("NgayTao")
-                        .HasColumnType("datetime2");
-
                     b.Property<DateOnly?>("NgayThanhToan")
                         .HasColumnType("date");
 
@@ -60,7 +57,7 @@ namespace GymManagement.Web.Migrations
 
                     b.HasIndex("HlvId");
 
-                    b.ToTable("BangLuongs");
+                    b.ToTable("BangLuongs", (string)null);
                 });
 
             modelBuilder.Entity("GymManagement.Web.Data.Models.Booking", b =>
@@ -108,7 +105,7 @@ namespace GymManagement.Web.Migrations
 
                     b.HasIndex("ThanhVienId");
 
-                    b.ToTable("Bookings");
+                    b.ToTable("Bookings", (string)null);
                 });
 
             modelBuilder.Entity("GymManagement.Web.Data.Models.BuoiHlv", b =>
@@ -146,7 +143,7 @@ namespace GymManagement.Web.Migrations
 
                     b.HasIndex("ThanhVienId");
 
-                    b.ToTable("BuoiHlvs");
+                    b.ToTable("BuoiHlvs", (string)null);
                 });
 
             modelBuilder.Entity("GymManagement.Web.Data.Models.BuoiTap", b =>
@@ -179,7 +176,7 @@ namespace GymManagement.Web.Migrations
 
                     b.HasIndex("ThanhVienId");
 
-                    b.ToTable("BuoiTaps");
+                    b.ToTable("BuoiTaps", (string)null);
                 });
 
             modelBuilder.Entity("GymManagement.Web.Data.Models.CauHinhHoaHong", b =>
@@ -193,17 +190,14 @@ namespace GymManagement.Web.Migrations
                     b.Property<int?>("GoiTapId")
                         .HasColumnType("int");
 
-                    b.Property<DateTime>("NgayTao")
-                        .HasColumnType("datetime2");
-
-                    b.Property<decimal>("PhanTramHoaHong")
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<int>("PhanTramHoaHong")
+                        .HasColumnType("int");
 
                     b.HasKey("CauHinhHoaHongId");
 
                     b.HasIndex("GoiTapId");
 
-                    b.ToTable("CauHinhHoaHongs");
+                    b.ToTable("CauHinhHoaHongs", (string)null);
                 });
 
             modelBuilder.Entity("GymManagement.Web.Data.Models.DangKy", b =>
@@ -216,11 +210,6 @@ namespace GymManagement.Web.Migrations
 
                     b.Property<int?>("GoiTapId")
                         .HasColumnType("int");
-
-                    b.Property<string>("LoaiDangKy")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
 
                     b.Property<int?>("LopHocId")
                         .HasColumnType("int");
@@ -253,10 +242,6 @@ namespace GymManagement.Web.Migrations
                         .HasColumnType("nvarchar(20)")
                         .HasDefaultValue("ACTIVE");
 
-                    b.Property<string>("TrangThaiChiTiet")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
                     b.HasKey("DangKyId");
 
                     b.HasIndex("GoiTapId");
@@ -265,7 +250,7 @@ namespace GymManagement.Web.Migrations
 
                     b.HasIndex("NguoiDungId");
 
-                    b.ToTable("DangKys");
+                    b.ToTable("DangKys", (string)null);
                 });
 
             modelBuilder.Entity("GymManagement.Web.Data.Models.DiemDanh", b =>
@@ -312,7 +297,7 @@ namespace GymManagement.Web.Migrations
 
                     b.HasIndex("ThanhVienId");
 
-                    b.ToTable("DiemDanhs");
+                    b.ToTable("DiemDanhs", (string)null);
                 });
 
             modelBuilder.Entity("GymManagement.Web.Data.Models.ExternalLogin", b =>
@@ -381,7 +366,7 @@ namespace GymManagement.Web.Migrations
 
                     b.HasKey("GoiTapId");
 
-                    b.ToTable("GoiTaps");
+                    b.ToTable("GoiTaps", (string)null);
                 });
 
             modelBuilder.Entity("GymManagement.Web.Data.Models.KhuyenMai", b =>
@@ -420,7 +405,7 @@ namespace GymManagement.Web.Migrations
                     b.HasIndex("MaCode")
                         .IsUnique();
 
-                    b.ToTable("KhuyenMais");
+                    b.ToTable("KhuyenMais", (string)null);
                 });
 
             modelBuilder.Entity("GymManagement.Web.Data.Models.LichLop", b =>
@@ -457,7 +442,7 @@ namespace GymManagement.Web.Migrations
 
                     b.HasIndex("LopHocId");
 
-                    b.ToTable("LichLops");
+                    b.ToTable("LichLops", (string)null);
                 });
 
             modelBuilder.Entity("GymManagement.Web.Data.Models.LichSuAnh", b =>
@@ -492,7 +477,7 @@ namespace GymManagement.Web.Migrations
 
                     b.HasIndex("NguoiDungId");
 
-                    b.ToTable("LichSuAnhs");
+                    b.ToTable("LichSuAnhs", (string)null);
                 });
 
             modelBuilder.Entity("GymManagement.Web.Data.Models.LopHoc", b =>
@@ -515,20 +500,9 @@ namespace GymManagement.Web.Migrations
                     b.Property<int?>("HlvId")
                         .HasColumnType("int");
 
-                    b.Property<string>("LoaiDangKy")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
                     b.Property<string>("MoTa")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
-
-                    b.Property<DateOnly?>("NgayBatDauKhoa")
-                        .HasColumnType("date");
-
-                    b.Property<DateOnly?>("NgayKetThucKhoa")
-                        .HasColumnType("date");
 
                     b.Property<int>("SucChua")
                         .HasColumnType("int");
@@ -557,7 +531,7 @@ namespace GymManagement.Web.Migrations
 
                     b.HasIndex("HlvId");
 
-                    b.ToTable("LopHocs");
+                    b.ToTable("LopHocs", (string)null);
                 });
 
             modelBuilder.Entity("GymManagement.Web.Data.Models.MauMat", b =>
@@ -592,7 +566,7 @@ namespace GymManagement.Web.Migrations
                     b.HasIndex("NguoiDungId")
                         .IsUnique();
 
-                    b.ToTable("MauMats");
+                    b.ToTable("MauMats", (string)null);
                 });
 
             modelBuilder.Entity("GymManagement.Web.Data.Models.NguoiDung", b =>
@@ -653,7 +627,7 @@ namespace GymManagement.Web.Migrations
 
                     b.HasKey("NguoiDungId");
 
-                    b.ToTable("NguoiDungs");
+                    b.ToTable("NguoiDungs", (string)null);
                 });
 
             modelBuilder.Entity("GymManagement.Web.Data.Models.TaiKhoan", b =>
@@ -749,7 +723,7 @@ namespace GymManagement.Web.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ThanhToanId"));
 
-                    b.Property<int?>("DangKyId")
+                    b.Property<int>("DangKyId")
                         .HasColumnType("int");
 
                     b.Property<string>("GhiChu")
@@ -779,7 +753,7 @@ namespace GymManagement.Web.Migrations
 
                     b.HasIndex("DangKyId");
 
-                    b.ToTable("ThanhToans");
+                    b.ToTable("ThanhToans", (string)null);
                 });
 
             modelBuilder.Entity("GymManagement.Web.Data.Models.ThanhToanGateway", b =>
@@ -827,7 +801,7 @@ namespace GymManagement.Web.Migrations
                     b.HasIndex("ThanhToanId")
                         .IsUnique();
 
-                    b.ToTable("ThanhToanGateways");
+                    b.ToTable("ThanhToanGateways", (string)null);
                 });
 
             modelBuilder.Entity("GymManagement.Web.Data.Models.ThongBao", b =>
@@ -867,91 +841,7 @@ namespace GymManagement.Web.Migrations
 
                     b.HasIndex("NguoiDungId");
 
-                    b.ToTable("ThongBaos");
-                });
-
-            modelBuilder.Entity("GymManagement.Web.Data.Models.TinTuc", b =>
-                {
-                    b.Property<int>("TinTucId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TinTucId"));
-
-                    b.Property<string>("AnhDaiDien")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<int>("LuotXem")
-                        .HasColumnType("int");
-
-                    b.Property<string>("MetaDescription")
-                        .HasMaxLength(160)
-                        .HasColumnType("nvarchar(160)");
-
-                    b.Property<string>("MetaKeywords")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("MetaTitle")
-                        .HasMaxLength(160)
-                        .HasColumnType("nvarchar(160)");
-
-                    b.Property<string>("MoTaNgan")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<DateTime?>("NgayCapNhat")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("NgayTao")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasDefaultValueSql("GETDATE()");
-
-                    b.Property<DateTime?>("NgayXuatBan")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("NoiBat")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("NoiDung")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Slug")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<int?>("TacGiaId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("TenTacGia")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("TieuDe")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("TrangThai")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)")
-                        .HasDefaultValue("DRAFT");
-
-                    b.HasKey("TinTucId");
-
-                    b.HasIndex("Slug")
-                        .IsUnique()
-                        .HasFilter("[Slug] IS NOT NULL");
-
-                    b.HasIndex("TacGiaId");
-
-                    b.ToTable("TinTucs");
+                    b.ToTable("ThongBaos", (string)null);
                 });
 
             modelBuilder.Entity("GymManagement.Web.Data.Models.VaiTro", b =>
@@ -1179,7 +1069,8 @@ namespace GymManagement.Web.Migrations
                     b.HasOne("GymManagement.Web.Data.Models.DangKy", "DangKy")
                         .WithMany("ThanhToans")
                         .HasForeignKey("DangKyId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("DangKy");
                 });
@@ -1202,16 +1093,6 @@ namespace GymManagement.Web.Migrations
                         .HasForeignKey("NguoiDungId");
 
                     b.Navigation("NguoiDung");
-                });
-
-            modelBuilder.Entity("GymManagement.Web.Data.Models.TinTuc", b =>
-                {
-                    b.HasOne("GymManagement.Web.Data.Models.NguoiDung", "TacGia")
-                        .WithMany()
-                        .HasForeignKey("TacGiaId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("TacGia");
                 });
 
             modelBuilder.Entity("GymManagement.Web.Data.Models.DangKy", b =>

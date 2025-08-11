@@ -24,7 +24,7 @@
                     </div>
                 </div>
                 <div class="flex items-center space-x-3">
-                    <a href="@Url.Action("Create")" class="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200">
+                    <a href="@Url.Action("Create", "TinTuc")" class="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                         </svg>
@@ -74,7 +74,7 @@
 
         <!-- Filters -->
         <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-            <form method="get" action="@Url.Action("Index")" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <form method="get" action="@Url.Action("Index", "TinTuc")" class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                     <label for="searchTerm" class="block text-sm font-medium text-gray-700 mb-2">Tìm kiếm</label>
                     <input type="text" id="searchTerm" name="searchTerm" value="@ViewBag.SearchTerm" 
@@ -254,14 +254,14 @@
                         <div class="flex-1 flex justify-between sm:hidden">
                             @if (ViewBag.CurrentPage > 1)
                             {
-                                <a href="@Url.Action("Index", new { searchTerm = ViewBag.SearchTerm, trangThai = ViewBag.TrangThai, page = ViewBag.CurrentPage - 1 })" 
+                                <a href="@Url.Action("Index", "TinTuc", new { searchTerm = ViewBag.SearchTerm, trangThai = ViewBag.TrangThai, page = ViewBag.CurrentPage - 1 })"
                                    class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
                                     Trước
                                 </a>
                             }
                             @if (ViewBag.CurrentPage < ViewBag.TotalPages)
                             {
-                                <a href="@Url.Action("Index", new { searchTerm = ViewBag.SearchTerm, trangThai = ViewBag.TrangThai, page = ViewBag.CurrentPage + 1 })" 
+                                <a href="@Url.Action("Index", "TinTuc", new { searchTerm = ViewBag.SearchTerm, trangThai = ViewBag.TrangThai, page = ViewBag.CurrentPage + 1 })"
                                    class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
                                     Sau
                                 </a>
@@ -283,7 +283,7 @@
                                 <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
                                     @if (ViewBag.CurrentPage > 1)
                                     {
-                                        <a href="@Url.Action("Index", new { searchTerm = ViewBag.SearchTerm, trangThai = ViewBag.TrangThai, page = ViewBag.CurrentPage - 1 })" 
+                                        <a href="@Url.Action("Index", "TinTuc", new { searchTerm = ViewBag.SearchTerm, trangThai = ViewBag.TrangThai, page = ViewBag.CurrentPage - 1 })"
                                            class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                                             <span class="sr-only">Trước</span>
                                             <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -302,7 +302,7 @@
                                         }
                                         else
                                         {
-                                            <a href="@Url.Action("Index", new { searchTerm = ViewBag.SearchTerm, trangThai = ViewBag.TrangThai, page = i })" 
+                                            <a href="@Url.Action("Index", "TinTuc", new { searchTerm = ViewBag.SearchTerm, trangThai = ViewBag.TrangThai, page = i })"
                                                class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
                                                 @i
                                             </a>
@@ -337,7 +337,7 @@
                     <h3 class="mt-2 text-sm font-medium text-gray-900">Chưa có tin tức nào</h3>
                     <p class="mt-1 text-sm text-gray-500">Bắt đầu bằng cách tạo tin tức mới.</p>
                     <div class="mt-6">
-                        <a href="@Url.Action("Create")" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        <a href="@Url.Action("Create", "TinTuc")" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                             </svg>

@@ -3,6 +3,11 @@
     Layout = "_Layout";
 }
 
+@* CSRF Token for AJAX requests *@
+<form id="csrfForm" style="display: none;">
+    @Html.AntiForgeryToken()
+</form>
+
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <!-- Header -->
     <div class="mb-8">
@@ -82,12 +87,89 @@
         </div>
     </div>
 
+    <!-- Face Registration Section -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+        <h2 class="text-xl font-bold text-gray-900 mb-4">📝 Đăng Ký Khuôn Mặt Mới</h2>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Member Selection & Camera -->
+            <div class="space-y-4">
+                <!-- Member Selection -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Chọn hội viên</label>
+                    <select id="memberSelect" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">Chọn hội viên...</option>
+                        @if (ViewBag.Members != null)
+                        {
+                            @foreach (var member in ViewBag.Members)
+                            {
+                                <option value="@member.NguoiDungId">@member.Ho @member.Ten (@member.Email)</option>
+                            }
+                        }
+                    </select>
+                </div>
+
+                <!-- Camera Section -->
+                <div>
+                    <div class="relative bg-gray-100 rounded-lg overflow-hidden" style="height: 300px;">
+                        <video id="registerVideo" class="w-full h-full object-cover" autoplay muted></video>
+                        <canvas id="registerCanvas" class="absolute top-0 left-0 w-full h-full pointer-events-none"></canvas>
+
+                        <!-- Status Overlay -->
+                        <div class="absolute bottom-4 left-4 right-4">
+                            <div class="bg-black bg-opacity-75 text-white px-3 py-2 rounded-lg text-sm">
+                                <div id="registerCameraStatus">📷 Camera not started</div>
+                                <div id="registerFaceStatus">👁️ No face detected</div>
+                                <div id="registerQualityStatus">⭐ Quality: Not assessed</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Camera Controls -->
+                <div class="flex space-x-3">
+                    <button id="startRegisterCameraBtn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                        📷 Start Camera
+                    </button>
+                    <button id="stopRegisterCameraBtn" class="flex-1 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                        ⏹️ Stop Camera
+                    </button>
+                </div>
+
+                <button id="registerButton" class="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors" disabled>
+                    📝 Đăng Ký Khuôn Mặt
+                </button>
+            </div>
+
+            <!-- Registration Results -->
+            <div class="space-y-4">
+                <div id="registerResults" class="hidden">
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <h3 class="font-medium text-gray-900 mb-2">Kết quả đăng ký:</h3>
+                        <div id="registerResultContent"></div>
+                    </div>
+                </div>
+
+                <!-- Instructions -->
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <h4 class="font-medium text-blue-900 mb-2">📋 Hướng dẫn:</h4>
+                    <ul class="text-sm text-blue-800 space-y-1">
+                        <li>• Chọn hội viên từ danh sách</li>
+                        <li>• Bật camera và đưa mặt vào khung hình</li>
+                        <li>• Đảm bảo ánh sáng đủ và mặt thẳng</li>
+                        <li>• Nhấn "Đăng Ký Khuôn Mặt" khi sẵn sàng</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Search and Filter -->
     <div class="bg-white rounded-lg shadow-md p-6 mb-8">
         <div class="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
             <div class="flex-1 max-w-lg">
                 <div class="relative">
-                    <input type="text" id="searchInput" placeholder="Tìm kiếm theo tên, email..." 
+                    <input type="text" id="searchInput" placeholder="Tìm kiếm theo tên, email..."
                            class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -130,23 +212,384 @@
 
 @section Scripts {
     <script>
+        // Face Management variables
         let allFaces = [];
         let filteredFaces = [];
         let currentPage = 1;
         const itemsPerPage = 10;
 
+        // Face Registration variables (học theo FaceTest)
+        let isModelLoaded = false;
+        let registerStream = null;
+        let registerDetectionInterval = null;
+        let currentRegisterDescriptor = null;
+
+        // DOM elements
+        let registerVideo, registerCanvas;
+        let startRegisterCameraBtn, stopRegisterCameraBtn, registerButton;
+        let registerCameraStatus, registerFaceStatus, registerQualityStatus;
+
         document.addEventListener('DOMContentLoaded', function() {
+            // Initialize DOM elements (học theo FaceTest)
+            initializeDOMElements();
+
+            // Load Face-API models
+            loadModels();
+
+            // Setup event listeners
+            setupEventListeners();
+
+            // Load existing faces
             loadAllFaces();
-            
+        });
+
+        function initializeDOMElements() {
+            // Face Registration elements
+            registerVideo = document.getElementById('registerVideo');
+            registerCanvas = document.getElementById('registerCanvas');
+            startRegisterCameraBtn = document.getElementById('startRegisterCameraBtn');
+            stopRegisterCameraBtn = document.getElementById('stopRegisterCameraBtn');
+            registerButton = document.getElementById('registerButton');
+            registerCameraStatus = document.getElementById('registerCameraStatus');
+            registerFaceStatus = document.getElementById('registerFaceStatus');
+            registerQualityStatus = document.getElementById('registerQualityStatus');
+        }
+
+        function setupEventListeners() {
+            // Face Registration buttons (học theo FaceTest)
+            if (startRegisterCameraBtn) startRegisterCameraBtn.addEventListener('click', startRegisterCamera);
+            if (stopRegisterCameraBtn) stopRegisterCameraBtn.addEventListener('click', stopRegisterCamera);
+            if (registerButton) registerButton.addEventListener('click', testRegisterFace);
+
             // Search functionality
             document.getElementById('searchInput').addEventListener('input', function() {
                 filterFaces();
             });
-            
+
             document.getElementById('filterSelect').addEventListener('change', function() {
                 filterFaces();
             });
-        });
+        }
+
+        // Load Face-API models (học theo FaceTest)
+        async function loadModels() {
+            try {
+                console.log('📦 Loading Face-API models...');
+
+                // Use global models manager if available
+                if (window.FaceAPIGlobal) {
+                    if (window.FaceAPIGlobal.isReady()) {
+                        console.log('✅ Global Face-API models already ready!');
+                        isModelLoaded = true;
+                        return;
+                    }
+
+                    console.log('⏳ Waiting for global Face-API models...');
+                    await window.FaceAPIGlobal.waitForModels(30000);
+                    isModelLoaded = true;
+                    console.log('✅ Global Face-API models ready for Face Management');
+                } else {
+                    // Fallback: load models locally
+                    const baseUrl = window.location.origin;
+                    const modelsPath = `${baseUrl}/FaceTest/models`;
+
+                    await faceapi.nets.tinyFaceDetector.loadFromUri(modelsPath);
+                    await faceapi.nets.faceLandmark68Net.loadFromUri(modelsPath);
+                    await faceapi.nets.faceRecognitionNet.loadFromUri(modelsPath);
+
+                    isModelLoaded = true;
+                    console.log('✅ Face-API models loaded locally');
+                }
+            } catch (error) {
+                console.error('❌ Error loading models:', error);
+            }
+        }
+
+        // Helper functions (học theo FaceTest)
+        function updateStatus(elementId, text) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.textContent = text;
+            }
+        }
+
+        function showError(message) {
+            console.error('❌ Error:', message);
+            alert(message);
+        }
+
+        function showSuccess(message) {
+            console.log('✅ Success:', message);
+            alert(message);
+        }
+
+        function clearCanvas(canvas) {
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function drawFaceBox(canvas, box) {
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            ctx.strokeStyle = '#00ff00';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(box.x, box.y, box.width, box.height);
+        }
+
+        // Camera Functions (học theo FaceTest)
+        async function startRegisterCamera() {
+            try {
+                // Check HTTPS requirement
+                if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+                    showError('Camera requires HTTPS connection. Please use HTTPS URL.');
+                    return;
+                }
+
+                if (!isModelLoaded) {
+                    showError('AI models not loaded yet. Please wait.');
+                    return;
+                }
+
+                // Check if getUserMedia is available
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    showError('Camera not supported in this browser.');
+                    return;
+                }
+
+                console.log('Requesting camera access for registration...');
+                registerStream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        width: { ideal: 640 },
+                        height: { ideal: 480 }
+                    }
+                });
+
+                registerVideo.srcObject = registerStream;
+                updateStatus('registerCameraStatus', '📷 Camera running');
+
+                // Start face detection
+                startRegisterDetection();
+
+                console.log('✅ Registration camera started successfully');
+            } catch (error) {
+                console.error('Registration camera error:', error);
+                updateStatus('registerCameraStatus', '📷 Camera error');
+                showError('Failed to access camera. Please check permissions.');
+            }
+        }
+
+        async function stopRegisterCamera() {
+            if (registerStream) {
+                registerStream.getTracks().forEach(track => track.stop());
+                registerStream = null;
+            }
+            if (registerDetectionInterval) {
+                clearInterval(registerDetectionInterval);
+                registerDetectionInterval = null;
+            }
+            updateStatus('registerCameraStatus', '📷 Camera stopped');
+            updateStatus('registerFaceStatus', '👁️ No face detected');
+            updateStatus('registerQualityStatus', '⭐ Quality: Not assessed');
+            registerButton.disabled = true;
+        }
+
+        // Face Detection for Registration (học theo FaceTest)
+        function startRegisterDetection() {
+            console.log('🔍 Starting register detection...');
+
+            registerDetectionInterval = setInterval(async () => {
+                if (!registerVideo.videoWidth || !registerVideo.videoHeight) {
+                    return;
+                }
+
+                if (!isModelLoaded) {
+                    updateStatus('registerFaceStatus', '🔄 Loading models...');
+                    return;
+                }
+
+                try {
+                    // Detect face with landmarks and descriptor
+                    const detection = await faceapi
+                        .detectSingleFace(registerVideo, new faceapi.TinyFaceDetectorOptions())
+                        .withFaceLandmarks()
+                        .withFaceDescriptor();
+
+                    if (detection) {
+                        updateStatus('registerFaceStatus', '✅ Face detected');
+
+                        // Assess face quality
+                        const quality = assessFaceQuality(detection);
+                        updateStatus('registerQualityStatus', `⭐ Quality: ${quality.score.toFixed(1)}/10 (${quality.status})`);
+
+                        currentRegisterDescriptor = detection.descriptor;
+                        registerButton.disabled = false;
+
+                        // Draw face box
+                        drawFaceBox(registerCanvas, detection.detection.box);
+                    } else {
+                        updateStatus('registerFaceStatus', '👁️ Searching for face...');
+                        updateStatus('registerQualityStatus', '⭐ Quality: Not assessed');
+                        currentRegisterDescriptor = null;
+                        registerButton.disabled = true;
+                        clearCanvas(registerCanvas);
+                    }
+                } catch (error) {
+                    console.error('Register detection error:', error);
+                }
+            }, 500);
+        }
+
+        // Assess face quality (học theo FaceTest)
+        function assessFaceQuality(detection) {
+            const box = detection.detection.box;
+            const landmarks = detection.landmarks;
+
+            let score = 10;
+            let issues = [];
+
+            // Check face size
+            const faceArea = box.width * box.height;
+            const videoArea = registerVideo.videoWidth * registerVideo.videoHeight;
+            const faceRatio = faceArea / videoArea;
+
+            if (faceRatio < 0.05) {
+                score -= 3;
+                issues.push('Face too small');
+            } else if (faceRatio > 0.5) {
+                score -= 2;
+                issues.push('Face too large');
+            }
+
+            // Check face position
+            const centerX = box.x + box.width / 2;
+            const centerY = box.y + box.height / 2;
+            const videoCenterX = registerVideo.videoWidth / 2;
+            const videoCenterY = registerVideo.videoHeight / 2;
+
+            const offsetX = Math.abs(centerX - videoCenterX) / registerVideo.videoWidth;
+            const offsetY = Math.abs(centerY - videoCenterY) / registerVideo.videoHeight;
+
+            if (offsetX > 0.2 || offsetY > 0.2) {
+                score -= 2;
+                issues.push('Face not centered');
+            }
+
+            // Determine status
+            let status;
+            if (score >= 8) status = 'Excellent';
+            else if (score >= 6) status = 'Good';
+            else if (score >= 4) status = 'Fair';
+            else status = 'Poor';
+
+            return { score, status, issues };
+        }
+
+        // Face Registration Function (học theo FaceTest)
+        async function testRegisterFace() {
+            console.log('🔥 testRegisterFace() called!');
+
+            const memberId = document.getElementById('memberSelect').value;
+            console.log('👤 Selected member ID:', memberId);
+
+            if (!memberId) {
+                console.log('❌ No member selected');
+                showError('Please select a member first.');
+                return;
+            }
+
+            console.log('🧠 Current descriptor:', currentRegisterDescriptor);
+            if (!currentRegisterDescriptor) {
+                console.log('❌ No face descriptor available');
+                showError('No face detected. Please ensure your face is visible.');
+                return;
+            }
+
+            console.log('✅ All checks passed, proceeding with registration...');
+
+            try {
+                registerButton.disabled = true;
+                registerButton.textContent = 'Đang đăng ký...';
+
+                const response = await fetch('/FaceTest/TestRegisterFace', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                    },
+                    body: JSON.stringify({
+                        memberId: parseInt(memberId),
+                        descriptor: Array.from(currentRegisterDescriptor)
+                    })
+                });
+
+                const result = await response.json();
+                console.log('📡 Registration response:', result);
+
+                // Show results
+                showRegisterResults(result);
+
+                if (result.success) {
+                    showSuccess(`Face registered successfully for member ID: ${memberId}`);
+
+                    // Refresh face list
+                    loadAllFaces();
+
+                    // Reset form
+                    document.getElementById('memberSelect').value = '';
+                    currentRegisterDescriptor = null;
+                    registerButton.disabled = true;
+                } else {
+                    showError(result.message || 'Registration failed');
+                }
+
+            } catch (error) {
+                console.error('❌ Registration error:', error);
+                showError('Network error occurred during registration.');
+            } finally {
+                registerButton.disabled = false;
+                registerButton.textContent = '📝 Đăng Ký Khuôn Mặt';
+            }
+        }
+
+        // Show registration results (học theo FaceTest)
+        function showRegisterResults(result) {
+            const resultsDiv = document.getElementById('registerResults');
+            const contentDiv = document.getElementById('registerResultContent');
+
+            contentDiv.innerHTML = `
+                <div class="space-y-2">
+                    <div class="flex justify-between">
+                        <span class="font-medium">Status:</span>
+                        <span class="${result.success ? 'text-green-600' : 'text-red-600'}">${result.success ? 'Success' : 'Failed'}</span>
+                    </div>
+                    ${result.success ? `
+                    <div class="flex justify-between">
+                        <span class="font-medium">Member ID:</span>
+                        <span class="text-gray-700">${result.memberId}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="font-medium">Face ID:</span>
+                        <span class="text-gray-700">${result.faceId || 'N/A'}</span>
+                    </div>
+                    ` : ''}
+                    <div class="flex justify-between">
+                        <span class="font-medium">Message:</span>
+                        <span class="text-gray-700">${result.message}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="font-medium">Processing Time:</span>
+                        <span class="text-gray-700">${result.processingTime || 0}ms</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="font-medium">Timestamp:</span>
+                        <span class="text-gray-700">${new Date().toLocaleTimeString()}</span>
+                    </div>
+                </div>
+            `;
+
+            resultsDiv.classList.remove('hidden');
+        }
 
         async function loadAllFaces() {
             try {

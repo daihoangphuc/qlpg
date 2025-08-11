@@ -25,7 +25,7 @@
                 @if (User.IsInRole("Admin"))
                 {
                     <div class="flex items-center space-x-3">
-                        <a href="@Url.Action("Create")" class="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200">
+                        <a href="@Url.Action("Create", "LopHoc")" class="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                             </svg>
@@ -349,7 +349,7 @@
                                 <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
                                     @if (ViewBag.HasPreviousPage)
                                     {
-                                        <a href="@Url.Action("Index", new { page = ViewBag.CurrentPage - 1 })"
+                                        <a href="@Url.Action("Index", "LopHoc", new { page = ViewBag.CurrentPage - 1 })"
                                            class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                                             <span class="sr-only">Trang trước</span>
                                             <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
@@ -376,7 +376,7 @@
                                         }
                                         else
                                         {
-                                            <a href="@Url.Action("Index", new { page = i })"
+                                            <a href="@Url.Action("Index", "LopHoc", new { page = i })"
                                                class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
                                                 @i
                                             </a>
@@ -385,7 +385,7 @@
 
                                     @if (ViewBag.HasNextPage)
                                     {
-                                        <a href="@Url.Action("Index", new { page = ViewBag.CurrentPage + 1 })"
+                                        <a href="@Url.Action("Index", "LopHoc", new { page = ViewBag.CurrentPage + 1 })"
                                            class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                                             <span class="sr-only">Trang sau</span>
                                             <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
@@ -423,7 +423,7 @@
                 <p class="text-gray-600 mb-6">Hệ thống chưa có lớp học nào. Hãy tạo lớp học đầu tiên để bắt đầu quản lý các hoạt động tập luyện.</p>
                 @if (User.IsInRole("Admin"))
                 {
-                    <a href="@Url.Action("Create")" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200">
+                    <a href="@Url.Action("Create", "LopHoc")" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200">
                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                         </svg>

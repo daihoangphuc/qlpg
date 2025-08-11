@@ -31,16 +31,32 @@ namespace GymManagement.Web.Controllers
         /// </summary>
         [HttpGet]
         public async Task<IActionResult> Index(
-            string? loaiNguoiDung = null, 
+            string? loaiNguoiDung = null,
             string? searchTerm = null,
-            int page = 1, 
+            int page = 1,
             int pageSize = 5)
         {
             try
             {
-                _logger.LogInformation("Admin accessing user list page {Page} with filter {Filter}", 
-                    page, loaiNguoiDung);
-                
+                _logger.LogInformation("=== UserController.Index START ===");
+                _logger.LogInformation("Parameters - Page: {Page}, Filter: {Filter}, SearchTerm: {SearchTerm}",
+                    page, loaiNguoiDung, searchTerm);
+
+                // Log current user info
+                var currentUser = _userSessionService.GetUserName();
+                var userRoles = _userSessionService.GetUserRoles();
+                _logger.LogInformation("Current user: {User}, Roles: {Roles}", currentUser, string.Join(",", userRoles ?? new List<string>()));
+
+                // Check user authorization
+                if (!IsInRoleSafe("Admin"))
+                {
+                    _logger.LogWarning("AUTHORIZATION FAILED - Non-admin user attempted to access user management");
+                    _logger.LogWarning("User: {User}, Roles: {Roles}", currentUser, string.Join(",", userRoles ?? new List<string>()));
+                    return HandleUnauthorized();
+                }
+
+                _logger.LogInformation("Authorization passed - proceeding with user list");
+
                 // Validate pagination parameters
                 if (page < 1) page = 1;
                 if (pageSize < 5 || pageSize > 50) pageSize = 5;
@@ -83,7 +99,8 @@ namespace GymManagement.Web.Controllers
                 ViewBag.LoaiNguoiDung = loaiNguoiDung;
                 ViewBag.SearchTerm = searchTerm;
 
-                _logger.LogInformation("Returning {Count} users for page {Page}", users.Count, page);
+                _logger.LogInformation("SUCCESS - Returning {Count} users for page {Page}", users.Count, page);
+                _logger.LogInformation("=== UserController.Index END ===");
                 return View(users);
             }
             catch (Exception ex)

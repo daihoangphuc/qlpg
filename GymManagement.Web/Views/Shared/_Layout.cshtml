@@ -21,6 +21,12 @@
     <!-- QRCode.js Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.3/qrcode.min.js"></script>
 
+    <!-- Face-API.js for face recognition -->
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+
+    <!-- Global Face-API Models Manager -->
+    <script src="~/js/face-api-global.js" asp-append-version="true"></script>
+
     <!-- Custom CSS -->
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/class-management.css" asp-append-version="true" />
@@ -226,7 +232,7 @@
                         </a>
                     </li>
                     <li>
-                        <a asp-controller="BaoCao" asp-action="Index"
+                        <a asp-controller="BaoCao" asp-action="Revenue"
                             class="flex items-center p-3 text-gray-900 rounded-lg hover:bg-gray-100 group @(ViewContext.RouteData.Values["Controller"]?.ToString() == "BaoCao" ? "bg-gray-100 " : "")">
                             <svg class="flex-shrink-0 w-5 h-5 text-gray-500 transition duration-75 group-hover:text-gray-900"
                                 aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor"

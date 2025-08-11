@@ -403,6 +403,113 @@ namespace GymManagement.Web.Services
             return (_fixedPrice, _fixedPackageName, _fixedPackageDescription);
         }
 
+        /// <summary>
+        /// Đăng ký khách vãng lai với thanh toán (All-in-one method)
+        /// </summary>
+        public async Task<WalkInRegistrationResult> RegisterWalkInWithPaymentAsync(
+            string fullName,
+            string phoneNumber,
+            string? email,
+            string? note,
+            string paymentMethod,
+            decimal amount)
+        {
+            try
+            {
+                _logger.LogInformation("Registering walk-in with payment: {Name}, Method: {Method}, Amount: {Amount}",
+                    fullName, paymentMethod, amount);
+
+                // 1. Tạo khách vãng lai
+                var guest = await CreateGuestAsync(fullName, phoneNumber, email);
+
+                // 2. Tạo vé với giá cố định
+                var dayPass = await CreateFixedPricePassAsync(guest.NguoiDungId);
+
+                // 3. Xử lý thanh toán
+                var payment = await ProcessWalkInPaymentAsync(
+                    dayPass.DangKyId,
+                    paymentMethod,
+                    note ?? $"WALKIN - {_fixedPackageName}");
+
+                // 4. Tự động check-in nếu thanh toán thành công
+                DiemDanh? checkIn = null;
+                if (payment.TrangThai == "SUCCESS")
+                {
+                    checkIn = await CheckInGuestAsync(guest.NguoiDungId, note ?? "Auto check-in after payment");
+                }
+
+                _logger.LogInformation("Walk-in registration with payment completed for {Name}", fullName);
+
+                return new WalkInRegistrationResult
+                {
+                    Success = true,
+                    GuestId = guest.NguoiDungId,
+                    TransactionId = payment.ThanhToanId.ToString(),
+                    Message = "Đăng ký và thanh toán thành công"
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in walk-in registration with payment for {Name}", fullName);
+                return new WalkInRegistrationResult
+                {
+                    Success = false,
+                    Message = "Có lỗi xảy ra khi đăng ký và thanh toán"
+                };
+            }
+        }
+
+        /// <summary>
+        /// Tạo thanh toán VNPay cho khách vãng lai
+        /// </summary>
+        public async Task<WalkInVNPayResult> CreateVNPayPaymentAsync(
+            string fullName,
+            string phoneNumber,
+            string? email,
+            string? note,
+            decimal amount)
+        {
+            try
+            {
+                _logger.LogInformation("Creating VNPay payment for walk-in: {Name}, Amount: {Amount}", fullName, amount);
+
+                // 1. Tạo khách vãng lai
+                var guest = await CreateGuestAsync(fullName, phoneNumber, email);
+
+                // 2. Tạo vé với giá cố định
+                var dayPass = await CreateFixedPricePassAsync(guest.NguoiDungId);
+
+                // 3. Tạo thanh toán VNPay (PENDING)
+                var payment = await ProcessWalkInPaymentAsync(
+                    dayPass.DangKyId,
+                    "VNPAY",
+                    note ?? $"WALKIN - {_fixedPackageName}");
+
+                // 4. Tạo VNPay URL (giả lập - cần tích hợp thật)
+                var orderId = $"WALKIN_{payment.ThanhToanId}_{DateTime.Now:yyyyMMddHHmmss}";
+                var paymentUrl = $"/VNPay/Payment?orderId={orderId}&amount={amount}&description=WALKIN_{guest.NguoiDungId}";
+
+                _logger.LogInformation("VNPay payment created for walk-in: {Name}, OrderId: {OrderId}", fullName, orderId);
+
+                return new WalkInVNPayResult
+                {
+                    Success = true,
+                    PaymentUrl = paymentUrl,
+                    OrderId = orderId,
+                    Message = "Tạo thanh toán VNPay thành công"
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating VNPay payment for walk-in: {Name}", fullName);
+                return new WalkInVNPayResult
+                {
+                    Success = false,
+                    Message = "Có lỗi xảy ra khi tạo thanh toán VNPay"
+                };
+            }
+        }
+
         public async Task<WalkInStats> GetWalkInStatsAsync(DateTime startDate, DateTime endDate)
         {
             try
@@ -441,5 +548,21 @@ namespace GymManagement.Web.Services
                 return new WalkInStats();
             }
         }
+    }
+
+    public class WalkInRegistrationResult
+    {
+        public bool Success { get; set; }
+        public int GuestId { get; set; }
+        public string? TransactionId { get; set; }
+        public string Message { get; set; } = string.Empty;
+    }
+
+    public class WalkInVNPayResult
+    {
+        public bool Success { get; set; }
+        public string? PaymentUrl { get; set; }
+        public string? OrderId { get; set; }
+        public string Message { get; set; } = string.Empty;
     }
 }

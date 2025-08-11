@@ -60,7 +60,7 @@
                         class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-colors">
                     ← Quay lại
                 </button>
-                <a href="@Url.Action("Index", "Home")" 
+                <a href="@Url.Action("Index", "Home")"
                    class="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-md text-center transition-colors">
                     🏠 Trang chủ
                 </a>
@@ -68,7 +68,7 @@
             
             @if (User.Identity?.IsAuthenticated != true)
             {
-                <a href="@Url.Action("Login", "Auth")" 
+                <a href="@Url.Action("Login", "Auth")"
                    class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md text-center block transition-colors">
                     🔐 Đăng nhập
                 </a>

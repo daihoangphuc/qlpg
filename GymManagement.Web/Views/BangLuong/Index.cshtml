@@ -476,11 +476,13 @@
         async function markAsPaid(salaryId) {
             if (confirm('Xác nhận đã thanh toán lương này?')) {
                 try {
-                    const response = await fetch(`@Url.Action("MarkAsPaid")/${salaryId}`, {
+                    const response = await fetch(`@Url.Action("PaySalary")`, {
                         method: 'POST',
                         headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
                             'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
-                        }
+                        },
+                        body: `salaryId=${salaryId}`
                     });
                     
                     const result = await response.json();

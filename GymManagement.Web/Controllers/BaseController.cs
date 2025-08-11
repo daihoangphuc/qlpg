@@ -164,6 +164,14 @@ namespace GymManagement.Web.Controllers
         {
             _logger.LogWarning("Unauthorized access attempt by user: {Username}", _userSessionService.GetUserName());
             TempData["ErrorMessage"] = message;
+
+            // Avoid redirect loop - if already on Home controller, stay there
+            var currentController = ControllerContext.RouteData.Values["controller"]?.ToString();
+            if (currentController?.Equals("Home", StringComparison.OrdinalIgnoreCase) == true)
+            {
+                return View("Error");
+            }
+
             return RedirectToAction("Index", "Home");
         }
 
@@ -174,6 +182,14 @@ namespace GymManagement.Web.Controllers
         {
             _logger.LogError(ex, "Error handled in controller: {Controller}", GetType().Name);
             TempData["ErrorMessage"] = userMessage;
+
+            // Avoid redirect loop - if already on Home controller, stay there
+            var currentController = ControllerContext.RouteData.Values["controller"]?.ToString();
+            if (currentController?.Equals("Home", StringComparison.OrdinalIgnoreCase) == true)
+            {
+                return View("Error");
+            }
+
             return RedirectToAction("Index", "Home");
         }
 

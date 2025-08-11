@@ -1,6 +1,8 @@
 using GymManagement.Web.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using GymManagement.Web.Data;
 
 namespace GymManagement.Web.Controllers
 {
@@ -10,11 +12,13 @@ namespace GymManagement.Web.Controllers
         private readonly IBaoCaoService _baoCaoService;
         private readonly IWalkInService _walkInService;
         private readonly ILogger<BaoCaoController> _logger;
+        private readonly GymDbContext _context;
 
-        public BaoCaoController(IBaoCaoService baoCaoService, IWalkInService walkInService, ILogger<BaoCaoController> logger)
+        public BaoCaoController(IBaoCaoService baoCaoService, IWalkInService walkInService, GymDbContext context, ILogger<BaoCaoController> logger)
         {
             _baoCaoService = baoCaoService;
             _walkInService = walkInService;
+            _context = context;
             _logger = logger;
         }
 
@@ -35,6 +39,7 @@ namespace GymManagement.Web.Controllers
 
         public IActionResult Revenue()
         {
+            // ✅ OPTIMIZED: Chỉ trả về View, dữ liệu sẽ được load bằng JavaScript
             return View();
         }
 
@@ -338,6 +343,8 @@ namespace GymManagement.Web.Controllers
                 return Json(new { success = false, message = "Có lỗi xảy ra khi tải thống kê nhanh." });
             }
         }
+
+
 
         public IActionResult CustomReport()
         {

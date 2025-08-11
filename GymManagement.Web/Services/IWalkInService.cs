@@ -106,6 +106,40 @@ namespace GymManagement.Web.Services
         /// <param name="endDate">Ngày kết thúc</param>
         /// <returns>Thống kê chi tiết</returns>
         Task<WalkInStats> GetWalkInStatsAsync(DateTime startDate, DateTime endDate);
+
+        /// <summary>
+        /// Đăng ký khách vãng lai với thanh toán (All-in-one method)
+        /// </summary>
+        /// <param name="fullName">Họ tên đầy đủ</param>
+        /// <param name="phoneNumber">Số điện thoại</param>
+        /// <param name="email">Email (tùy chọn)</param>
+        /// <param name="note">Ghi chú (tùy chọn)</param>
+        /// <param name="paymentMethod">Phương thức thanh toán (CASH, VNPAY)</param>
+        /// <param name="amount">Số tiền thanh toán</param>
+        /// <returns>Kết quả đăng ký và thanh toán</returns>
+        Task<WalkInRegistrationResult> RegisterWalkInWithPaymentAsync(
+            string fullName,
+            string phoneNumber,
+            string? email,
+            string? note,
+            string paymentMethod,
+            decimal amount);
+
+        /// <summary>
+        /// Tạo thanh toán VNPay cho khách vãng lai
+        /// </summary>
+        /// <param name="fullName">Họ tên đầy đủ</param>
+        /// <param name="phoneNumber">Số điện thoại</param>
+        /// <param name="email">Email (tùy chọn)</param>
+        /// <param name="note">Ghi chú (tùy chọn)</param>
+        /// <param name="amount">Số tiền thanh toán</param>
+        /// <returns>Kết quả tạo thanh toán VNPay</returns>
+        Task<WalkInVNPayResult> CreateVNPayPaymentAsync(
+            string fullName,
+            string phoneNumber,
+            string? email,
+            string? note,
+            decimal amount);
     }
 
     /// <summary>

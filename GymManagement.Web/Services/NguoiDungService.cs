@@ -8,10 +8,12 @@ namespace GymManagement.Web.Services
     public class NguoiDungService : INguoiDungService
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly ILogger<NguoiDungService> _logger;
 
-        public NguoiDungService(IUnitOfWork unitOfWork)
+        public NguoiDungService(IUnitOfWork unitOfWork, ILogger<NguoiDungService> logger)
         {
             _unitOfWork = unitOfWork;
+            _logger = logger;
         }
 
         public async Task<NguoiDungDto?> GetByIdAsync(int id)
@@ -89,13 +91,81 @@ namespace GymManagement.Web.Services
 
         public async Task<bool> DeleteAsync(int id)
         {
-            var nguoiDung = await _unitOfWork.NguoiDungs.GetByIdAsync(id);
-            if (nguoiDung == null)
-                return false;
+            try
+            {
+                var nguoiDung = await _unitOfWork.NguoiDungs.GetByIdAsync(id);
+                if (nguoiDung == null)
+                    return false;
 
-            await _unitOfWork.NguoiDungs.DeleteAsync(nguoiDung);
-            await _unitOfWork.SaveChangesAsync();
-            return true;
+                // Check if user can be deleted
+                var (canDelete, message) = await CanDeleteUserAsync(id);
+                if (!canDelete)
+                {
+                    throw new InvalidOperationException(message);
+                }
+
+                // Delete related data first to avoid foreign key constraints
+                await DeleteRelatedDataAsync(id);
+
+                // Delete the user
+                await _unitOfWork.NguoiDungs.DeleteAsync(nguoiDung);
+                await _unitOfWork.SaveChangesAsync();
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while deleting user ID: {UserId}", id);
+                throw;
+            }
+        }
+
+        private async Task DeleteRelatedDataAsync(int nguoiDungId)
+        {
+            try
+            {
+                // Delete ThongBaos
+                var thongBaos = _unitOfWork.Context.ThongBaos.Where(tb => tb.NguoiDungId == nguoiDungId);
+                _unitOfWork.Context.ThongBaos.RemoveRange(thongBaos);
+
+                // Delete Face Recognition data
+                var mauMats = _unitOfWork.Context.MauMats.Where(mm => mm.NguoiDungId == nguoiDungId);
+                _unitOfWork.Context.MauMats.RemoveRange(mauMats);
+
+                // Delete DiemDanhs (attendance records) - Use raw SQL to avoid model mismatch
+                await _unitOfWork.Context.Database.ExecuteSqlRawAsync(
+                    "DELETE FROM DiemDanhs WHERE ThanhVienId = {0}", nguoiDungId);
+
+                // Delete BuoiTaps (workout sessions) - Use raw SQL to avoid potential issues
+                await _unitOfWork.Context.Database.ExecuteSqlRawAsync(
+                    "DELETE FROM BuoiTaps WHERE ThanhVienId = {0}", nguoiDungId);
+
+                // Delete ThanhToans (payments) - through DangKys
+                var dangKyIds = await _unitOfWork.Context.DangKys
+                    .Where(dk => dk.NguoiDungId == nguoiDungId)
+                    .Select(dk => dk.DangKyId)
+                    .ToListAsync();
+                var thanhToans = _unitOfWork.Context.ThanhToans.Where(tt => tt.DangKyId.HasValue && dangKyIds.Contains(tt.DangKyId.Value));
+                _unitOfWork.Context.ThanhToans.RemoveRange(thanhToans);
+
+                // Delete DangKys (registrations)
+                var dangKys = _unitOfWork.Context.DangKys.Where(dk => dk.NguoiDungId == nguoiDungId);
+                _unitOfWork.Context.DangKys.RemoveRange(dangKys);
+
+                // Delete Bookings
+                var bookings = _unitOfWork.Context.Bookings.Where(b => b.ThanhVienId == nguoiDungId);
+                _unitOfWork.Context.Bookings.RemoveRange(bookings);
+
+                // Save changes for related data deletion
+                await _unitOfWork.SaveChangesAsync();
+
+                _logger.LogInformation("Successfully deleted related data for user ID: {UserId}", nguoiDungId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting related data for user ID: {UserId}", nguoiDungId);
+                throw;
+            }
         }
 
         public async Task<IEnumerable<NguoiDungDto>> GetByLoaiNguoiDungAsync(string loaiNguoiDung)

@@ -118,6 +118,8 @@ namespace GymManagement.Web.Services
         // 🚀 IMPROVED & SIMPLIFIED METHOD WITH TRANSACTION SCOPE AND CONCURRENCY CONTROL
         public async Task<bool> GenerateMonthlySalariesAsync(string thang)
         {
+            _logger.LogInformation("=== GenerateMonthlySalariesAsync START for month: {Month} ===", thang);
+
             // Get or create a semaphore for this month to prevent concurrent salary generation
             var lockKey = $"salary_generation_{thang}";
             var semaphore = _salaryGenerationLocks.GetOrAdd(lockKey, _ => new SemaphoreSlim(1, 1));
@@ -129,8 +131,11 @@ namespace GymManagement.Web.Services
             {
                 // Double-check if salaries already exist after acquiring lock
                 var existingSalariesCount = await _bangLuongRepository.GetSalaryCountByMonthAsync(thang);
+                _logger.LogInformation("Existing salaries count for month {Month}: {Count}", thang, existingSalariesCount);
+
                 if (existingSalariesCount > 0)
                 {
+                    _logger.LogWarning("Salaries already exist for month {Month}, count: {Count}", thang, existingSalariesCount);
                     throw new InvalidOperationException($"Bảng lương cho tháng {thang} đã được tạo trước đó. Không thể tạo lại.");
                 }
 
@@ -147,8 +152,11 @@ namespace GymManagement.Web.Services
 
                 // Get all active trainers
                 var trainers = await _nguoiDungRepository.GetTrainersAsync();
+                _logger.LogInformation("Found {TrainerCount} trainers for salary generation", trainers.Count());
+
                 if (!trainers.Any())
                 {
+                    _logger.LogWarning("No trainers found in system for salary generation");
                     throw new InvalidOperationException("Không tìm thấy huấn luyện viên nào trong hệ thống để tạo bảng lương.");
                 }
 
@@ -161,15 +169,23 @@ namespace GymManagement.Web.Services
                 {
                     try
                     {
+                        _logger.LogInformation("Processing trainer {TrainerId} - {TrainerName}", trainer.NguoiDungId, $"{trainer.Ho} {trainer.Ten}");
+
                         // Check if salary already exists for this month
                         var existingSalary = await _bangLuongRepository.GetByHlvAndMonthAsync(trainer.NguoiDungId, thang);
-                        if (existingSalary != null) continue;
+                        if (existingSalary != null)
+                        {
+                            _logger.LogInformation("Salary already exists for trainer {TrainerId}, skipping", trainer.NguoiDungId);
+                            continue;
+                        }
 
                         // Calculate base salary - đơn giản hóa
                         decimal baseSalary = await GetBaseSalaryForTrainer(trainer.NguoiDungId);
+                        _logger.LogInformation("Base salary for trainer {TrainerId}: {BaseSalary}", trainer.NguoiDungId, baseSalary);
 
                         // Calculate simplified commission breakdown
                         var commissionBreakdown = await CalculateSimplifiedCommissionAsync(trainer.NguoiDungId, thang);
+                        _logger.LogInformation("Commission for trainer {TrainerId}: {Commission}", trainer.NguoiDungId, commissionBreakdown.TotalCommission);
 
                         // Create salary record - simplified
                         var bangLuong = new BangLuong
@@ -183,18 +199,24 @@ namespace GymManagement.Web.Services
                         salariesToCreate.Add(bangLuong);
                         notificationsToSend.Add((trainer, bangLuong, commissionBreakdown));
                         successCount++;
+                        _logger.LogInformation("Successfully prepared salary for trainer {TrainerId}", trainer.NguoiDungId);
                     }
                     catch (Exception ex)
                     {
                         // Log error for individual trainer but continue with others
+                        _logger.LogError(ex, "Error processing salary for trainer {TrainerId}: {Error}", trainer.NguoiDungId, ex.Message);
                         // This ensures one trainer's error doesn't stop the whole process
                         continue;
                     }
                 }
 
+                _logger.LogInformation("Phase 1 completed - {Count} salaries prepared for creation", salariesToCreate.Count);
+
                 // Phase 2: Bulk insert salary records within transaction
                 if (salariesToCreate.Any())
                 {
+                    _logger.LogInformation("Phase 2 - Inserting {Count} salary records", salariesToCreate.Count);
+
                     foreach (var salary in salariesToCreate)
                     {
                         await _bangLuongRepository.AddAsync(salary);
@@ -202,6 +224,7 @@ namespace GymManagement.Web.Services
 
                     // Save all salary records in one transaction
                     await _unitOfWork.SaveChangesAsync();
+                    _logger.LogInformation("Phase 2 completed - All salary records saved to database");
 
                     // Commit transaction for salary creation
                     await transaction.CommitAsync();
@@ -246,6 +269,9 @@ namespace GymManagement.Web.Services
 
                 // Invalidate cache for this month
                 InvalidateMonthCache(thang);
+
+                _logger.LogInformation("GenerateMonthlySalariesAsync completed - Success count: {SuccessCount}", successCount);
+                _logger.LogInformation("=== GenerateMonthlySalariesAsync END for month: {Month} ===", thang);
 
                 return successCount > 0;
                 }
@@ -450,9 +476,12 @@ namespace GymManagement.Web.Services
                 .SumAsync(d => d.LopHoc!.GiaTuyChinh ?? 0);
 
             // Method 2: From confirmed bookings for personal training sessions
+            // Convert DateOnly to DateTime for comparison
+            var monthStartDateOnly = DateOnly.FromDateTime(monthStart);
+            var monthEndDateOnly = DateOnly.FromDateTime(monthEnd);
+
             var personalBookingRevenue = await _unitOfWork.Context.Bookings
-                .Where(b => b.NgayDat.ToDateTime(TimeOnly.MinValue) >= monthStart &&
-                           b.NgayDat.ToDateTime(TimeOnly.MinValue) <= monthEnd)
+                .Where(b => b.NgayDat >= monthStartDateOnly && b.NgayDat <= monthEndDateOnly)
                 .Where(b => b.LopHoc != null && b.LopHoc.HlvId == hlvId)
                 .Where(b => b.LopHoc.SucChua <= 2 ||
                            b.LopHoc.TenLop.ToLower().Contains("personal") ||
@@ -510,9 +539,13 @@ namespace GymManagement.Web.Services
         private async Task<decimal> CalculateAttendanceBonusAsync(int hlvId, DateTime monthStart, DateTime monthEnd)
         {
             // Calculate attendance rate for trainer's classes using LichLop
+            // Convert DateTime to DateOnly for comparison
+            var monthStartDateOnly = DateOnly.FromDateTime(monthStart);
+            var monthEndDateOnly = DateOnly.FromDateTime(monthEnd);
+
             var totalSessions = await _unitOfWork.Context.LichLops
                 .Where(ll => ll.LopHoc != null && ll.LopHoc.HlvId == hlvId)
-                .Where(ll => ll.Ngay.ToDateTime(TimeOnly.MinValue) >= monthStart && ll.Ngay.ToDateTime(TimeOnly.MinValue) <= monthEnd)
+                .Where(ll => ll.Ngay >= monthStartDateOnly && ll.Ngay <= monthEndDateOnly)
                 .CountAsync();
 
             if (totalSessions == 0) return 0;

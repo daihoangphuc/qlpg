@@ -1,3 +1,5 @@
+using GymManagement.Web.Data.Models;
+
 namespace GymManagement.Web.Services
 {
     public interface IBaoCaoService
@@ -40,5 +42,9 @@ namespace GymManagement.Web.Services
         // Dashboard Data
         Task<object> GetDashboardDataAsync();
         Task<object> GetRealtimeStatsAsync();
+
+        // Debug methods
+        Task<IEnumerable<ThanhToan>> GetAllPaymentsForDebugAsync();
+        Task<IEnumerable<DangKy>> GetAllRegistrationsForDebugAsync();
     }
 }

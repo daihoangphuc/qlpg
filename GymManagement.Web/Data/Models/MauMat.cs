@@ -15,7 +15,7 @@ namespace GymManagement.Web.Data.Models
         public DateTime NgayTao { get; set; }
         
         [StringLength(50)]
-        public string ThuatToan { get; set; } = "ArcFace";
+        public string ThuatToan { get; set; } = "Face-API.js";
 
         // Navigation properties
         public virtual NguoiDung NguoiDung { get; set; } = null!;

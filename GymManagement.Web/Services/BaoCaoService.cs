@@ -409,7 +409,7 @@ namespace GymManagement.Web.Services
         public async Task<object> GetRealtimeStatsAsync()
         {
             var today = DateTime.Today;
-            
+
             return new
             {
                 CurrentAttendance = await GetDailyAttendanceAsync(today),
@@ -417,6 +417,17 @@ namespace GymManagement.Web.Services
                 ActiveMembers = await GetTotalActiveMembersAsync(),
                 LastUpdated = DateTime.Now
             };
+        }
+
+        // Debug methods
+        public async Task<IEnumerable<ThanhToan>> GetAllPaymentsForDebugAsync()
+        {
+            return await _thanhToanRepository.GetAllAsync();
+        }
+
+        public async Task<IEnumerable<DangKy>> GetAllRegistrationsForDebugAsync()
+        {
+            return await _dangKyRepository.GetAllAsync();
         }
     }
 }
