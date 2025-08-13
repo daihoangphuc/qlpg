@@ -15,6 +15,11 @@ namespace GymManagement.Web.Services
         Task<bool> DeleteAsync(int id);
         Task<bool> ChangePasswordAsync(int userId, string currentPassword, string newPassword);
 
+        // Methods with TaiKhoan included
+        Task<IEnumerable<NguoiDungDto>> GetAllWithTaiKhoanAsync();
+        Task<(IEnumerable<NguoiDungDto> Items, int TotalCount)> GetPagedWithTaiKhoanAsync(
+            int pageNumber, int pageSize, string? searchTerm = null, string? loaiNguoiDung = null);
+
         // Business methods
         Task<IEnumerable<NguoiDungDto>> GetByLoaiNguoiDungAsync(string loaiNguoiDung);
         Task<NguoiDungDto?> GetByEmailAsync(string email);

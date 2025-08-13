@@ -10,7 +10,7 @@ namespace GymManagement.Web.Models.DTOs
         public DateTime? PackageExpiryDate { get; set; }
         public int? DaysRemaining { get; set; }
         public string? PackageStatus { get; set; } // "ACTIVE", "EXPIRING_SOON", "EXPIRED", "NONE"
-        
+
         // Thông tin lớp học hiện tại
         public IEnumerable<DangKy>? ActiveClassRegistrations { get; set; }
         public int ActiveClassCount { get; set; }

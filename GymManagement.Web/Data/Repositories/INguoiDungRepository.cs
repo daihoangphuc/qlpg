@@ -1,4 +1,5 @@
 using GymManagement.Web.Data.Models;
+using System.Linq.Expressions;
 
 namespace GymManagement.Web.Data.Repositories
 {
@@ -13,5 +14,10 @@ namespace GymManagement.Web.Data.Repositories
         Task<IEnumerable<NguoiDung>> GetMembersAsync();
         Task<IEnumerable<NguoiDung>> GetTrainersAsync();
         Task<NguoiDung?> GetWithTaiKhoanAsync(int nguoiDungId);
+        Task<IEnumerable<NguoiDung>> GetAllWithTaiKhoanAsync();
+        Task<(IEnumerable<NguoiDung> Items, int TotalCount)> GetPagedWithTaiKhoanAsync(
+            int pageNumber, int pageSize,
+            Expression<Func<NguoiDung, bool>>? filter = null,
+            Func<IQueryable<NguoiDung>, IOrderedQueryable<NguoiDung>>? orderBy = null);
     }
 }

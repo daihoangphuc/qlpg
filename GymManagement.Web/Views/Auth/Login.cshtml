@@ -26,9 +26,10 @@
 
             <div class="space-y-6">
                 <div>
-                    <label asp-for="Username" class="block mb-2 text-sm font-medium text-gray-900">Tên đăng nhập</label>
-                    <input asp-for="Username" type="text" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-3 transition-colors" placeholder="Nhập tên đăng nhập" required>
+                    <label asp-for="Username" class="block mb-2 text-sm font-medium text-gray-900">Tên đăng nhập hoặc Email</label>
+                    <input asp-for="Username" type="text" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-3 transition-colors" placeholder="Nhập tên đăng nhập hoặc email" required>
                     <span asp-validation-for="Username" class="text-red-600 text-sm"></span>
+                    <p class="text-xs text-gray-500 mt-1">Bạn có thể đăng nhập bằng tên đăng nhập hoặc địa chỉ email</p>
                 </div>
 
                 <div>

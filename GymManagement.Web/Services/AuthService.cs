@@ -13,6 +13,7 @@ namespace GymManagement.Web.Services
         Task<TaiKhoan?> GetUserByEmailAsync(string email);
         Task<TaiKhoan?> GetUserByUsernameAsync(string username);
         Task<bool> CreateUserAsync(TaiKhoan user, string password, bool isGoogleUser = false);
+        Task<bool> CreateAccountForExistingUserAsync(TaiKhoan user, string password);
         Task<bool> AssignRoleAsync(string userId, string roleName);
         Task<List<string>> GetUserRolesAsync(string userId);
         Task<ClaimsPrincipal> CreateClaimsPrincipalAsync(TaiKhoan user);
@@ -34,9 +35,17 @@ namespace GymManagement.Web.Services
             _passwordService = passwordService;
         }
 
-        public async Task<TaiKhoan?> AuthenticateAsync(string username, string password)
+        public async Task<TaiKhoan?> AuthenticateAsync(string usernameOrEmail, string password)
         {
-            var user = await GetUserByUsernameAsync(username);
+            // Try to find user by username first, then by email
+            var user = await GetUserByUsernameAsync(usernameOrEmail);
+
+            // If not found by username, try by email
+            if (user == null && IsValidEmail(usernameOrEmail))
+            {
+                user = await GetUserByEmailAsync(usernameOrEmail);
+            }
+
             if (user == null || !user.KichHoat)
                 return null;
 
@@ -120,6 +129,47 @@ namespace GymManagement.Web.Services
             {
                 // Log the exception for debugging
                 Console.WriteLine($"Error creating user: {ex.Message}");
+                return false;
+            }
+        }
+
+        public async Task<bool> CreateAccountForExistingUserAsync(TaiKhoan user, string password)
+        {
+            try
+            {
+                // Check if username or email already exists
+                var existingUser = await _context.TaiKhoans
+                    .FirstOrDefaultAsync(u => u.TenDangNhap == user.TenDangNhap || u.Email == user.Email);
+
+                if (existingUser != null)
+                {
+                    Console.WriteLine($"ERROR: Username '{user.TenDangNhap}' or email '{user.Email}' already exists");
+                    Console.WriteLine($"Existing user ID: {existingUser.Id}, Username: {existingUser.TenDangNhap}, Email: {existingUser.Email}");
+                    return false;
+                }
+
+                // Verify NguoiDung exists
+                var nguoiDung = await _context.NguoiDungs.FindAsync(user.NguoiDungId);
+                if (nguoiDung == null)
+                {
+                    Console.WriteLine($"ERROR: NguoiDung with ID {user.NguoiDungId} not found");
+                    return false;
+                }
+
+                // Hash password
+                user.Salt = _passwordService.GenerateSalt();
+                user.MatKhauHash = _passwordService.HashPassword(password, user.Salt);
+
+                // Add TaiKhoan only (NguoiDung already exists)
+                _context.TaiKhoans.Add(user);
+                await _context.SaveChangesAsync();
+
+                Console.WriteLine($"SUCCESS: Created TaiKhoan for existing NguoiDung ID: {user.NguoiDungId}");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"ERROR: Exception in CreateAccountForExistingUserAsync: {ex.Message}");
                 return false;
             }
         }
@@ -332,24 +382,63 @@ namespace GymManagement.Web.Services
         {
             try
             {
+                Console.WriteLine($"DEBUG: ResetPasswordAsync called for NguoiDungId: {nguoiDungId}");
+
                 // Find TaiKhoan by NguoiDungId
                 var taiKhoan = await _context.TaiKhoans
                     .FirstOrDefaultAsync(t => t.NguoiDungId == nguoiDungId);
 
                 if (taiKhoan == null)
+                {
+                    Console.WriteLine($"ERROR: No TaiKhoan found for NguoiDungId: {nguoiDungId}");
                     return false;
+                }
+
+                Console.WriteLine($"DEBUG: Found TaiKhoan - ID: {taiKhoan.Id}, Username: {taiKhoan.TenDangNhap}");
 
                 // Generate new salt and hash password
-                taiKhoan.Salt = _passwordService.GenerateSalt();
-                taiKhoan.MatKhauHash = _passwordService.HashPassword(newPassword, taiKhoan.Salt);
+                var newSalt = _passwordService.GenerateSalt();
+                var newHash = _passwordService.HashPassword(newPassword, newSalt);
+
+                Console.WriteLine($"DEBUG: Generated new salt length: {newSalt.Length}, hash length: {newHash.Length}");
+
+                taiKhoan.Salt = newSalt;
+                taiKhoan.MatKhauHash = newHash;
 
                 _context.TaiKhoans.Update(taiKhoan);
                 await _context.SaveChangesAsync();
+
+                Console.WriteLine($"SUCCESS: Password reset completed for TaiKhoan ID: {taiKhoan.Id}");
+
+                // Verify the password was saved correctly
+                var verifyResult = _passwordService.VerifyPassword(newPassword, taiKhoan.Salt, taiKhoan.MatKhauHash);
+                Console.WriteLine($"DEBUG: Password verification after save: {verifyResult}");
+
                 return true;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error resetting password: {ex.Message}");
+                Console.WriteLine($"ERROR: Exception in ResetPasswordAsync: {ex.Message}");
+                Console.WriteLine($"ERROR: Stack trace: {ex.StackTrace}");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Check if string is a valid email format
+        /// </summary>
+        private static bool IsValidEmail(string email)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                return false;
+
+            try
+            {
+                var addr = new System.Net.Mail.MailAddress(email);
+                return addr.Address == email;
+            }
+            catch
+            {
                 return false;
             }
         }

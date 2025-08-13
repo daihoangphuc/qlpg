@@ -70,8 +70,8 @@ namespace GymManagement.Web.Controllers
                 if (page < 1) page = 1;
                 if (pageSize < 5 || pageSize > 50) pageSize = 5;
 
-                // Get all users based on filter
-                var allUsers = await _nguoiDungService.GetAllAsync();
+                // Get all users based on filter (with TaiKhoan information)
+                var allUsers = await _nguoiDungService.GetAllWithTaiKhoanAsync();
 
                 // Apply filters
                 if (!string.IsNullOrEmpty(loaiNguoiDung))
@@ -117,7 +117,10 @@ namespace GymManagement.Web.Controllers
                         AnhDaiDien = user.AnhDaiDien,
                         TrangThai = user.TrangThai,
                         NgayThamGia = user.NgayThamGia,
-                        NgayTao = user.NgayTao
+                        NgayTao = user.NgayTao,
+                        // Add account information
+                        Username = user.Username,
+                        HasAccount = user.HasAccount
                     };
 
                     // Get active registrations for this user
@@ -247,8 +250,8 @@ namespace GymManagement.Web.Controllers
                     return Json(new { success = false, message = "Bạn không có quyền thực hiện chức năng này." });
                 }
 
-                // Get all users with active packages
-                var allUsers = await _nguoiDungService.GetAllAsync();
+                // Get all users with active packages (with TaiKhoan information)
+                var allUsers = await _nguoiDungService.GetAllWithTaiKhoanAsync();
                 var usersWithSubscription = new List<NguoiDungWithSubscriptionDto>();
 
                 foreach (var user in allUsers.Where(u => u.LoaiNguoiDung == "THANHVIEN"))
@@ -266,7 +269,10 @@ namespace GymManagement.Web.Controllers
                         AnhDaiDien = user.AnhDaiDien,
                         TrangThai = user.TrangThai,
                         NgayThamGia = user.NgayThamGia,
-                        NgayTao = user.NgayTao
+                        NgayTao = user.NgayTao,
+                        // Add account information
+                        Username = user.Username,
+                        HasAccount = user.HasAccount
                     };
 
                     // Get active package registration
@@ -450,7 +456,7 @@ namespace GymManagement.Web.Controllers
                         EmailXacNhan = true
                     };
 
-                    var accountCreated = await _authService.CreateUserAsync(taiKhoan, createDto.Password);
+                    var accountCreated = await _authService.CreateAccountForExistingUserAsync(taiKhoan, createDto.Password);
                     if (accountCreated)
                     {
                         // Assign role based on user type
@@ -490,70 +496,7 @@ namespace GymManagement.Web.Controllers
             }
         }
 
-        /// <summary>
-        /// Tạo tài khoản đăng nhập cho người dùng đã tồn tại
-        /// </summary>
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateAccount(int nguoiDungId, string username, string password)
-        {
-            try
-            {
-                _logger.LogInformation("Admin creating account for existing user ID: {Id}", nguoiDungId);
 
-                // Get existing NguoiDung
-                var nguoiDung = await _nguoiDungService.GetByIdAsync(nguoiDungId);
-                if (nguoiDung == null)
-                {
-                    return Json(new { success = false, message = "Không tìm thấy người dùng." });
-                }
-
-                // Check if account already exists
-                var existingAccount = await _authService.GetUserByUsernameAsync(username);
-                if (existingAccount != null)
-                {
-                    return Json(new { success = false, message = "Tên đăng nhập đã tồn tại." });
-                }
-
-                // Create TaiKhoan
-                var taiKhoan = new TaiKhoan
-                {
-                    TenDangNhap = username,
-                    Email = nguoiDung.Email ?? "",
-                    NguoiDungId = nguoiDung.NguoiDungId,
-                    KichHoat = nguoiDung.TrangThai == "ACTIVE",
-                    EmailXacNhan = true
-                };
-
-                var accountCreated = await _authService.CreateUserAsync(taiKhoan, password);
-                if (accountCreated)
-                {
-                    // Assign role based on user type
-                    string roleName = nguoiDung.LoaiNguoiDung switch
-                    {
-                        "ADMIN" => "Admin",
-                        "HLV" => "Trainer", 
-                        "THANHVIEN" => "Member",
-                        "VANGLAI" => "Member",
-                        _ => "Member"
-                    };
-                    
-                    await _authService.AssignRoleAsync(taiKhoan.Id, roleName);
-                    _logger.LogInformation("Successfully created account for user {Username} with role {Role}", username, roleName);
-                    
-                    return Json(new { success = true, message = "Tạo tài khoản thành công! Người dùng có thể đăng nhập với tên đăng nhập: " + username });
-                }
-                else
-                {
-                    return Json(new { success = false, message = "Không thể tạo tài khoản. Vui lòng thử lại." });
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error creating account for user ID: {Id}", nguoiDungId);
-                return Json(new { success = false, message = "Có lỗi xảy ra khi tạo tài khoản." });
-            }
-        }
 
         /// <summary>
         /// Hiển thị form chỉnh sửa người dùng
@@ -855,7 +798,7 @@ namespace GymManagement.Web.Controllers
                     return Json(new { success = false, message = "Bạn không có quyền thực hiện chức năng này." });
                 }
 
-                // Get user
+                // Get user with TaiKhoan information
                 var user = await _nguoiDungService.GetByIdAsync(userId);
                 if (user == null)
                 {
@@ -863,19 +806,31 @@ namespace GymManagement.Web.Controllers
                     return Json(new { success = false, message = "Không tìm thấy người dùng." });
                 }
 
+                // Check if user has account
+                if (!user.HasAccount)
+                {
+                    _logger.LogWarning("User ID: {UserId} does not have an account", userId);
+                    return Json(new { success = false, message = "Người dùng chưa có tài khoản. Vui lòng tạo tài khoản trước." });
+                }
+
                 // Generate new random password
                 var newPassword = GenerateRandomPassword();
                 var memberName = $"{user.Ho} {user.Ten}".Trim();
+
+                _logger.LogInformation("Attempting to reset password for UserId: {UserId}, Username: {Username}", userId, user.Username);
 
                 // Reset password using AuthService
                 var resetResult = await _authService.ResetPasswordAsync(userId, newPassword);
                 if (!resetResult)
                 {
                     _logger.LogError("Failed to reset password for UserId: {UserId}", userId);
-                    return Json(new { success = false, message = "Không thể đặt lại mật khẩu. Vui lòng thử lại sau." });
+                    return Json(new { success = false, message = "Không thể đặt lại mật khẩu. Người dùng có thể chưa có tài khoản hoặc có lỗi hệ thống." });
                 }
 
                 // Send email notification if user has email
+                bool emailSent = false;
+                string emailError = null;
+
                 if (!string.IsNullOrEmpty(user.Email))
                 {
                     try
@@ -886,12 +841,18 @@ namespace GymManagement.Web.Controllers
                             "#" // Placeholder for reset link - not needed for admin reset
                         );
                         _logger.LogInformation("Password reset email sent to {Email}", user.Email);
+                        emailSent = true;
                     }
                     catch (Exception emailEx)
                     {
                         _logger.LogError(emailEx, "Failed to send password reset email to {Email}", user.Email);
-                        // Continue even if email fails
+                        emailError = $"Không thể gửi email đến {user.Email}. Lỗi: {emailEx.Message}";
+                        emailSent = false;
                     }
+                }
+                else
+                {
+                    emailError = "Người dùng không có địa chỉ email để gửi thông báo.";
                 }
 
                 // Create notification in system
@@ -904,12 +865,26 @@ namespace GymManagement.Web.Controllers
 
                 _logger.LogInformation("Password reset successful for UserId: {UserId}", userId);
 
+                // Prepare response message
+                var successMessage = $"Đã đặt lại mật khẩu thành công cho {memberName}.";
+                if (emailSent)
+                {
+                    successMessage += " Mật khẩu mới đã được gửi qua email.";
+                }
+                else if (!string.IsNullOrEmpty(emailError))
+                {
+                    successMessage += $" Tuy nhiên, {emailError}";
+                }
+
                 return Json(new {
                     success = true,
-                    message = $"Đã đặt lại mật khẩu thành công cho {memberName}. Mật khẩu mới đã được gửi qua email.",
+                    message = successMessage,
                     newPassword = newPassword,
                     userEmail = user.Email,
-                    userName = memberName
+                    userName = memberName,
+                    username = user.Username,
+                    emailSent = emailSent,
+                    emailError = emailError
                 });
             }
             catch (Exception ex)
@@ -917,6 +892,385 @@ namespace GymManagement.Web.Controllers
                 _logger.LogError(ex, "Error occurred while resetting password for UserId: {UserId}", userId);
                 return Json(new { success = false, message = "Có lỗi xảy ra khi đặt lại mật khẩu. Vui lòng thử lại sau." });
             }
+        }
+
+        /// <summary>
+        /// Tạo tài khoản cho người dùng chưa có tài khoản
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateAccount(int userId)
+        {
+            try
+            {
+                _logger.LogInformation("Admin attempting to create account for user ID: {UserId}", userId);
+
+                // Get user information
+                var nguoiDung = await _nguoiDungService.GetByIdAsync(userId);
+                if (nguoiDung == null)
+                {
+                    _logger.LogWarning("User not found with ID: {UserId}", userId);
+                    return Json(new { success = false, message = "Không tìm thấy người dùng." });
+                }
+
+                // Check if user already has an account
+                var existingUser = await _nguoiDungService.GetByIdAsync(userId);
+                if (existingUser?.HasAccount == true)
+                {
+                    _logger.LogWarning("User ID: {UserId} already has an account", userId);
+                    return Json(new { success = false, message = "Người dùng đã có tài khoản." });
+                }
+
+                // Generate username and password
+                var username = GenerateUsername(nguoiDung.Ho, nguoiDung.Ten, nguoiDung.SoDienThoai);
+                var password = GenerateRandomPassword();
+
+                // Create TaiKhoan
+                var taiKhoan = new TaiKhoan
+                {
+                    TenDangNhap = username,
+                    Email = nguoiDung.Email ?? $"{username}@gym.local",
+                    NguoiDungId = nguoiDung.NguoiDungId,
+                    KichHoat = nguoiDung.TrangThai == "ACTIVE",
+                    EmailXacNhan = true
+                };
+
+                var accountCreated = await _authService.CreateAccountForExistingUserAsync(taiKhoan, password);
+                if (accountCreated)
+                {
+                    // Assign role based on user type
+                    string roleName = nguoiDung.LoaiNguoiDung switch
+                    {
+                        "ADMIN" => "Admin",
+                        "HLV" => "Trainer",
+                        "THANHVIEN" => "Member",
+                        "VANGLAI" => "Member",
+                        _ => "Member"
+                    };
+
+                    await _authService.AssignRoleAsync(taiKhoan.Id, roleName);
+                    _logger.LogInformation("Successfully created account for user {Username} with role {Role}", username, roleName);
+
+                    return Json(new {
+                        success = true,
+                        message = $"Tạo tài khoản thành công!\nTên đăng nhập: {username}\nMật khẩu: {password}\n\nVui lòng thông báo cho người dùng thông tin đăng nhập này.",
+                        username = username,
+                        password = password
+                    });
+                }
+                else
+                {
+                    return Json(new { success = false, message = "Không thể tạo tài khoản. Tên đăng nhập có thể đã tồn tại." });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while creating account for user ID: {UserId}", userId);
+                return Json(new { success = false, message = "Có lỗi xảy ra khi tạo tài khoản. Vui lòng thử lại sau." });
+            }
+        }
+
+        /// <summary>
+        /// Vô hiệu hóa người dùng (xóa tạm thời)
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Deactivate(int id)
+        {
+            try
+            {
+                _logger.LogInformation("Admin attempting to deactivate user ID: {Id}", id);
+
+                var result = await _nguoiDungService.DeactivateUserAsync(id);
+                if (result)
+                {
+                    _logger.LogInformation("Successfully deactivated user ID: {Id}", id);
+                    return Json(new { success = true, message = "Vô hiệu hóa người dùng thành công!" });
+                }
+                else
+                {
+                    _logger.LogWarning("Failed to deactivate user ID: {Id}", id);
+                    return Json(new { success = false, message = "Không thể vô hiệu hóa người dùng. Người dùng không tồn tại." });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while deactivating user ID: {Id}", id);
+                return Json(new { success = false, message = "Có lỗi xảy ra khi vô hiệu hóa người dùng. Vui lòng thử lại sau." });
+            }
+        }
+
+        /// <summary>
+        /// Tạo username từ thông tin người dùng
+        /// </summary>
+        private static string GenerateUsername(string ho, string? ten, string? soDienThoai)
+        {
+            // Remove Vietnamese accents and convert to lowercase
+            var username = RemoveVietnameseAccents($"{ho}{ten}").ToLower().Replace(" ", "");
+
+            // If username is too short or empty, use phone number
+            if (username.Length < 3 && !string.IsNullOrEmpty(soDienThoai))
+            {
+                username = soDienThoai;
+            }
+
+            // Add random numbers if username is still too short
+            if (username.Length < 3)
+            {
+                username += new Random().Next(100, 999);
+            }
+
+            return username;
+        }
+
+        /// <summary>
+        /// Tạo tài khoản với username và password do admin nhập
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateAccountWithCredentials(int userId, string username, string password)
+        {
+            try
+            {
+                _logger.LogInformation("Admin creating account with custom credentials for user ID: {UserId}", userId);
+
+                // Get user information
+                var nguoiDung = await _nguoiDungService.GetByIdAsync(userId);
+                if (nguoiDung == null)
+                {
+                    _logger.LogWarning("User not found with ID: {UserId}", userId);
+                    return Json(new { success = false, message = "Không tìm thấy người dùng." });
+                }
+
+                // Check if user already has an account
+                if (nguoiDung.HasAccount)
+                {
+                    _logger.LogWarning("User ID: {UserId} already has an account", userId);
+                    return Json(new { success = false, message = "Người dùng đã có tài khoản." });
+                }
+
+                // Validate input
+                if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
+                {
+                    return Json(new { success = false, message = "Tên đăng nhập và mật khẩu không được để trống." });
+                }
+
+                if (password.Length < 6)
+                {
+                    return Json(new { success = false, message = "Mật khẩu phải có ít nhất 6 ký tự." });
+                }
+
+                // Create TaiKhoan
+                var taiKhoan = new TaiKhoan
+                {
+                    TenDangNhap = username.Trim(),
+                    Email = nguoiDung.Email ?? $"{username.Trim()}@gym.local",
+                    NguoiDungId = nguoiDung.NguoiDungId,
+                    KichHoat = nguoiDung.TrangThai == "ACTIVE",
+                    EmailXacNhan = true
+                };
+
+                var accountCreated = await _authService.CreateAccountForExistingUserAsync(taiKhoan, password);
+                if (accountCreated)
+                {
+                    // Assign role based on user type
+                    string roleName = nguoiDung.LoaiNguoiDung switch
+                    {
+                        "ADMIN" => "Admin",
+                        "HLV" => "Trainer",
+                        "THANHVIEN" => "Member",
+                        "VANGLAI" => "Member",
+                        _ => "Member"
+                    };
+
+                    await _authService.AssignRoleAsync(taiKhoan.Id, roleName);
+                    _logger.LogInformation("Successfully created account for user {Username} with role {Role}", username, roleName);
+
+                    return Json(new {
+                        success = true,
+                        message = $"Tạo tài khoản thành công!\nTên đăng nhập: {username}\nNgười dùng có thể đăng nhập ngay bây giờ."
+                    });
+                }
+                else
+                {
+                    return Json(new { success = false, message = "Không thể tạo tài khoản. Tên đăng nhập hoặc email có thể đã tồn tại." });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while creating account with credentials for user ID: {UserId}", userId);
+                return Json(new { success = false, message = "Có lỗi xảy ra khi tạo tài khoản. Vui lòng thử lại sau." });
+            }
+        }
+
+        /// <summary>
+        /// Lấy danh sách người dùng chưa có tài khoản
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> GetUsersWithoutAccount()
+        {
+            try
+            {
+                _logger.LogInformation("Admin requesting users without account");
+
+                var allUsers = await _nguoiDungService.GetAllWithTaiKhoanAsync();
+                var usersWithoutAccount = allUsers.Where(u => !u.HasAccount).ToList();
+
+                return Json(new {
+                    success = true,
+                    users = usersWithoutAccount.Select(u => new {
+                        nguoiDungId = u.NguoiDungId,
+                        ho = u.Ho,
+                        ten = u.Ten,
+                        hoTen = u.HoTen,
+                        email = u.Email,
+                        loaiNguoiDung = u.LoaiNguoiDung
+                    })
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while getting users without account");
+                return Json(new { success = false, message = "Có lỗi xảy ra khi lấy danh sách người dùng." });
+            }
+        }
+
+        /// <summary>
+        /// Tạo tài khoản hàng loạt cho tất cả người dùng chưa có tài khoản
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> BulkCreateAccount()
+        {
+            try
+            {
+                _logger.LogInformation("Admin attempting bulk create account");
+
+                var allUsers = await _nguoiDungService.GetAllWithTaiKhoanAsync();
+                var usersWithoutAccount = allUsers.Where(u => !u.HasAccount).ToList();
+
+                if (!usersWithoutAccount.Any())
+                {
+                    return Json(new { success = false, message = "Không có người dùng nào cần tạo tài khoản." });
+                }
+
+                var createdAccounts = new List<object>();
+                var failedAccounts = new List<object>();
+
+                foreach (var user in usersWithoutAccount)
+                {
+                    try
+                    {
+                        // Generate username and password
+                        var username = GenerateUsername(user.Ho, user.Ten, user.SoDienThoai);
+                        var password = GenerateRandomPassword();
+
+                        // Create TaiKhoan
+                        var taiKhoan = new TaiKhoan
+                        {
+                            TenDangNhap = username,
+                            Email = user.Email ?? $"{username}@gym.local",
+                            NguoiDungId = user.NguoiDungId,
+                            KichHoat = user.TrangThai == "ACTIVE",
+                            EmailXacNhan = true
+                        };
+
+                        var accountCreated = await _authService.CreateAccountForExistingUserAsync(taiKhoan, password);
+                        if (accountCreated)
+                        {
+                            // Assign role based on user type
+                            string roleName = user.LoaiNguoiDung switch
+                            {
+                                "ADMIN" => "Admin",
+                                "HLV" => "Trainer",
+                                "THANHVIEN" => "Member",
+                                "VANGLAI" => "Member",
+                                _ => "Member"
+                            };
+
+                            await _authService.AssignRoleAsync(taiKhoan.Id, roleName);
+
+                            createdAccounts.Add(new {
+                                userId = user.NguoiDungId,
+                                fullName = user.HoTen,
+                                username = username,
+                                password = password,
+                                role = roleName
+                            });
+
+                            _logger.LogInformation("Successfully created account for user {Username} with role {Role}", username, roleName);
+                        }
+                        else
+                        {
+                            failedAccounts.Add(new {
+                                userId = user.NguoiDungId,
+                                fullName = user.HoTen,
+                                reason = "Không thể tạo tài khoản"
+                            });
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error creating account for user ID: {UserId}", user.NguoiDungId);
+                        failedAccounts.Add(new {
+                            userId = user.NguoiDungId,
+                            fullName = user.HoTen,
+                            reason = ex.Message
+                        });
+                    }
+                }
+
+                var message = $"Đã tạo thành công {createdAccounts.Count} tài khoản";
+                if (failedAccounts.Any())
+                {
+                    message += $", {failedAccounts.Count} tài khoản tạo thất bại";
+                }
+
+                return Json(new {
+                    success = true,
+                    message = message,
+                    accounts = createdAccounts,
+                    failed = failedAccounts
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred during bulk create account");
+                return Json(new { success = false, message = "Có lỗi xảy ra khi tạo tài khoản hàng loạt." });
+            }
+        }
+
+        /// <summary>
+        /// Remove Vietnamese accents from string
+        /// </summary>
+        private static string RemoveVietnameseAccents(string text)
+        {
+            if (string.IsNullOrEmpty(text)) return string.Empty;
+
+            var accents = new Dictionary<char, char>
+            {
+                {'à', 'a'}, {'á', 'a'}, {'ạ', 'a'}, {'ả', 'a'}, {'ã', 'a'}, {'â', 'a'}, {'ầ', 'a'}, {'ấ', 'a'}, {'ậ', 'a'}, {'ẩ', 'a'}, {'ẫ', 'a'}, {'ă', 'a'}, {'ằ', 'a'}, {'ắ', 'a'}, {'ặ', 'a'}, {'ẳ', 'a'}, {'ẵ', 'a'},
+                {'è', 'e'}, {'é', 'e'}, {'ẹ', 'e'}, {'ẻ', 'e'}, {'ẽ', 'e'}, {'ê', 'e'}, {'ề', 'e'}, {'ế', 'e'}, {'ệ', 'e'}, {'ể', 'e'}, {'ễ', 'e'},
+                {'ì', 'i'}, {'í', 'i'}, {'ị', 'i'}, {'ỉ', 'i'}, {'ĩ', 'i'},
+                {'ò', 'o'}, {'ó', 'o'}, {'ọ', 'o'}, {'ỏ', 'o'}, {'õ', 'o'}, {'ô', 'o'}, {'ồ', 'o'}, {'ố', 'o'}, {'ộ', 'o'}, {'ổ', 'o'}, {'ỗ', 'o'}, {'ơ', 'o'}, {'ờ', 'o'}, {'ớ', 'o'}, {'ợ', 'o'}, {'ở', 'o'}, {'ỡ', 'o'},
+                {'ù', 'u'}, {'ú', 'u'}, {'ụ', 'u'}, {'ủ', 'u'}, {'ũ', 'u'}, {'ư', 'u'}, {'ừ', 'u'}, {'ứ', 'u'}, {'ự', 'u'}, {'ử', 'u'}, {'ữ', 'u'},
+                {'ỳ', 'y'}, {'ý', 'y'}, {'ỵ', 'y'}, {'ỷ', 'y'}, {'ỹ', 'y'},
+                {'đ', 'd'},
+                {'À', 'A'}, {'Á', 'A'}, {'Ạ', 'A'}, {'Ả', 'A'}, {'Ã', 'A'}, {'Â', 'A'}, {'Ầ', 'A'}, {'Ấ', 'A'}, {'Ậ', 'A'}, {'Ẩ', 'A'}, {'Ẫ', 'A'}, {'Ă', 'A'}, {'Ằ', 'A'}, {'Ắ', 'A'}, {'Ặ', 'A'}, {'Ẳ', 'A'}, {'Ẵ', 'A'},
+                {'È', 'E'}, {'É', 'E'}, {'Ẹ', 'E'}, {'Ẻ', 'E'}, {'Ẽ', 'E'}, {'Ê', 'E'}, {'Ề', 'E'}, {'Ế', 'E'}, {'Ệ', 'E'}, {'Ể', 'E'}, {'Ễ', 'E'},
+                {'Ì', 'I'}, {'Í', 'I'}, {'Ị', 'I'}, {'Ỉ', 'I'}, {'Ĩ', 'I'},
+                {'Ò', 'O'}, {'Ó', 'O'}, {'Ọ', 'O'}, {'Ỏ', 'O'}, {'Õ', 'O'}, {'Ô', 'O'}, {'Ồ', 'O'}, {'Ố', 'O'}, {'Ộ', 'O'}, {'Ổ', 'O'}, {'Ỗ', 'O'}, {'Ơ', 'O'}, {'Ờ', 'O'}, {'Ớ', 'O'}, {'Ợ', 'O'}, {'Ở', 'O'}, {'Ỡ', 'O'},
+                {'Ù', 'U'}, {'Ú', 'U'}, {'Ụ', 'U'}, {'Ủ', 'U'}, {'Ũ', 'U'}, {'Ư', 'U'}, {'Ừ', 'U'}, {'Ứ', 'U'}, {'Ự', 'U'}, {'Ử', 'U'}, {'Ữ', 'U'},
+                {'Ỳ', 'Y'}, {'Ý', 'Y'}, {'Ỵ', 'Y'}, {'Ỷ', 'Y'}, {'Ỹ', 'Y'},
+                {'Đ', 'D'}
+            };
+
+            var result = new System.Text.StringBuilder();
+            foreach (char c in text)
+            {
+                result.Append(accents.ContainsKey(c) ? accents[c] : c);
+            }
+            return result.ToString();
         }
 
         /// <summary>

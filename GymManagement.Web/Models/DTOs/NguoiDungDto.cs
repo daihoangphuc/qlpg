@@ -52,6 +52,13 @@ namespace GymManagement.Web.Models.DTOs
         [Display(Name = "Ngày tạo")]
         public DateTime NgayTao { get; set; } = DateTime.Now;
 
+        // Thông tin tài khoản
+        [Display(Name = "Tên đăng nhập")]
+        public string? Username { get; set; }
+
+        [Display(Name = "Có tài khoản")]
+        public bool HasAccount { get; set; }
+
         [Display(Name = "Họ và tên")]
         public string HoTen => $"{Ho} {Ten}".Trim();
     }

@@ -1,5 +1,6 @@
 using GymManagement.Web.Data.Models;
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 
 namespace GymManagement.Web.Data.Repositories
 {
@@ -68,6 +69,37 @@ namespace GymManagement.Web.Data.Repositories
             return await _dbSet
                 .Include(x => x.TaiKhoan)
                 .FirstOrDefaultAsync(x => x.NguoiDungId == nguoiDungId);
+        }
+
+        public async Task<IEnumerable<NguoiDung>> GetAllWithTaiKhoanAsync()
+        {
+            return await _dbSet
+                .Include(x => x.TaiKhoan)
+                .ToListAsync();
+        }
+
+        public async Task<(IEnumerable<NguoiDung> Items, int TotalCount)> GetPagedWithTaiKhoanAsync(
+            int pageNumber, int pageSize,
+            Expression<Func<NguoiDung, bool>>? filter = null,
+            Func<IQueryable<NguoiDung>, IOrderedQueryable<NguoiDung>>? orderBy = null)
+        {
+            IQueryable<NguoiDung> query = _dbSet.Include(x => x.TaiKhoan);
+
+            if (filter != null)
+            {
+                query = query.Where(filter);
+            }
+
+            var totalCount = await query.CountAsync();
+
+            if (orderBy != null)
+            {
+                query = orderBy(query);
+            }
+
+            var items = await query.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
+
+            return (items, totalCount);
         }
     }
 }

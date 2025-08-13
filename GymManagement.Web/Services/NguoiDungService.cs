@@ -254,6 +254,24 @@ namespace GymManagement.Web.Services
             return true;
         }
 
+        public async Task<IEnumerable<NguoiDungDto>> GetAllWithTaiKhoanAsync()
+        {
+            var nguoiDungs = await _unitOfWork.NguoiDungs.GetAllWithTaiKhoanAsync();
+            return nguoiDungs.Select(MapToDtoWithTaiKhoan);
+        }
+
+        public async Task<(IEnumerable<NguoiDungDto> Items, int TotalCount)> GetPagedWithTaiKhoanAsync(
+            int pageNumber, int pageSize, string? searchTerm = null, string? loaiNguoiDung = null)
+        {
+            var filter = BuildFilter(searchTerm, loaiNguoiDung);
+            var orderBy = BuildOrderBy();
+
+            var (items, totalCount) = await _unitOfWork.NguoiDungs.GetPagedWithTaiKhoanAsync(
+                pageNumber, pageSize, filter, orderBy);
+
+            return (items.Select(MapToDtoWithTaiKhoan), totalCount);
+        }
+
         // Private helper methods
         private static NguoiDungDto MapToDto(NguoiDung nguoiDung)
         {
@@ -271,6 +289,28 @@ namespace GymManagement.Web.Services
                 TrangThai = nguoiDung.TrangThai,
                 AnhDaiDien = nguoiDung.AnhDaiDien,
                 NgayTao = nguoiDung.NgayTao
+            };
+        }
+
+        private static NguoiDungDto MapToDtoWithTaiKhoan(NguoiDung nguoiDung)
+        {
+            return new NguoiDungDto
+            {
+                NguoiDungId = nguoiDung.NguoiDungId,
+                LoaiNguoiDung = nguoiDung.LoaiNguoiDung,
+                Ho = nguoiDung.Ho,
+                Ten = nguoiDung.Ten,
+                GioiTinh = nguoiDung.GioiTinh,
+                NgaySinh = nguoiDung.NgaySinh,
+                SoDienThoai = nguoiDung.SoDienThoai,
+                Email = nguoiDung.Email,
+                NgayThamGia = nguoiDung.NgayThamGia,
+                TrangThai = nguoiDung.TrangThai,
+                AnhDaiDien = nguoiDung.AnhDaiDien,
+                NgayTao = nguoiDung.NgayTao,
+                // Add TaiKhoan information
+                Username = nguoiDung.TaiKhoan?.TenDangNhap,
+                HasAccount = nguoiDung.TaiKhoan != null
             };
         }
 

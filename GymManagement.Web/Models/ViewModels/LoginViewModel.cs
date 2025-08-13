@@ -4,8 +4,8 @@ namespace GymManagement.Web.Models.ViewModels
 {
     public class LoginViewModel
     {
-        [Required(ErrorMessage = "Tên đăng nhập là bắt buộc")]
-        [Display(Name = "Tên đăng nhập")]
+        [Required(ErrorMessage = "Tên đăng nhập hoặc email là bắt buộc")]
+        [Display(Name = "Tên đăng nhập hoặc Email")]
         public string Username { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Mật khẩu là bắt buộc")]
