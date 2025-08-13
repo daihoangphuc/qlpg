@@ -145,6 +145,10 @@ namespace GymManagement.Web.Services
                 {
                     Console.WriteLine($"ERROR: Username '{user.TenDangNhap}' or email '{user.Email}' already exists");
                     Console.WriteLine($"Existing user ID: {existingUser.Id}, Username: {existingUser.TenDangNhap}, Email: {existingUser.Email}");
+                    Console.WriteLine($"CONFLICT DETAILS:");
+                    Console.WriteLine($"  - Requested Username: '{user.TenDangNhap}' vs Existing: '{existingUser.TenDangNhap}'");
+                    Console.WriteLine($"  - Requested Email: '{user.Email}' vs Existing: '{existingUser.Email}'");
+                    Console.WriteLine($"  - Existing Account Status: Active={existingUser.KichHoat}, EmailConfirmed={existingUser.EmailXacNhan}");
                     return false;
                 }
 

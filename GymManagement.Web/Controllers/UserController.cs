@@ -425,10 +425,30 @@ namespace GymManagement.Web.Controllers
             try
             {
                 _logger.LogInformation("Admin creating new user with type: {Type}", createDto.LoaiNguoiDung);
-                
+
                 if (!ModelState.IsValid)
                 {
                     return View(createDto);
+                }
+
+                // Check for duplicate username/email in TaiKhoans table BEFORE creating NguoiDung
+                if (!string.IsNullOrEmpty(createDto.Username) && !string.IsNullOrEmpty(createDto.Password))
+                {
+                    var existingAccount = await _authService.GetUserByUsernameAsync(createDto.Username);
+                    if (existingAccount != null)
+                    {
+                        ModelState.AddModelError("Username", $"Tên đăng nhập '{createDto.Username}' đã tồn tại trong hệ thống.");
+                        TempData["ErrorMessage"] = $"Tên đăng nhập '{createDto.Username}' đã tồn tại trong hệ thống.";
+                        return View(createDto);
+                    }
+
+                    var existingEmailAccount = await _authService.GetUserByEmailAsync(createDto.Email);
+                    if (existingEmailAccount != null)
+                    {
+                        ModelState.AddModelError("Email", $"Email '{createDto.Email}' đã được sử dụng cho tài khoản khác trong hệ thống.");
+                        TempData["ErrorMessage"] = $"Email '{createDto.Email}' đã được sử dụng cho tài khoản khác. Vui lòng sử dụng email khác hoặc không tạo tài khoản đăng nhập.";
+                        return View(createDto);
+                    }
                 }
 
                 // Create NguoiDung first
@@ -460,21 +480,26 @@ namespace GymManagement.Web.Controllers
                     if (accountCreated)
                     {
                         // Assign role based on user type
-                                            string roleName = createDto.LoaiNguoiDung switch
-                    {
-                        "ADMIN" => "Admin",
-                        "HLV" => "Trainer", 
-                        "THANHVIEN" => "Member",
-                        "VANGLAI" => "Member",
-                        _ => "Member"
-                    };
-                        
+                        string roleName = createDto.LoaiNguoiDung switch
+                        {
+                            "ADMIN" => "Admin",
+                            "HLV" => "Trainer",
+                            "THANHVIEN" => "Member",
+                            "VANGLAI" => "Member",
+                            _ => "Member"
+                        };
+
                         await _authService.AssignRoleAsync(taiKhoan.Id, roleName);
                         _logger.LogInformation("Successfully created account for user {Username} with role {Role}", createDto.Username, roleName);
                     }
                     else
                     {
                         _logger.LogWarning("Failed to create account for user {Username}, but NguoiDung was created", createDto.Username);
+
+                        // Show warning message to user
+                        TempData["WarningMessage"] = $"Người dùng đã được tạo thành công, nhưng không thể tạo tài khoản đăng nhập. " +
+                                                   $"Tên đăng nhập '{createDto.Username}' hoặc email '{createDto.Email}' có thể đã tồn tại trong hệ thống. " +
+                                                   $"Bạn có thể tạo tài khoản đăng nhập sau với thông tin khác.";
                     }
                 }
                 
