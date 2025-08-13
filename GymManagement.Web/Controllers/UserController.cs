@@ -881,7 +881,7 @@ namespace GymManagement.Web.Controllers
                     message = successMessage,
                     newPassword = newPassword,
                     userEmail = user.Email,
-                    userName = memberName,
+                    fullName = memberName,
                     username = user.Username,
                     emailSent = emailSent,
                     emailError = emailError

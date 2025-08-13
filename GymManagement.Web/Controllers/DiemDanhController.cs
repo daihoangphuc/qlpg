@@ -120,6 +120,142 @@ namespace GymManagement.Web.Controllers
         }
 
         [HttpPost]
+        public async Task<IActionResult> ManualCheckInWithClass(int memberId, int? classId = null, string? note = null)
+        {
+            try
+            {
+                var result = await _diemDanhService.CheckInWithClassAsync(memberId, classId, note);
+                if (result)
+                {
+                    return Json(new { success = true, message = "Check-in thành công!" });
+                }
+                else
+                {
+                    return Json(new { success = false, message = "Không thể check-in. Thành viên có thể đã check-in hôm nay rồi hoặc lớp học không hợp lệ." });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while manual check-in with class");
+                return Json(new { success = false, message = "Có lỗi xảy ra khi check-in." });
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetAvailableClasses()
+        {
+            try
+            {
+                var classes = await _diemDanhService.GetAvailableClassesAsync();
+                return Json(new { success = true, classes = classes });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while getting available classes");
+                return Json(new { success = false, message = "Có lỗi xảy ra khi tải danh sách lớp học." });
+            }
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Admin,Trainer")]
+        public async Task<IActionResult> FaceRecognitionCheckInWithClass([FromBody] FaceCheckInWithClassRequest request)
+        {
+            try
+            {
+                if (request?.Descriptor == null || request.Descriptor.Length != 128)
+                {
+                    return Json(new { success = false, message = "Dữ liệu khuôn mặt không hợp lệ" });
+                }
+
+                // Convert to float array
+                var faceDescriptor = request.Descriptor.Select(d => (float)d).ToArray();
+
+                // Recognize face
+                var recognitionResult = await _diemDanhService.RecognizeFaceAsync(faceDescriptor);
+
+                if (!recognitionResult.Success)
+                {
+                    return Json(new {
+                        success = false,
+                        message = "Không nhận diện được khuôn mặt. Vui lòng thử lại hoặc liên hệ nhân viên."
+                    });
+                }
+
+                var memberId = recognitionResult.MemberId!.Value;
+                var member = await _nguoiDungService.GetByIdAsync(memberId);
+
+                if (member == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy thông tin hội viên" });
+                }
+
+                // Check current session status
+                var currentSession = await _diemDanhService.GetLatestAttendanceAsync(memberId);
+                var hasActiveSession = currentSession != null &&
+                                     currentSession.ThoiGianCheckIn.Date == DateTime.Today &&
+                                     currentSession.ThoiGianCheckOut == null;
+
+                if (!hasActiveSession)
+                {
+                    // CHECK-IN with class selection
+                    var checkInSuccess = await _diemDanhService.CheckInWithClassAsync(memberId, request.ClassId);
+
+                    if (checkInSuccess)
+                    {
+                        var className = request.ClassId.HasValue ?
+                            (await _diemDanhService.GetClassNameAsync(request.ClassId.Value)) ?? "Lớp học" :
+                            "tập tự do";
+
+                        return Json(new
+                        {
+                            success = true,
+                            action = "checkin",
+                            message = $"Check-in thành công {className}!",
+                            memberName = $"{member.Ho} {member.Ten}",
+                            time = DateTime.Now.ToString("HH:mm dd/MM/yyyy"),
+                            confidence = Math.Round(recognitionResult.Confidence * 100, 1),
+                            className = className
+                        });
+                    }
+                    else
+                    {
+                        return Json(new { success = false, message = "Không thể check-in. Có thể đã check-in hôm nay rồi." });
+                    }
+                }
+                else
+                {
+                    // CHECK-OUT
+                    var checkOutSuccess = await _diemDanhService.CheckOutAsync(currentSession.DiemDanhId);
+
+                    if (checkOutSuccess)
+                    {
+                        var duration = DateTime.Now - currentSession.ThoiGianCheckIn;
+                        var durationText = $"{(int)duration.TotalHours}h {duration.Minutes}m";
+
+                        return Json(new
+                        {
+                            success = true,
+                            action = "checkout",
+                            message = "Check-out thành công!",
+                            memberName = $"{member.Ho} {member.Ten}",
+                            duration = durationText,
+                            confidence = Math.Round(recognitionResult.Confidence * 100, 1)
+                        });
+                    }
+                    else
+                    {
+                        return Json(new { success = false, message = "Không thể check-out." });
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred during face recognition check-in with class");
+                return Json(new { success = false, message = "Có lỗi xảy ra khi xử lý nhận diện khuôn mặt." });
+            }
+        }
+
+        [HttpPost]
         public async Task<IActionResult> SelfCheckIn()
         {
             try
@@ -395,5 +531,12 @@ namespace GymManagement.Web.Controllers
                 });
             }
         }
+    }
+
+    // DTO classes for face recognition with class selection
+    public class FaceCheckInWithClassRequest
+    {
+        public double[] Descriptor { get; set; } = Array.Empty<double>();
+        public int? ClassId { get; set; }
     }
 }

@@ -13,6 +13,7 @@ namespace GymManagement.Web.Services
         Task<IEnumerable<DiemDanh>> GetTodayAttendanceAsync();
         Task<DiemDanh?> GetLatestAttendanceAsync(int thanhVienId);
         Task<bool> CheckInAsync(int thanhVienId, string? anhMinhChung = null);
+        Task<bool> CheckInWithClassAsync(int thanhVienId, int? lopHocId = null, string? anhMinhChung = null);
         Task<bool> CheckInWithFaceRecognitionAsync(int thanhVienId, byte[] faceImage);
         Task<bool> CheckOutAsync(int diemDanhId);
         Task<DiemDanh?> GetActiveSessionAsync(int thanhVienId);
@@ -28,6 +29,9 @@ namespace GymManagement.Web.Services
         Task<bool> CanTrainerTakeAttendanceAsync(int trainerId, int lichLopId);
         Task<DateTime?> GetFirstAttendanceDateAsync(int nguoiDungId);
         Task<IEnumerable<DiemDanh>> GetByDateRangeAsync(DateTime fromDate, DateTime toDate);
+        Task<IEnumerable<object>> GetAvailableClassesAsync();
+        Task<string?> GetClassNameAsync(int classId);
+        Task<FaceRecognitionResult> RecognizeFaceAsync(float[] faceDescriptor);
     }
 
     // DTO for class attendance

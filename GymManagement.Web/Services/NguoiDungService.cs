@@ -20,8 +20,8 @@ namespace GymManagement.Web.Services
 
         public async Task<NguoiDungDto?> GetByIdAsync(int id)
         {
-            var nguoiDung = await _unitOfWork.NguoiDungs.GetByIdAsync(id);
-            return nguoiDung != null ? MapToDto(nguoiDung) : null;
+            var nguoiDung = await _unitOfWork.NguoiDungs.GetWithTaiKhoanAsync(id);
+            return nguoiDung != null ? MapToDtoWithTaiKhoan(nguoiDung) : null;
         }
 
         public async Task<IEnumerable<NguoiDungDto>> GetAllAsync()

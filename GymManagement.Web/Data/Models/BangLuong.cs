@@ -5,6 +5,11 @@ namespace GymManagement.Web.Data.Models
 {
     public class BangLuong
     {
+        public BangLuong()
+        {
+            NgayTao = DateTime.Now;
+        }
+
         public int BangLuongId { get; set; }
         
         public int? HlvId { get; set; }

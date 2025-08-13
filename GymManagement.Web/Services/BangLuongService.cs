@@ -193,7 +193,8 @@ namespace GymManagement.Web.Services
                             HlvId = trainer.NguoiDungId,
                             Thang = thang,
                             LuongCoBan = baseSalary,
-                            TienHoaHong = commissionBreakdown.TotalCommission
+                            TienHoaHong = commissionBreakdown.TotalCommission,
+                            NgayTao = DateTime.Now
                         };
 
                         salariesToCreate.Add(bangLuong);

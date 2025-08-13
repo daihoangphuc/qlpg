@@ -791,8 +791,31 @@ namespace GymManagement.Web.Controllers
                 // Only load members for admin
                 if (User.IsInRole("Admin"))
                 {
-                    var members = await _nguoiDungService.GetMembersAsync();
-                    ViewBag.Members = new SelectList(members, "NguoiDungId", "Ho");
+                    var allUsers = await _nguoiDungService.GetAllAsync();
+                    var userList = allUsers
+                        .Where(u => u.TrangThai == "ACTIVE" &&
+                                   (u.LoaiNguoiDung == "THANHVIEN" || u.LoaiNguoiDung == "VANGLAI")) // Chỉ thành viên và vãng lai
+                        .OrderBy(u => u.Ho)
+                        .ThenBy(u => u.Ten)
+                        .Select(u => new {
+                            NguoiDungId = u.NguoiDungId,
+                            FullName = $"{u.Ho} {u.Ten}".Trim(),
+                            UserType = u.LoaiNguoiDung switch
+                            {
+                                "THANHVIEN" => "👤",
+                                "VANGLAI" => "🚶",
+                                _ => "👤"
+                            },
+                            DisplayName = $"{u.Ho} {u.Ten}".Trim() + $" ({u.LoaiNguoiDung switch
+                            {
+                                "THANHVIEN" => "👤 Thành viên",
+                                "VANGLAI" => "🚶 Vãng lai",
+                                _ => "👤 Thành viên"
+                            }})"
+                        })
+                        .ToList();
+
+                    ViewBag.Members = new SelectList(userList, "NguoiDungId", "DisplayName");
                 }
             }
             catch (Exception ex)
