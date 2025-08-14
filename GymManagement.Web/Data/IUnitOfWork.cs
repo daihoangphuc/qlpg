@@ -23,7 +23,6 @@ namespace GymManagement.Web.Data
         IRepository<Models.BuoiTap> BuoiTaps { get; }
         IRepository<Models.MauMat> MauMats { get; }
         IRepository<Models.DiemDanh> DiemDanhs { get; }
-        IRepository<Models.CauHinhHoaHong> CauHinhHoaHongs { get; }
         IRepository<Models.BangLuong> BangLuongs { get; }
         IRepository<Models.ThongBao> ThongBaos { get; }
         IRepository<Models.LichSuAnh> LichSuAnhs { get; }

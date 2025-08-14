@@ -87,7 +87,7 @@
         </div>
     </div>
 
-    <!-- Face Registration Section -->
+    @* <!-- Face Registration Section -->
     <div class="bg-white rounded-lg shadow-md p-6 mb-8">
         <h2 class="text-xl font-bold text-gray-900 mb-4">📝 Đăng Ký Khuôn Mặt Mới</h2>
 
@@ -162,7 +162,7 @@
                 </div>
             </div>
         </div>
-    </div>
+    </div> *@
 
     <!-- Search and Filter -->
     <div class="bg-white rounded-lg shadow-md p-6 mb-8">
@@ -179,11 +179,11 @@
                 </div>
             </div>
             <div class="flex space-x-3">
-                <select id="filterSelect" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                @* <select id="filterSelect" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                     <option value="all">Tất cả</option>
                     <option value="recent">Đăng ký gần đây</option>
                     <option value="old">Đăng ký cũ</option>
-                </select>
+                </select> *@
                 <button onclick="loadAllFaces()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
                     🔍 Tìm kiếm
                 </button>
@@ -263,10 +263,6 @@
 
             // Search functionality
             document.getElementById('searchInput').addEventListener('input', function() {
-                filterFaces();
-            });
-
-            document.getElementById('filterSelect').addEventListener('change', function() {
                 filterFaces();
             });
         }
@@ -612,28 +608,14 @@
 
         function filterFaces() {
             const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            const filter = document.getElementById('filterSelect').value;
-            
+
             filteredFaces = allFaces.filter(face => {
                 const matchesSearch = face.memberName.toLowerCase().includes(searchTerm) ||
                                     face.memberEmail.toLowerCase().includes(searchTerm);
-                
-                let matchesFilter = true;
-                if (filter === 'recent') {
-                    const faceDate = new Date(face.createdDate.split(' ')[0].split('/').reverse().join('-'));
-                    const weekAgo = new Date();
-                    weekAgo.setDate(weekAgo.getDate() - 7);
-                    matchesFilter = faceDate >= weekAgo;
-                } else if (filter === 'old') {
-                    const faceDate = new Date(face.createdDate.split(' ')[0].split('/').reverse().join('-'));
-                    const monthAgo = new Date();
-                    monthAgo.setMonth(monthAgo.getMonth() - 1);
-                    matchesFilter = faceDate < monthAgo;
-                }
-                
-                return matchesSearch && matchesFilter;
+
+                return matchesSearch;
             });
-            
+
             currentPage = 1;
             displayFaces();
         }

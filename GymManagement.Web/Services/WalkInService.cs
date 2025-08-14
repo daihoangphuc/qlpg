@@ -19,6 +19,7 @@ namespace GymManagement.Web.Services
         private readonly IGoiTapRepository _goiTapRepository;
         private readonly IConfiguration _configuration;
         private readonly ILogger<WalkInService> _logger;
+        private readonly IFaceRecognitionService _faceRecognitionService;
 
         // Giá cố định cho khách vãng lai
         private readonly decimal _fixedPrice;
@@ -33,7 +34,8 @@ namespace GymManagement.Web.Services
             IDiemDanhRepository diemDanhRepository,
             IGoiTapRepository goiTapRepository,
             IConfiguration configuration,
-            ILogger<WalkInService> logger)
+            ILogger<WalkInService> logger,
+            IFaceRecognitionService faceRecognitionService)
         {
             _unitOfWork = unitOfWork;
             _nguoiDungRepository = nguoiDungRepository;
@@ -43,6 +45,7 @@ namespace GymManagement.Web.Services
             _goiTapRepository = goiTapRepository;
             _configuration = configuration;
             _logger = logger;
+            _faceRecognitionService = faceRecognitionService;
 
             // Đọc cấu hình giá cố định
             _fixedPrice = _configuration.GetValue<decimal>("WalkIn:FixedPrice:Amount", 15000);
@@ -122,7 +125,7 @@ namespace GymManagement.Web.Services
                 var dangKy = new DangKy
                 {
                     NguoiDungId = guestId,
-                    LoaiDangKy = "WALKIN_FIXED", // Loại đăng ký mới cho giá cố định
+                    LoaiDangKy = "WALKIN", // Loại đăng ký mới cho giá cố định
                     NgayBatDau = today,
                     NgayKetThuc = today, // Vé trong ngày
                     PhiDangKy = _fixedPrice,
@@ -447,12 +450,13 @@ namespace GymManagement.Web.Services
             string? email,
             string? note,
             string paymentMethod,
-            decimal amount)
+            decimal amount,
+            float[]? faceDescriptor = null)
         {
             try
             {
-                _logger.LogInformation("Registering walk-in with payment: {Name}, Method: {Method}, Amount: {Amount}",
-                    fullName, paymentMethod, amount);
+                _logger.LogInformation("Registering walk-in with payment: {Name}, Method: {Method}, Amount: {Amount}, FaceDescriptor: {HasFaceDescriptor}",
+                    fullName, paymentMethod, amount, faceDescriptor != null ? $"Yes ({faceDescriptor.Length} dimensions)" : "No");
 
                 // 1. Tạo khách vãng lai
                 var guest = await CreateGuestAsync(fullName, phoneNumber, email);
@@ -471,6 +475,32 @@ namespace GymManagement.Web.Services
                 if (payment.TrangThai == "SUCCESS")
                 {
                     checkIn = await CheckInGuestAsync(guest.NguoiDungId, note ?? "Auto check-in after payment");
+                }
+
+                // 5. Lưu face descriptor nếu có (để có thể checkout bằng Face ID)
+                _logger.LogInformation("Checking face descriptor: HasDescriptor={HasDescriptor}, PaymentStatus={PaymentStatus}",
+                    faceDescriptor != null && faceDescriptor.Length > 0, payment.TrangThai);
+
+                if (faceDescriptor != null && faceDescriptor.Length > 0 && payment.TrangThai == "SUCCESS")
+                {
+                    try
+                    {
+                        _logger.LogInformation("Attempting to save face descriptor for guest {GuestId} with {Dimensions} dimensions",
+                            guest.NguoiDungId, faceDescriptor.Length);
+
+                        await _faceRecognitionService.RegisterFaceAsync(guest.NguoiDungId, faceDescriptor);
+                        _logger.LogInformation("✅ Face descriptor saved successfully for walk-in guest {GuestId}", guest.NguoiDungId);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "❌ Failed to save face descriptor for walk-in guest {GuestId}", guest.NguoiDungId);
+                        // Không throw exception vì đăng ký đã thành công, chỉ face recognition thất bại
+                    }
+                }
+                else
+                {
+                    _logger.LogWarning("⚠️ Face descriptor not saved: HasDescriptor={HasDescriptor}, PaymentStatus={PaymentStatus}",
+                        faceDescriptor != null && faceDescriptor.Length > 0, payment.TrangThai);
                 }
 
                 _logger.LogInformation("Walk-in registration with payment completed for {Name}", fullName);

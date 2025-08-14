@@ -4,6 +4,7 @@ using GymManagement.Web.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace GymManagement.Web.Migrations
 {
     [DbContext(typeof(GymDbContext))]
-    partial class GymDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250814072416_RemoveCauHinhHoaHongTable")]
+    partial class RemoveCauHinhHoaHongTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -60,7 +63,7 @@ namespace GymManagement.Web.Migrations
 
                     b.HasIndex("HlvId");
 
-                    b.ToTable("BangLuongs", (string)null);
+                    b.ToTable("BangLuongs");
                 });
 
             modelBuilder.Entity("GymManagement.Web.Data.Models.Booking", b =>
@@ -103,7 +106,7 @@ namespace GymManagement.Web.Migrations
 
                     b.HasIndex("ThanhVienId");
 
-                    b.ToTable("Bookings", (string)null);
+                    b.ToTable("Bookings");
                 });
 
             modelBuilder.Entity("GymManagement.Web.Data.Models.BuoiHlv", b =>
@@ -141,7 +144,7 @@ namespace GymManagement.Web.Migrations
 
                     b.HasIndex("ThanhVienId");
 
-                    b.ToTable("BuoiHlvs", (string)null);
+                    b.ToTable("BuoiHlvs");
                 });
 
             modelBuilder.Entity("GymManagement.Web.Data.Models.BuoiTap", b =>
@@ -174,7 +177,7 @@ namespace GymManagement.Web.Migrations
 
                     b.HasIndex("ThanhVienId");
 
-                    b.ToTable("BuoiTaps", (string)null);
+                    b.ToTable("BuoiTaps");
                 });
 
             modelBuilder.Entity("GymManagement.Web.Data.Models.DangKy", b =>
@@ -236,7 +239,7 @@ namespace GymManagement.Web.Migrations
 
                     b.HasIndex("NguoiDungId");
 
-                    b.ToTable("DangKys", (string)null);
+                    b.ToTable("DangKys");
                 });
 
             modelBuilder.Entity("GymManagement.Web.Data.Models.DiemDanh", b =>
@@ -293,7 +296,7 @@ namespace GymManagement.Web.Migrations
 
                     b.HasIndex("ThanhVienId");
 
-                    b.ToTable("DiemDanhs", (string)null);
+                    b.ToTable("DiemDanhs");
                 });
 
             modelBuilder.Entity("GymManagement.Web.Data.Models.ExternalLogin", b =>
@@ -362,7 +365,7 @@ namespace GymManagement.Web.Migrations
 
                     b.HasKey("GoiTapId");
 
-                    b.ToTable("GoiTaps", (string)null);
+                    b.ToTable("GoiTaps");
                 });
 
             modelBuilder.Entity("GymManagement.Web.Data.Models.KhuyenMai", b =>
@@ -404,7 +407,7 @@ namespace GymManagement.Web.Migrations
                     b.HasIndex("MaCode")
                         .IsUnique();
 
-                    b.ToTable("KhuyenMais", (string)null);
+                    b.ToTable("KhuyenMais");
                 });
 
             modelBuilder.Entity("GymManagement.Web.Data.Models.LichSuAnh", b =>
@@ -439,7 +442,7 @@ namespace GymManagement.Web.Migrations
 
                     b.HasIndex("NguoiDungId");
 
-                    b.ToTable("LichSuAnhs", (string)null);
+                    b.ToTable("LichSuAnhs");
                 });
 
             modelBuilder.Entity("GymManagement.Web.Data.Models.LopHoc", b =>
@@ -504,7 +507,7 @@ namespace GymManagement.Web.Migrations
 
                     b.HasIndex("HlvId");
 
-                    b.ToTable("LopHocs", (string)null);
+                    b.ToTable("LopHocs");
                 });
 
             modelBuilder.Entity("GymManagement.Web.Data.Models.MauMat", b =>
@@ -539,7 +542,7 @@ namespace GymManagement.Web.Migrations
                     b.HasIndex("NguoiDungId")
                         .IsUnique();
 
-                    b.ToTable("MauMats", (string)null);
+                    b.ToTable("MauMats");
                 });
 
             modelBuilder.Entity("GymManagement.Web.Data.Models.NguoiDung", b =>
@@ -600,7 +603,7 @@ namespace GymManagement.Web.Migrations
 
                     b.HasKey("NguoiDungId");
 
-                    b.ToTable("NguoiDungs", (string)null);
+                    b.ToTable("NguoiDungs");
                 });
 
             modelBuilder.Entity("GymManagement.Web.Data.Models.TaiKhoan", b =>
@@ -726,7 +729,7 @@ namespace GymManagement.Web.Migrations
 
                     b.HasIndex("DangKyId");
 
-                    b.ToTable("ThanhToans", (string)null);
+                    b.ToTable("ThanhToans");
                 });
 
             modelBuilder.Entity("GymManagement.Web.Data.Models.ThanhToanGateway", b =>
@@ -774,7 +777,7 @@ namespace GymManagement.Web.Migrations
                     b.HasIndex("ThanhToanId")
                         .IsUnique();
 
-                    b.ToTable("ThanhToanGateways", (string)null);
+                    b.ToTable("ThanhToanGateways");
                 });
 
             modelBuilder.Entity("GymManagement.Web.Data.Models.ThongBao", b =>
@@ -814,7 +817,7 @@ namespace GymManagement.Web.Migrations
 
                     b.HasIndex("NguoiDungId");
 
-                    b.ToTable("ThongBaos", (string)null);
+                    b.ToTable("ThongBaos");
                 });
 
             modelBuilder.Entity("GymManagement.Web.Data.Models.TinTuc", b =>
@@ -898,7 +901,7 @@ namespace GymManagement.Web.Migrations
 
                     b.HasIndex("TacGiaId");
 
-                    b.ToTable("TinTucs", (string)null);
+                    b.ToTable("TinTucs");
                 });
 
             modelBuilder.Entity("GymManagement.Web.Data.Models.VaiTro", b =>

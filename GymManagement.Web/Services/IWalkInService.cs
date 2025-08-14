@@ -124,6 +124,7 @@ namespace GymManagement.Web.Services
         /// <param name="note">Ghi chú (tùy chọn)</param>
         /// <param name="paymentMethod">Phương thức thanh toán (CASH, VNPAY)</param>
         /// <param name="amount">Số tiền thanh toán</param>
+        /// <param name="faceDescriptor">Face descriptor để lưu vào MauMats (tùy chọn)</param>
         /// <returns>Kết quả đăng ký và thanh toán</returns>
         Task<WalkInRegistrationResult> RegisterWalkInWithPaymentAsync(
             string fullName,
@@ -131,7 +132,8 @@ namespace GymManagement.Web.Services
             string? email,
             string? note,
             string paymentMethod,
-            decimal amount);
+            decimal amount,
+            float[]? faceDescriptor = null);
 
         /// <summary>
         /// Tạo thanh toán VNPay cho khách vãng lai

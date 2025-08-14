@@ -25,6 +25,5 @@ namespace GymManagement.Web.Data.Models
 
         // Navigation properties
         public virtual ICollection<DangKy> DangKys { get; set; } = new List<DangKy>();
-        public virtual ICollection<CauHinhHoaHong> CauHinhHoaHongs { get; set; } = new List<CauHinhHoaHong>();
     }
 }

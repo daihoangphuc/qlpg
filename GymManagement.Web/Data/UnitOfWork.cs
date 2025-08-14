@@ -24,7 +24,6 @@ namespace GymManagement.Web.Data
         private IRepository<Models.BuoiTap>? _buoiTaps;
         private IRepository<Models.MauMat>? _mauMats;
         private IRepository<Models.DiemDanh>? _diemDanhs;
-        private IRepository<Models.CauHinhHoaHong>? _cauHinhHoaHongs;
         private IRepository<Models.BangLuong>? _bangLuongs;
         private IRepository<Models.ThongBao>? _thongBaos;
         private IRepository<Models.LichSuAnh>? _lichSuAnhs;
@@ -79,13 +78,10 @@ namespace GymManagement.Web.Data
         public IRepository<Models.MauMat> MauMats => 
             _mauMats ??= new Repository<Models.MauMat>(_context);
 
-        public IRepository<Models.DiemDanh> DiemDanhs => 
+        public IRepository<Models.DiemDanh> DiemDanhs =>
             _diemDanhs ??= new Repository<Models.DiemDanh>(_context);
 
-        public IRepository<Models.CauHinhHoaHong> CauHinhHoaHongs => 
-            _cauHinhHoaHongs ??= new Repository<Models.CauHinhHoaHong>(_context);
-
-        public IRepository<Models.BangLuong> BangLuongs => 
+        public IRepository<Models.BangLuong> BangLuongs =>
             _bangLuongs ??= new Repository<Models.BangLuong>(_context);
 
         public IRepository<Models.ThongBao> ThongBaos => 

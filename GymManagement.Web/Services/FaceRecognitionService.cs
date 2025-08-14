@@ -34,10 +34,13 @@ namespace GymManagement.Web.Services
         {
             try
             {
+                _logger.LogInformation("🔍 RegisterFaceAsync called for user {UserId} with descriptor length {Length}",
+                    nguoiDungId, faceDescriptor?.Length);
+
                 // Validate input
                 if (faceDescriptor == null || faceDescriptor.Length != 128)
                 {
-                    _logger.LogWarning("Invalid face descriptor length: {Length}", faceDescriptor?.Length);
+                    _logger.LogWarning("❌ Invalid face descriptor length: {Length} (expected 128)", faceDescriptor?.Length);
                     return false;
                 }
 

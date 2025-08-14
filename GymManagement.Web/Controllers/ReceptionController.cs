@@ -639,8 +639,9 @@ namespace GymManagement.Web.Controllers
         {
             try
             {
-                _logger.LogInformation("Walk-in registration with payment: {Name}, Method: {Method}",
-                    request.FullName, request.PaymentMethod);
+                _logger.LogInformation("Walk-in registration with payment: {Name}, Method: {Method}, FaceDescriptor: {HasFaceDescriptor}",
+                    request.FullName, request.PaymentMethod,
+                    request.FaceDescriptor != null ? $"Yes ({request.FaceDescriptor.Length} dimensions)" : "No");
 
                 // Validation
                 if (string.IsNullOrWhiteSpace(request.FullName))
@@ -665,7 +666,8 @@ namespace GymManagement.Web.Controllers
                     request.Email,
                     request.Note,
                     request.PaymentMethod,
-                    request.Amount);
+                    request.Amount,
+                    request.FaceDescriptor);
 
                 if (result.Success)
                 {
@@ -779,7 +781,7 @@ namespace GymManagement.Web.Controllers
 
         // Các field cũ để backward compatibility (sẽ bị ignore)
         [Obsolete("Fixed price model - this field is ignored")]
-        public string PackageType { get; set; } = "WALKIN_FIXED";
+        public string PackageType { get; set; } = "WALKIN";
         [Obsolete("Fixed price model - this field is ignored")]
         public string PackageName { get; set; } = "Vé tập một buổi";
         [Obsolete("Fixed price model - this field is ignored")]
@@ -807,6 +809,7 @@ namespace GymManagement.Web.Controllers
         public string? Note { get; set; }
         public string PaymentMethod { get; set; } = "CASH"; // CASH, VNPAY
         public decimal Amount { get; set; }
+        public float[]? FaceDescriptor { get; set; } // Face descriptor for face recognition
     }
 
     public class WalkInVNPayRequest

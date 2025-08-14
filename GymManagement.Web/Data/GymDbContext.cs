@@ -37,8 +37,7 @@ namespace GymManagement.Web.Data
         public DbSet<MauMat> MauMats { get; set; }
         public DbSet<DiemDanh> DiemDanhs { get; set; }
 
-        // Lương & Hoa hồng
-        public DbSet<CauHinhHoaHong> CauHinhHoaHongs { get; set; }
+        // Lương
         public DbSet<BangLuong> BangLuongs { get; set; }
 
         // Hệ thống
@@ -314,16 +313,7 @@ namespace GymManagement.Web.Data
                     .HasForeignKey(d => d.LopHocId);
             });
 
-            // Cấu hình bảng CauHinhHoaHong
-            modelBuilder.Entity<CauHinhHoaHong>(entity =>
-            {
-                entity.HasKey(e => e.CauHinhHoaHongId);
-                entity.Property(e => e.CauHinhHoaHongId).ValueGeneratedOnAdd();
-                
-                entity.HasOne(d => d.GoiTap)
-                    .WithMany(p => p.CauHinhHoaHongs)
-                    .HasForeignKey(d => d.GoiTapId);
-            });
+
 
             // Cấu hình bảng BangLuong
             modelBuilder.Entity<BangLuong>(entity =>

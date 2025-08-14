@@ -93,6 +93,11 @@
                 🔍 Recognize Face & Check-in
             </button>
 
+            <!-- Debug button for testing -->
+            <button onclick="openWalkInModal()" class="w-full bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-medium transition-colors mt-2">
+                🧪 Test Walk-in Modal
+            </button>
+
             <!-- Results -->
             <div id="recognizeResults" class="mt-4 hidden">
                 <div class="bg-gray-50 rounded-lg p-4">
@@ -838,6 +843,125 @@
     </style>
 }
 
+<!-- Walk-in Registration Modal -->
+<div id="walkInModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 hidden">
+    <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-2/3 lg:w-1/2 shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-bold text-gray-900">🚶 Đăng Ký Khách Vãng Lai</h3>
+                <button onclick="closeWalkInModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Walk-in Form - Step 1: Information -->
+            <div id="walkInStep1" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Họ và tên *</label>
+                    <input type="text" id="modalGuestName" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Nguyễn Văn A">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Số điện thoại *</label>
+                    <input type="tel" id="modalGuestPhone" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="0123456789">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Email (tùy chọn)</label>
+                    <input type="email" id="modalGuestEmail" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="example@email.com">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Ghi chú</label>
+                    <textarea id="modalGuestNote" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Ghi chú thêm..."></textarea>
+                </div>
+
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-sm font-medium text-blue-800">Vé tập một buổi</span>
+                        <span class="text-lg font-bold text-blue-900">50,000 VNĐ</span>
+                    </div>
+                    <p class="text-xs text-blue-600">Bao gồm: Sử dụng thiết bị, phòng tập, khăn tắm</p>
+                </div>
+
+                <button id="continueToPaymentBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                    💳 Tiếp tục thanh toán
+                </button>
+            </div>
+
+            <!-- Walk-in Form - Step 2: Payment Method -->
+            <div id="walkInStep2" class="space-y-4 hidden">
+                <!-- Customer Info Summary -->
+                <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                    <h4 class="font-medium text-gray-900 mb-2">Thông tin khách hàng:</h4>
+                    <div class="text-sm text-gray-600">
+                        <div id="customerSummaryName"></div>
+                        <div id="customerSummaryPhone"></div>
+                    </div>
+                </div>
+
+                <!-- Payment Method Selection -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-3">Chọn phương thức thanh toán *</label>
+                    <div class="space-y-3">
+                        <label class="flex items-center p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
+                            <input type="radio" name="paymentMethod" value="CASH" class="mr-3" checked>
+                            <div class="flex items-center">
+                                <span class="text-2xl mr-3">💵</span>
+                                <div>
+                                    <div class="font-medium">Tiền mặt</div>
+                                    <div class="text-sm text-gray-500">Thanh toán trực tiếp tại quầy</div>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="flex items-center p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
+                            <input type="radio" name="paymentMethod" value="VNPAY" class="mr-3">
+                            <div class="flex items-center">
+                                <span class="text-2xl mr-3">🏦</span>
+                                <div>
+                                    <div class="font-medium">VNPay</div>
+                                    <div class="text-sm text-gray-500">Thanh toán online qua VNPay</div>
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Price Summary -->
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-sm font-medium text-blue-800">Tổng thanh toán</span>
+                        <span class="text-xl font-bold text-blue-900">50,000 VNĐ</span>
+                    </div>
+                    <p class="text-xs text-blue-600">Vé tập một buổi - Bao gồm: Sử dụng thiết bị, phòng tập, khăn tắm</p>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex space-x-3">
+                    <button id="backToInfoBtn" class="flex-1 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                        ← Quay lại
+                    </button>
+                    <button id="processPaymentBtn" class="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                        💳 Thanh toán & Check-in
+                    </button>
+                </div>
+            </div>
+
+            <!-- Walk-in Results -->
+            <div id="modalWalkInResults" class="mt-4 hidden">
+                <div class="bg-gray-50 rounded-lg p-4">
+                    <h4 class="font-medium text-gray-900 mb-2">Kết quả đăng ký:</h4>
+                    <div id="modalWalkInResultContent"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <script>
         // Debug: Check if script is loading
@@ -1015,6 +1139,10 @@
         let recognizeCameraStatus, recognizeFaceStatus, recognizeConfidenceStatus, systemStatus;
         let recognizeResults, recognizeResultContent;
         let currentRecognizeDescriptor = null;
+
+        // Walk-in face descriptor storage
+        let pendingWalkInFaceDescriptor = null;
+        let pendingWalkInFaceData = null;
 
         // Walk-in elements
         const guestName = document.getElementById('guestName');
@@ -1548,6 +1676,7 @@
                         // Store the first face descriptor for recognition
                         if (detections[0].descriptor) {
                             currentRecognizeDescriptor = detections[0].descriptor;
+                            console.log('🔍 Face descriptor captured:', currentRecognizeDescriptor.length, 'dimensions');
                         }
                     } else {
                         recognizeFaceStatus.textContent = '👁️ No face detected';
@@ -1638,32 +1767,182 @@
                                 </div>
                             </div>
                         `;
+                    } else {
+                        // Recognition successful but cannot check-in/checkout (e.g., already checked in)
+                        // Check if this is a walk-in case that should redirect
+                        const isWalkInCase = result.message && (
+                            result.message.includes('khách vãng lai') ||
+                            result.message.includes('không tìm thấy') ||
+                            result.message.includes('không khớp') ||
+                            result.message.includes('không nhận diện') ||
+                            result.message.includes('không có trong hệ thống')
+                        );
+
+                        if (isWalkInCase) {
+                            // Store face descriptor for walk-in registration
+                            if (currentRecognizeDescriptor && currentRecognizeDescriptor.length > 0) {
+                                pendingWalkInFaceDescriptor = Array.from(currentRecognizeDescriptor);
+                                pendingWalkInFaceData = {
+                                    embedding: pendingWalkInFaceDescriptor,
+                                    ngayTao: new Date().toISOString(),
+                                    thuatToan: 'face-api.js'
+                                };
+                                console.log('💾 Face descriptor stored for walk-in registration (success case):', pendingWalkInFaceDescriptor.length, 'dimensions');
+                            } else {
+                                console.warn('⚠️ No face descriptor to store (success case)');
+                            }
+
+                            // Redirect to walk-in registration
+                            recognizeResultContent.innerHTML = `
+                                <div class="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                                    <div class="flex items-center">
+                                        <div class="flex-shrink-0">
+                                            <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                            </svg>
+                                        </div>
+                                        <div class="ml-3">
+                                            <h3 class="text-sm font-medium text-orange-800">🚶 Khách vãng lai được phát hiện!</h3>
+                                            <div class="mt-2 text-sm text-orange-700">
+                                                <p>${result.message}</p>
+                                                <p class="font-medium">Đang mở form đăng ký khách vãng lai...</p>
+                                                ${pendingWalkInFaceDescriptor ? '<p class="text-xs text-green-600">✅ Khuôn mặt đã được lưu tạm thời</p>' : ''}
+                                            </div>
+                                            <div class="mt-3">
+                                                <div class="flex items-center">
+                                                    <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-600 mr-2"></div>
+                                                    <span class="text-sm text-orange-600">Mở form trong 3 giây...</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+
+                            // Auto open walk-in modal after 3 seconds
+                            setTimeout(() => {
+                                try {
+                                    console.log('🚶 Opening walk-in registration modal...');
+                                    console.log('🔍 currentRecognizeDescriptor:', currentRecognizeDescriptor);
+
+                                    // Open modal directly
+                                    openWalkInModal();
+                                } catch (error) {
+                                    console.error('❌ Error opening modal:', error);
+                                }
+                            }, 3000);
+                        } else {
+                            // Just show warning message without redirect
+                            recognizeResultContent.innerHTML = `
+                                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                                    <div class="flex items-center">
+                                        <div class="flex-shrink-0">
+                                            <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                                            </svg>
+                                        </div>
+                                        <div class="ml-3">
+                                            <h3 class="text-sm font-medium text-yellow-800">⚠️ NHẬN DIỆN THÀNH CÔNG</h3>
+                                            <div class="mt-2 text-sm text-yellow-700">
+                                                <p><strong>Thành viên:</strong> ${result.memberName || 'Đã nhận diện'}</p>
+                                                <p><strong>Độ tin cậy:</strong> ${result.confidence}%</p>
+                                                <p class="mt-2 font-medium text-yellow-800">${result.message}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        }
                     }
 
                     // Refresh statistics after successful check-in/out
                     updateRealtimeStats();
 
                 } else {
-                    // Recognition failed or no match found
+                    // Recognition failed or no match found - Redirect to Walk-in Registration
                     recognizeConfidenceStatus.textContent = '🎯 Confidence: Low';
-                    recognizeResultContent.innerHTML = `
-                        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                            <div class="flex items-center">
-                                <div class="flex-shrink-0">
-                                    <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
-                                    </svg>
-                                </div>
-                                <div class="ml-3">
-                                    <h3 class="text-sm font-medium text-yellow-800">⚠️ Không nhận diện được</h3>
-                                    <div class="mt-2 text-sm text-yellow-700">
-                                        <p>${result.message || 'Khuôn mặt không khớp với bất kỳ thành viên nào trong hệ thống.'}</p>
-                                        <p>Vui lòng thử lại hoặc liên hệ quầy lễ tân.</p>
+
+                    // Check if this should trigger walk-in registration
+                    const shouldRedirectToWalkIn = !result.success ||
+                        (result.message && (
+                            result.message.includes('không tìm thấy') ||
+                            result.message.includes('không khớp') ||
+                            result.message.includes('không nhận diện') ||
+                            result.message.includes('không có trong hệ thống')
+                        ));
+
+                    if (shouldRedirectToWalkIn) {
+                        // Store face descriptor for walk-in registration
+                        if (currentRecognizeDescriptor && currentRecognizeDescriptor.length > 0) {
+                            pendingWalkInFaceDescriptor = Array.from(currentRecognizeDescriptor);
+                            pendingWalkInFaceData = {
+                                embedding: pendingWalkInFaceDescriptor,
+                                ngayTao: new Date().toISOString(),
+                                thuatToan: 'face-api.js'
+                            };
+                            console.log('💾 Face descriptor stored for walk-in registration:', pendingWalkInFaceDescriptor.length, 'dimensions');
+                        } else {
+                            console.warn('⚠️ No face descriptor to store');
+                        }
+
+                        recognizeResultContent.innerHTML = `
+                            <div class="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0">
+                                        <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                        </svg>
+                                    </div>
+                                    <div class="ml-3">
+                                        <h3 class="text-sm font-medium text-orange-800">🚶 Khách vãng lai được phát hiện!</h3>
+                                        <div class="mt-2 text-sm text-orange-700">
+                                            <p>${result.message || 'Khuôn mặt không khớp với thành viên nào trong hệ thống.'}</p>
+                                            <p class="font-medium">Đang mở form đăng ký khách vãng lai...</p>
+                                            ${pendingWalkInFaceDescriptor ? '<p class="text-xs text-green-600">✅ Khuôn mặt đã được lưu tạm thời</p>' : ''}
+                                        </div>
+                                        <div class="mt-3">
+                                            <div class="flex items-center">
+                                                <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-600 mr-2"></div>
+                                                <span class="text-sm text-orange-600">Mở form trong 3 giây...</span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    `;
+                        `;
+
+                        // Auto open walk-in modal after 3 seconds
+                        setTimeout(() => {
+                            try {
+                                console.log('🚶 Opening walk-in registration modal...');
+                                console.log('🔍 currentRecognizeDescriptor:', currentRecognizeDescriptor);
+
+                                // Open modal directly
+                                openWalkInModal();
+                            } catch (error) {
+                                console.error('❌ Error opening modal:', error);
+                            }
+                        }, 3000);
+                    } else {
+                        // Just show error message without redirect
+                        recognizeResultContent.innerHTML = `
+                            <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0">
+                                        <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                    </div>
+                                    <div class="ml-3">
+                                        <h3 class="text-sm font-medium text-red-800">❌ Không thể thực hiện</h3>
+                                        <div class="mt-2 text-sm text-red-700">
+                                            <p>${result.message || 'Có lỗi xảy ra khi xử lý yêu cầu.'}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }
                 }
 
                 recognizeResults.classList.remove('hidden');
@@ -1755,5 +2034,269 @@
                 walkInCheckInBtn.textContent = '🚶 Đăng Ký & Check-in';
             }
         }
+
+        // ===== WALK-IN MODAL FUNCTIONS =====
+
+        // Notification function
+        function showNotification(type, message) {
+            // Simple alert for now - can be enhanced later
+            if (type === 'success') {
+                alert('✅ ' + message);
+            } else if (type === 'error') {
+                alert('❌ ' + message);
+            } else if (type === 'info') {
+                alert('ℹ️ ' + message);
+            } else {
+                alert(message);
+            }
+        }
+
+        function openWalkInModal() {
+            console.log('🚶 Opening walk-in modal');
+            console.log('💾 Pending face descriptor:', pendingWalkInFaceDescriptor ? pendingWalkInFaceDescriptor.length + ' dimensions' : 'None');
+
+            // Update modal header to show face descriptor status
+            const modalHeader = document.querySelector('#walkInModal h3');
+            if (modalHeader) {
+                if (pendingWalkInFaceDescriptor) {
+                    modalHeader.innerHTML = '🚶 Đăng Ký Khách Vãng Lai <span class="text-xs text-green-600">(✅ Có khuôn mặt)</span>';
+                } else {
+                    modalHeader.innerHTML = '🚶 Đăng Ký Khách Vãng Lai <span class="text-xs text-red-600">(❌ Không có khuôn mặt)</span>';
+                }
+            }
+
+            document.getElementById('walkInModal').classList.remove('hidden');
+        }
+
+        function closeWalkInModal() {
+            console.log('❌ Closing walk-in modal');
+            document.getElementById('walkInModal').classList.add('hidden');
+
+            // Reset to step 1
+            showInfoStep();
+
+            // Clear form
+            document.getElementById('modalGuestName').value = '';
+            document.getElementById('modalGuestPhone').value = '';
+            document.getElementById('modalGuestEmail').value = '';
+            document.getElementById('modalGuestNote').value = '';
+
+            // Reset payment method
+            document.querySelector('input[name="paymentMethod"][value="CASH"]').checked = true;
+        }
+
+        // Walk-in Step Navigation
+        function showPaymentStep() {
+            const name = document.getElementById('modalGuestName').value.trim();
+            const phone = document.getElementById('modalGuestPhone').value.trim();
+
+            if (!name || !phone) {
+                alert('Vui lòng nhập đầy đủ họ tên và số điện thoại');
+                return;
+            }
+
+            // Update customer summary
+            document.getElementById('customerSummaryName').textContent = `Họ tên: ${name}`;
+            document.getElementById('customerSummaryPhone').textContent = `SĐT: ${phone}`;
+
+            // Show step 2, hide step 1
+            document.getElementById('walkInStep1').classList.add('hidden');
+            document.getElementById('walkInStep2').classList.remove('hidden');
+        }
+
+        function showInfoStep() {
+            // Show step 1, hide step 2
+            document.getElementById('walkInStep1').classList.remove('hidden');
+            document.getElementById('walkInStep2').classList.add('hidden');
+        }
+
+        // Walk-in Payment Processing
+        async function processWalkInPayment() {
+            const name = document.getElementById('modalGuestName').value.trim();
+            const phone = document.getElementById('modalGuestPhone').value.trim();
+            const email = document.getElementById('modalGuestEmail').value.trim();
+            const note = document.getElementById('modalGuestNote').value.trim();
+            const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked').value;
+
+            if (!name || !phone) {
+                alert('Vui lòng nhập đầy đủ thông tin');
+                return;
+            }
+
+            const processBtn = document.getElementById('processPaymentBtn');
+            processBtn.disabled = true;
+            processBtn.innerHTML = '<div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white inline-block mr-2"></div>Đang xử lý...';
+
+            try {
+                if (paymentMethod === 'CASH') {
+                    // Cash payment - direct registration and check-in
+                    await processCashPayment(name, phone, email, note);
+                } else if (paymentMethod === 'VNPAY') {
+                    // VNPay payment - redirect to payment gateway
+                    await processVNPayPayment(name, phone, email, note);
+                }
+            } catch (error) {
+                console.error('❌ Payment processing error:', error);
+                alert('Có lỗi xảy ra khi xử lý thanh toán');
+            } finally {
+                processBtn.disabled = false;
+                processBtn.innerHTML = '💳 Thanh toán & Check-in';
+            }
+        }
+
+        // Cash Payment Processing
+        async function processCashPayment(name, phone, email, note) {
+            try {
+                // Get face descriptor from pending storage
+                let faceDescriptor = null;
+                if (pendingWalkInFaceDescriptor && pendingWalkInFaceDescriptor.length > 0) {
+                    faceDescriptor = pendingWalkInFaceDescriptor;
+                    console.log('💾 Using pending face descriptor for registration:', faceDescriptor.length, 'dimensions');
+                } else {
+                    console.warn('⚠️ No pending face descriptor available');
+                }
+
+                const response = await fetch('/Reception/WalkInRegisterWithPayment', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                    },
+                    body: JSON.stringify({
+                        fullName: name,
+                        phoneNumber: phone,
+                        email: email,
+                        note: note,
+                        paymentMethod: 'CASH',
+                        amount: 50000,
+                        faceDescriptor: faceDescriptor
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // Clear pending face descriptor after successful registration
+                    if (faceDescriptor) {
+                        pendingWalkInFaceDescriptor = null;
+                        pendingWalkInFaceData = null;
+                        console.log('🗑️ Pending face descriptor cleared after successful registration');
+                        alert('✅ Thanh toán tiền mặt và check-in thành công! Khuôn mặt đã được lưu để checkout.');
+                    } else {
+                        alert('✅ Thanh toán tiền mặt và check-in thành công!');
+                    }
+                    closeWalkInModal();
+
+                    // Show payment confirmation
+                    showPaymentConfirmation({
+                        customerName: name,
+                        amount: 50000,
+                        paymentMethod: 'Tiền mặt',
+                        transactionId: result.transactionId || 'CASH_' + Date.now()
+                    });
+
+                    // Refresh stats
+                    updateRealtimeStats();
+                } else {
+                    alert('❌ ' + (result.message || 'Thanh toán thất bại'));
+                }
+            } catch (error) {
+                console.error('❌ Cash payment error:', error);
+                throw error;
+            }
+        }
+
+        // VNPay Payment Processing
+        async function processVNPayPayment(name, phone, email, note) {
+            try {
+                const response = await fetch('/Reception/CreateWalkInVNPayPayment', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                    },
+                    body: JSON.stringify({
+                        fullName: name,
+                        phoneNumber: phone,
+                        email: email,
+                        note: note,
+                        amount: 50000
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success && result.paymentUrl) {
+                    alert('ℹ️ Đang chuyển hướng đến VNPay...');
+
+                    // Store customer info for after payment return
+                    sessionStorage.setItem('walkInCustomerInfo', JSON.stringify({
+                        name, phone, email, note
+                    }));
+
+                    // Redirect to VNPay
+                    window.location.href = result.paymentUrl;
+                } else {
+                    alert('❌ ' + (result.message || 'Không thể tạo thanh toán VNPay'));
+                }
+            } catch (error) {
+                console.error('❌ VNPay payment error:', error);
+                throw error;
+            }
+        }
+
+        // Show Payment Confirmation
+        function showPaymentConfirmation(paymentInfo) {
+            const confirmationHtml = `
+                <div class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+                    <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+                        <div class="text-center">
+                            <div class="text-green-500 text-6xl mb-4">✅</div>
+                            <h3 class="text-lg font-bold text-gray-900 mb-4">Thanh toán thành công!</h3>
+
+                            <div class="text-left space-y-2 mb-6">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Khách hàng:</span>
+                                    <span class="font-medium">${paymentInfo.customerName}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Số tiền:</span>
+                                    <span class="font-medium">${paymentInfo.amount.toLocaleString()} VNĐ</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Phương thức:</span>
+                                    <span class="font-medium">${paymentInfo.paymentMethod}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Mã GD:</span>
+                                    <span class="font-medium">${paymentInfo.transactionId}</span>
+                                </div>
+                            </div>
+
+                            <button onclick="this.parentElement.parentElement.parentElement.remove()"
+                                    class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                                Đóng
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.body.insertAdjacentHTML('beforeend', confirmationHtml);
+        }
+
+        // Setup walk-in modal event listeners
+        function setupWalkInModalListeners() {
+            const continueToPaymentBtn = document.getElementById('continueToPaymentBtn');
+            const backToInfoBtn = document.getElementById('backToInfoBtn');
+            const processPaymentBtn = document.getElementById('processPaymentBtn');
+
+            if (continueToPaymentBtn) continueToPaymentBtn.addEventListener('click', showPaymentStep);
+            if (backToInfoBtn) backToInfoBtn.addEventListener('click', showInfoStep);
+            if (processPaymentBtn) processPaymentBtn.addEventListener('click', processWalkInPayment);
+        }
+
+        // Call setup when DOM is ready
+        setupWalkInModalListeners();
     </script>
 }

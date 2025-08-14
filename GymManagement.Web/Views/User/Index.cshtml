@@ -1460,6 +1460,18 @@
         // Cash Payment Processing
         async function processCashPayment(name, phone, email, note) {
             try {
+                // Get face descriptor from sessionStorage
+                const faceDescriptorJson = sessionStorage.getItem('walkInFaceDescriptor');
+                let faceDescriptor = null;
+                if (faceDescriptorJson) {
+                    try {
+                        faceDescriptor = JSON.parse(faceDescriptorJson);
+                        console.log('💾 Face descriptor found for registration:', faceDescriptor.length, 'dimensions');
+                    } catch (e) {
+                        console.warn('⚠️ Failed to parse face descriptor:', e);
+                    }
+                }
+
                 const response = await fetch('/Reception/WalkInRegisterWithPayment', {
                     method: 'POST',
                     headers: {
@@ -1472,14 +1484,23 @@
                         email: email,
                         note: note,
                         paymentMethod: 'CASH',
-                        amount: 50000
+                        amount: 50000,
+                        faceDescriptor: faceDescriptor
                     })
                 });
 
                 const result = await response.json();
 
                 if (result.success) {
-                    showNotification('success', 'Thanh toán tiền mặt và check-in thành công!');
+                    // Clear face descriptor from sessionStorage after successful registration
+                    sessionStorage.removeItem('walkInFaceDescriptor');
+                    console.log('🗑️ Face descriptor cleared from sessionStorage');
+
+                    if (faceDescriptor) {
+                        showNotification('success', 'Thanh toán tiền mặt và check-in thành công! Khuôn mặt đã được lưu để checkout.');
+                    } else {
+                        showNotification('success', 'Thanh toán tiền mặt và check-in thành công!');
+                    }
                     closeWalkInModal();
 
                     // Show payment confirmation
@@ -1916,6 +1937,32 @@
 
 
 
+
+        // Auto-open walk-in modal if redirected from face recognition
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('openWalkIn') === 'true') {
+                console.log('🚶 Auto-opening walk-in modal from face recognition redirect');
+
+                // Check if face descriptor is available
+                const faceDescriptor = sessionStorage.getItem('walkInFaceDescriptor');
+                if (faceDescriptor) {
+                    console.log('💾 Face descriptor found for walk-in registration');
+                    showNotification('info', '🚶 Khuôn mặt đã được lưu. Vui lòng đăng ký khách vãng lai để có thể checkout bằng Face ID.');
+                } else {
+                    showNotification('info', '🚶 Khuôn mặt không được nhận diện. Vui lòng đăng ký khách vãng lai.');
+                }
+
+                // Open walk-in modal after a short delay
+                setTimeout(() => {
+                    openWalkInModal();
+
+                    // Clean URL by removing the parameter
+                    const newUrl = window.location.pathname;
+                    window.history.replaceState({}, document.title, newUrl);
+                }, 500);
+            }
+        });
 
     </script>
 }
