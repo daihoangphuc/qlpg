@@ -383,7 +383,7 @@
                             @foreach (var diemDanh in Model.OrderByDescending(d => d.ThoiGian))
                             {
                                 <tr class="hover:bg-blue-50 attendance-row transition-colors duration-200"
-                                    data-member="@(diemDanh.ThanhVien?.Ho + " " + diemDanh.ThanhVien?.Ten)?.ToLower()"
+                                    data-member="@((diemDanh.ThanhVien?.Ho + " " + diemDanh.ThanhVien?.Ten)?.ToLower())"
                                     data-status="@diemDanh.TrangThai"
                                     data-recognition="@diemDanh.KetQuaNhanDang?.ToString().ToLower()"
                                     data-date="@diemDanh.ThoiGian.ToString("yyyy-MM-dd")">
@@ -492,6 +492,15 @@
                                                 <button onclick="viewImage('@diemDanh.AnhMinhChung')"
                                                         class="inline-flex items-center px-3 py-1 rounded-md text-green-600 hover:text-green-900 hover:bg-green-50 transition-colors">
                                                     🖼️ Ảnh
+                                                </button>
+                                            }
+                                            @* ✅ NEW: Nút checkout cho người đã check-in nhưng chưa check-out *@
+                                            @if (diemDanh.ThoiGianCheckOut == null && diemDanh.ThoiGianCheckIn.Date == DateTime.Today)
+                                            {
+                                                <button onclick="manualCheckOut(@diemDanh.DiemDanhId, '@(diemDanh.ThanhVien?.Ho + " " + diemDanh.ThanhVien?.Ten)')"
+                                                        class="inline-flex items-center px-3 py-1 rounded-md text-orange-600 hover:text-orange-900 hover:bg-orange-50 transition-colors"
+                                                        title="Check-out thủ công">
+                                                    🚪 Check-out
                                                 </button>
                                             }
                                             <button onclick="deleteAttendance(@diemDanh.DiemDanhId, '@(diemDanh.ThanhVien?.Ho + " " + diemDanh.ThanhVien?.Ten)')"
@@ -834,6 +843,17 @@
         // Debug: Check if script is loading
         console.log('🚀 DiemDanh Station JavaScript is loading...');
 
+        // ✅ ENHANCED: Function to remove Vietnamese accents for better search
+        function removeVietnameseAccents(str) {
+            if (!str) return '';
+            return str
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '') // Remove diacritics
+                .replace(/đ/g, 'd')
+                .replace(/Đ/g, 'D')
+                .toLowerCase();
+        }
+
         // Tab Management Functions
         function switchTab(tabName) {
             console.log('🔄 Switching to tab:', tabName);
@@ -1127,7 +1147,7 @@
         }
 
         function filterAttendance() {
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const searchTerm = removeVietnameseAccents(document.getElementById('searchInput').value);
             const status = document.getElementById('statusFilter').value;
             const recognition = document.getElementById('recognitionFilter').value;
             const date = document.getElementById('dateFilter').value;
@@ -1135,14 +1155,14 @@
             const attendanceRows = document.querySelectorAll('.attendance-row');
 
             attendanceRows.forEach(row => {
-                const member = row.getAttribute('data-member') || '';
+                const member = removeVietnameseAccents(row.getAttribute('data-member') || '');
                 const rowStatus = row.getAttribute('data-status');
                 const rowRecognition = row.getAttribute('data-recognition');
                 const rowDate = row.getAttribute('data-date');
 
                 let show = true;
 
-                // Search filter
+                // Search filter - now supports accent-insensitive search
                 if (searchTerm && !member.includes(searchTerm)) {
                     show = false;
                 }
@@ -1229,6 +1249,76 @@
                 <img src="${imagePath}" alt="Ảnh minh chứng" class="max-w-full h-auto rounded-lg">
             `;
             document.getElementById('imageModal').classList.remove('hidden');
+        }
+
+        // ✅ NEW: Manual checkout function
+        function manualCheckOut(attendanceId, memberName) {
+            console.log('🚪 Manual checkout requested for:', attendanceId, memberName);
+
+            const confirmMessage = `Xác nhận check-out cho "${memberName}"?\n\nThao tác này sẽ ghi nhận thời gian check-out hiện tại.`;
+
+            if (confirm(confirmMessage)) {
+                // Show loading state
+                const checkoutButton = event.target.closest('button');
+                if (checkoutButton) {
+                    checkoutButton.disabled = true;
+                    checkoutButton.innerHTML = '⏳ Đang xử lý...';
+                    checkoutButton.classList.add('opacity-50', 'cursor-not-allowed');
+                }
+
+                // Make API call to checkout
+                const checkoutUrl = `/DiemDanh/CheckOut/${attendanceId}`;
+                console.log('🔗 Checkout URL:', checkoutUrl);
+
+                fetch(checkoutUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                    }
+                })
+                .then(response => {
+                    console.log('📡 Response status:', response.status, response.statusText);
+                    if (response.ok) {
+                        return response.json();
+                    }
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                })
+                .then(data => {
+                    if (data.success) {
+                        // Hide checkout button (member has checked out)
+                        if (checkoutButton) {
+                            checkoutButton.style.display = 'none';
+                        }
+
+                        // Update statistics
+                        updateRealtimeStats();
+
+                        // Show success message
+                        showNotification(`✅ Check-out thành công cho ${memberName}!`, 'success');
+
+                        // Refresh page to show updated data
+                        setTimeout(() => {
+                            location.reload();
+                        }, 1500);
+                    } else {
+                        throw new Error(data.message || 'Không thể check-out');
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ Error during manual checkout:', error);
+
+                    // Restore button state
+                    if (checkoutButton) {
+                        checkoutButton.disabled = false;
+                        checkoutButton.innerHTML = '🚪 Check-out';
+                        checkoutButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                    }
+
+                    // Show error message
+                    showNotification('❌ Lỗi: ' + error.message, 'error');
+                });
+            }
         }
 
         // Delete attendance record with confirmation

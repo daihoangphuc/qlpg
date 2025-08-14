@@ -7,6 +7,7 @@ using System.Security.Claims;
 namespace GymManagement.Web.Controllers
 {
     [Authorize]
+    [Route("[controller]")]
     public class DiemDanhController : Controller
     {
         private readonly IDiemDanhService _diemDanhService;
@@ -37,6 +38,8 @@ namespace GymManagement.Web.Controllers
         }
 
         [Authorize(Roles = "Admin,Trainer")]
+        [HttpGet("")]
+        [HttpGet("Index")]
         public async Task<IActionResult> Index()
         {
             try
@@ -97,7 +100,7 @@ namespace GymManagement.Web.Controllers
             return View();
         }
 
-        [HttpPost]
+        [HttpPost("ManualCheckIn")]
         public async Task<IActionResult> ManualCheckIn(int memberId, string? note = null)
         {
             try
@@ -119,7 +122,7 @@ namespace GymManagement.Web.Controllers
             }
         }
 
-        [HttpPost]
+        [HttpPost("ManualCheckInWithClass")]
         public async Task<IActionResult> ManualCheckInWithClass(int memberId, int? classId = null, string? note = null)
         {
             try
@@ -141,7 +144,7 @@ namespace GymManagement.Web.Controllers
             }
         }
 
-        [HttpGet]
+        [HttpGet("GetAvailableClasses")]
         public async Task<IActionResult> GetAvailableClasses()
         {
             try
@@ -156,7 +159,7 @@ namespace GymManagement.Web.Controllers
             }
         }
 
-        [HttpPost]
+        [HttpPost("FaceRecognitionCheckInWithClass")]
         [Authorize(Roles = "Admin,Trainer")]
         public async Task<IActionResult> FaceRecognitionCheckInWithClass([FromBody] FaceCheckInWithClassRequest request)
         {
@@ -255,7 +258,7 @@ namespace GymManagement.Web.Controllers
             }
         }
 
-        [HttpPost]
+        [HttpPost("SelfCheckIn")]
         public async Task<IActionResult> SelfCheckIn()
         {
             try
@@ -283,7 +286,7 @@ namespace GymManagement.Web.Controllers
             }
         }
 
-        [HttpPost]
+        [HttpPost("FaceRecognitionCheckIn")]
         public async Task<IActionResult> FaceRecognitionCheckIn(IFormFile faceImage)
         {
             try
@@ -321,7 +324,7 @@ namespace GymManagement.Web.Controllers
             }
         }
 
-        [HttpGet]
+        [HttpGet("CheckStatus")]
         public async Task<IActionResult> CheckStatus(int? memberId = null)
         {
             try
@@ -357,7 +360,7 @@ namespace GymManagement.Web.Controllers
             }
         }
 
-        [HttpGet]
+        [HttpGet("GetAttendanceStats")]
         public async Task<IActionResult> GetAttendanceStats(int memberId, DateTime? startDate = null, DateTime? endDate = null)
         {
             try
@@ -410,7 +413,7 @@ namespace GymManagement.Web.Controllers
             }
         }
 
-        [HttpGet]
+        [HttpGet("ExportAttendance")]
         public async Task<IActionResult> ExportAttendance(DateTime startDate, DateTime endDate, string format = "csv")
         {
             try
@@ -439,7 +442,7 @@ namespace GymManagement.Web.Controllers
             }
         }
 
-        [HttpGet]
+        [HttpGet("GetRealtimeStats")]
         public async Task<IActionResult> GetRealtimeStats()
         {
             try
@@ -457,7 +460,61 @@ namespace GymManagement.Web.Controllers
             }
         }
 
-        [HttpDelete]
+        /// <summary>
+        /// API để checkout thủ công cho attendance record
+        /// </summary>
+        [HttpPost("CheckOut/{id}")]
+        [ActionName("CheckOut")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> CheckOut(int id)
+        {
+            _logger.LogInformation("🚪 Manual checkout request received for attendance ID: {AttendanceId}", id);
+            try
+            {
+                var attendance = await _diemDanhService.GetByIdAsync(id);
+                if (attendance == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy bản ghi điểm danh." });
+                }
+
+                if (attendance.ThoiGianCheckOut != null)
+                {
+                    return Json(new { success = false, message = "Thành viên đã check-out rồi." });
+                }
+
+                if (attendance.ThoiGianCheckIn.Date != DateTime.Today)
+                {
+                    return Json(new { success = false, message = "Chỉ có thể check-out cho bản ghi hôm nay." });
+                }
+
+                // Perform checkout
+                var checkOutSuccess = await _diemDanhService.CheckOutAsync(id);
+
+                if (checkOutSuccess)
+                {
+                    var duration = DateTime.Now - attendance.ThoiGianCheckIn;
+                    var durationText = $"{(int)duration.TotalHours}h {duration.Minutes}m";
+
+                    return Json(new
+                    {
+                        success = true,
+                        message = $"Check-out thành công! Thời gian tập: {durationText}",
+                        duration = durationText
+                    });
+                }
+                else
+                {
+                    return Json(new { success = false, message = "Không thể check-out. Vui lòng thử lại." });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during manual checkout for attendance ID: {AttendanceId}", id);
+                return Json(new { success = false, message = "Có lỗi xảy ra khi check-out." });
+            }
+        }
+
+        [HttpDelete("Delete/{id}")]
         public async Task<IActionResult> Delete(int id)
         {
             try

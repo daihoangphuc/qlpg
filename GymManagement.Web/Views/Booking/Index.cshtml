@@ -4,6 +4,11 @@
     Layout = "_Layout";
 }
 
+@* ✅ ADD: CSRF Token for AJAX requests *@
+<form style="display: none;">
+    @Html.AntiForgeryToken()
+</form>
+
 <div class="p-6">
     <!-- Header -->
     <div class="flex justify-between items-center mb-8">
@@ -148,9 +153,9 @@
                     <tbody id="bookingsTable" class="bg-white divide-y divide-gray-200">
                         @foreach (var booking in Model.OrderByDescending(b => b.NgayTao))
                         {
-                            <tr class="hover:bg-gray-50 booking-row" 
-                                data-member="@(booking.ThanhVien?.Ho + " " + booking.ThanhVien?.Ten)?.ToLower()"
-                                data-class="@booking.LopHoc?.TenLop?.ToLower()"
+                            <tr class="hover:bg-gray-50 booking-row"
+                                data-member="@((booking.ThanhVien?.Ho?.Trim() + " " + booking.ThanhVien?.Ten?.Trim())?.Trim()?.ToLower() ?? "")"
+                                data-class="@(booking.LopHoc?.TenLop?.ToLower() ?? "")"
                                 data-status="@booking.TrangThai"
                                 data-date="@booking.Ngay.ToString("yyyy-MM-dd")">
                                 
@@ -243,7 +248,13 @@
                                         }
                                         @if (booking.TrangThai == "BOOKED" && booking.Ngay == DateOnly.FromDateTime(DateTime.Today))
                                         {
-                                            <button onclick="markAttended(@booking.BookingId)" 
+                                            @* ✅ NEW: Nút thanh toán và check-in tại quầy *@
+                                            <button onclick="checkPaymentAndShowOptions(@booking.BookingId)"
+                                                    class="text-purple-600 hover:text-purple-900 bg-purple-50 hover:bg-purple-100 px-2 py-1 rounded text-xs">
+                                                💰 Thanh toán & Check-in
+                                            </button>
+
+                                            <button onclick="markAttended(@booking.BookingId)"
                                                     class="text-green-600 hover:text-green-900">
                                                 ✅ Điểm danh
                                             </button>
@@ -370,35 +381,165 @@
             // Show loading
             document.getElementById('bookingDetails').innerHTML = '<div class="text-center py-4">Đang tải...</div>';
             document.getElementById('bookingModal').classList.remove('hidden');
-            
-            // Load booking details (placeholder - implement with actual API call)
-            setTimeout(() => {
-                document.getElementById('bookingDetails').innerHTML = `
-                    <div class="space-y-4">
-                        <p><strong>ID Đặt lịch:</strong> ${bookingId}</p>
-                        <p><strong>Chi tiết:</strong> Sẽ được cập nhật sau</p>
-                    </div>
-                `;
-            }, 500);
+
+            // ✅ IMPROVED: Call actual API
+            fetch(`/Booking/GetBookingDetails?id=${bookingId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const booking = data.data;
+                        document.getElementById('bookingDetails').innerHTML = `
+                            <div class="space-y-4">
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <h4 class="font-semibold text-gray-900 mb-2">Thông tin thành viên</h4>
+                                        <p><strong>Họ tên:</strong> ${booking.ThanhVien?.HoTen || 'N/A'}</p>
+                                        <p><strong>Email:</strong> ${booking.ThanhVien?.Email || 'N/A'}</p>
+                                        <p><strong>Số điện thoại:</strong> ${booking.ThanhVien?.SoDienThoai || 'N/A'}</p>
+                                        <p><strong>Loại:</strong> ${booking.ThanhVien?.LoaiNguoiDung || 'N/A'}</p>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-semibold text-gray-900 mb-2">Thông tin lớp học</h4>
+                                        <p><strong>Tên lớp:</strong> ${booking.LopHoc?.TenLop || 'N/A'}</p>
+                                        <p><strong>Thời gian:</strong> ${booking.LopHoc?.GioBatDau || 'N/A'} - ${booking.LopHoc?.GioKetThuc || 'N/A'}</p>
+                                        <p><strong>Huấn luyện viên:</strong> ${booking.LopHoc?.HuanLuyenVien || 'N/A'}</p>
+                                        <p><strong>Sức chứa:</strong> ${booking.LopHoc?.SucChua || 'N/A'} người</p>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h4 class="font-semibold text-gray-900 mb-2">Chi tiết đặt lịch</h4>
+                                    <p><strong>ID:</strong> ${booking.BookingId}</p>
+                                    <p><strong>Ngày:</strong> ${booking.Ngay}</p>
+                                    <p><strong>Trạng thái:</strong> <span class="px-2 py-1 rounded text-sm ${getStatusClass(booking.TrangThai)}">${getStatusText(booking.TrangThai)}</span></p>
+                                    <p><strong>Ngày đặt:</strong> ${booking.NgayTao}</p>
+                                    <p><strong>Ghi chú:</strong> ${booking.GhiChu || 'Không có'}</p>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        document.getElementById('bookingDetails').innerHTML = `
+                            <div class="text-center py-4 text-red-600">
+                                ${data.message || 'Có lỗi xảy ra khi tải chi tiết'}
+                            </div>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('bookingDetails').innerHTML = `
+                        <div class="text-center py-4 text-red-600">
+                            Có lỗi xảy ra khi tải chi tiết đặt lịch
+                        </div>
+                    `;
+                });
         }
 
         function cancelBooking(bookingId) {
             if (confirm('Bạn có chắc chắn muốn hủy đặt lịch này không?')) {
-                // Implement cancel booking API call
-                alert('Chức năng hủy đặt lịch sẽ được triển khai trong phiên bản tiếp theo.');
+                // ✅ IMPROVED: Call actual API
+                fetch(`/Booking/CancelBooking`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                    },
+                    body: JSON.stringify({ id: bookingId })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(data.message);
+                        location.reload(); // Refresh page to show updated data
+                    } else {
+                        alert(data.message || 'Có lỗi xảy ra khi hủy đặt lịch');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Có lỗi xảy ra khi hủy đặt lịch');
+                });
             }
         }
 
         function markAttended(bookingId) {
             if (confirm('Xác nhận thành viên đã tham gia lớp học này?')) {
-                // Implement mark attended API call
-                alert('Chức năng điểm danh sẽ được triển khai trong phiên bản tiếp theo.');
+                // ✅ IMPROVED: Call actual API
+                fetch(`/Booking/MarkAttended`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                    },
+                    body: JSON.stringify({ id: bookingId })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(data.message);
+                        location.reload(); // Refresh page to show updated data
+                    } else {
+                        alert(data.message || 'Có lỗi xảy ra khi đánh dấu tham gia');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Có lỗi xảy ra khi đánh dấu tham gia');
+                });
             }
         }
 
         function exportBookings() {
-            // Implement export functionality
-            alert('Chức năng xuất Excel sẽ được triển khai trong phiên bản tiếp theo.');
+            // ✅ IMPROVED: Call actual API
+            window.open('/Booking/ExportExcel', '_blank');
+        }
+
+        // ✅ NEW: Function để kiểm tra thanh toán và hiển thị options
+        function checkPaymentAndShowOptions(bookingId) {
+            // Kiểm tra trạng thái thanh toán
+            fetch(`/Booking/CheckBookingPaymentStatus?id=${bookingId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const message = data.isFree ?
+                            `Thành viên: ${data.memberName}\nLớp học: ${data.className}\n\n✅ MIỄN PHÍ (${data.reason})\n\nBạn có muốn check-in ngay không?` :
+                            `Thành viên: ${data.memberName}\nLớp học: ${data.className}\n\n💰 PHÍ: ${data.feeText}\nLý do: ${data.reason}\n\nBạn có muốn thanh toán và check-in không?`;
+
+                        if (confirm(message)) {
+                            payAndCheckIn(bookingId);
+                        }
+                    } else {
+                        alert(data.message || 'Có lỗi xảy ra khi kiểm tra trạng thái thanh toán');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Có lỗi xảy ra khi kiểm tra trạng thái thanh toán');
+                });
+        }
+
+        // ✅ NEW: Function để thanh toán và check-in
+        function payAndCheckIn(bookingId) {
+            fetch(`/Booking/PayAndCheckIn`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                },
+                body: JSON.stringify({ id: bookingId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    location.reload(); // Refresh page to show updated data
+                } else {
+                    alert(data.message || 'Có lỗi xảy ra khi xử lý thanh toán và check-in');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Có lỗi xảy ra khi xử lý thanh toán và check-in');
+            });
         }
 
         function closeBookingModal() {
@@ -411,5 +552,24 @@
                 closeBookingModal();
             }
         });
+
+        // ✅ HELPER FUNCTIONS for status display
+        function getStatusClass(status) {
+            switch (status) {
+                case 'BOOKED': return 'bg-green-100 text-green-800';
+                case 'CANCELED': return 'bg-red-100 text-red-800';
+                case 'ATTENDED': return 'bg-blue-100 text-blue-800';
+                default: return 'bg-gray-100 text-gray-800';
+            }
+        }
+
+        function getStatusText(status) {
+            switch (status) {
+                case 'BOOKED': return 'Đã đặt';
+                case 'CANCELED': return 'Đã hủy';
+                case 'ATTENDED': return 'Đã tham gia';
+                default: return status;
+            }
+        }
     </script>
 }

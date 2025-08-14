@@ -64,6 +64,7 @@ namespace GymManagement.Web.Controllers
 
 
         // Xem tất cả gói tập (chỉ hiển thị những gói chưa đăng ký)
+        [AllowAnonymous]
         public async Task<IActionResult> Packages()
         {
             try
@@ -203,6 +204,7 @@ namespace GymManagement.Web.Controllers
         }
 
         // Xem tất cả lớp học (chỉ hiển thị những lớp chưa đăng ký)
+        [AllowAnonymous]
         public async Task<IActionResult> Classes()
         {
             try

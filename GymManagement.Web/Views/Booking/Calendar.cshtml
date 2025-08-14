@@ -635,8 +635,24 @@
             window.location.href = `@Url.Action("Create")?classId=${lopHocId}&date=${date}`;
         }
 
+        // ✅ IMPROVED: Store date globally for confirmQuickBooking
+        let currentBookingDate = null;
+
+        // 🔧 DEBUG: Force cache refresh - Version 2025-08-14-10:00
+        console.log('📅 Calendar.cshtml loaded at:', new Date().toISOString());
+        console.log('🔧 Script version: 2025-08-14-10:00');
+
         function showQuickBooking(date, preSelectedClassId = null) {
+            // ✅ Store the date object globally
+            currentBookingDate = date;
             const dateStr = date.toISOString().split('T')[0];
+
+            console.log('🗓️ showQuickBooking called with:', {
+                date: date,
+                dateStr: dateStr,
+                preSelectedClassId: preSelectedClassId
+            });
+
             const content = `
                 <div class="space-y-4">
                     <div class="text-center">
@@ -663,7 +679,7 @@
                         </div>
                     </div>
                     <div class="flex gap-2 pt-4 border-t">
-                        <button onclick="confirmQuickBooking('${dateStr}')" class="flex-1 bg-green-600 text-white px-4 py-2 rounded-md text-sm hover:bg-green-700">
+                        <button onclick="confirmQuickBooking()" class="flex-1 bg-green-600 text-white px-4 py-2 rounded-md text-sm hover:bg-green-700">
                             Xác nhận đặt lịch
                         </button>
                         <button onclick="closeQuickBookingModal()" class="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-md text-sm hover:bg-gray-400">
@@ -688,20 +704,45 @@
             document.getElementById('quickBookingModal').classList.remove('hidden');
         }
 
-        function confirmQuickBooking(date) {
+        function confirmQuickBooking() {
+            console.log('🚀 confirmQuickBooking called!');
+
             const classId = document.getElementById('quickBookingClass').value;
             const note = document.getElementById('quickBookingNote').value;
-            
+
+            console.log('📋 Form values:', {
+                classId: classId,
+                note: note,
+                currentBookingDate: currentBookingDate
+            });
+
             if (!classId) {
                 alert('Vui lòng chọn lớp học');
                 return;
             }
-            
+
+            if (!currentBookingDate) {
+                console.error('❌ currentBookingDate is null!');
+                alert('Lỗi: Không tìm thấy ngày đặt lịch');
+                return;
+            }
+
             // Disable button to prevent double-click
             const confirmBtn = event.target;
             confirmBtn.disabled = true;
             confirmBtn.textContent = 'Đang xử lý...';
-            
+
+            // ✅ IMPROVED: Format date properly to avoid timezone issues
+            const dateStr = currentBookingDate.toISOString().split('T')[0] + 'T00:00:00';
+
+            console.log('🕐 Booking date:', {
+                original: currentBookingDate,
+                formatted: dateStr,
+                classId: classId,
+                classIdType: typeof classId,
+                classIdParsed: parseInt(classId)
+            });
+
             // Make AJAX request to book class
             fetch('@Url.Action("BookClass", "Booking")', {
                 method: 'POST',
@@ -711,7 +752,7 @@
                 },
                 body: JSON.stringify({
                     classId: parseInt(classId),
-                    date: date,
+                    date: dateStr,
                     note: note
                 })
             })

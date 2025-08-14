@@ -9,6 +9,15 @@ namespace GymManagement.Web.Data.Repositories
         {
         }
 
+        // ✅ OVERRIDE: GetAllAsync with proper includes for navigation properties
+        public override async Task<IEnumerable<DiemDanh>> GetAllAsync()
+        {
+            return await _context.DiemDanhs
+                .Include(d => d.ThanhVien)
+                .OrderByDescending(d => d.ThoiGian)
+                .ToListAsync();
+        }
+
         public async Task<IEnumerable<DiemDanh>> GetByThanhVienIdAsync(int thanhVienId)
         {
             return await _context.DiemDanhs

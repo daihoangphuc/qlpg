@@ -77,9 +77,14 @@ namespace GymManagement.Web.Services
         public async Task<(bool Success, string ErrorMessage)> BookClassWithTransactionAsync(
             int thanhVienId, int lopHocId, DateTime date, string? ghiChu = null)
         {
-            // Check if date is in the future
-            if (date.Date < DateTime.Today)
-                return (false, "Không thể đặt lịch cho ngày trong quá khứ");
+            // ✅ IMPROVED: Better date validation with timezone handling
+            var today = DateTime.Today;
+            var bookingDate = date.Date;
+
+            Console.WriteLine($"🕐 Date validation: Today={today:yyyy-MM-dd}, BookingDate={bookingDate:yyyy-MM-dd}, Original={date:yyyy-MM-dd HH:mm:ss}");
+
+            if (bookingDate < today)
+                return (false, $"Không thể đặt lịch cho ngày trong quá khứ. Ngày đặt: {bookingDate:dd/MM/yyyy}, Hôm nay: {today:dd/MM/yyyy}");
 
             using var transaction = await _unitOfWork.Context.Database.BeginTransactionAsync();
             try

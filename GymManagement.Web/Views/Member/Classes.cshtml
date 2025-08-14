@@ -291,21 +291,39 @@
                                         </span>
                                     </a>
 
-                                    <!-- Register Button -->
+                                    <!-- Register/Login Button -->
                                     @if (lopHoc.TrangThai == "OPEN")
                                     {
-                                        <button onclick="registerClass(@lopHoc.LopHocId, '@lopHoc.TenLop')"
-                                                class="block w-full bg-gradient-to-r @gradientClass hover:shadow-xl text-white font-semibold py-4 px-6 rounded-xl transition-all duration-300 transform hover:scale-[1.02] hover:-translate-y-1 group relative overflow-hidden">
-                                            <!-- Button Background Effect -->
-                                            <div class="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+                                        @if (User.Identity.IsAuthenticated)
+                                        {
+                                            <button onclick="registerClass(@lopHoc.LopHocId, '@lopHoc.TenLop')"
+                                                    class="block w-full bg-gradient-to-r @gradientClass hover:shadow-xl text-white font-semibold py-4 px-6 rounded-xl transition-all duration-300 transform hover:scale-[1.02] hover:-translate-y-1 group relative overflow-hidden">
+                                                <!-- Button Background Effect -->
+                                                <div class="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
 
-                                            <span class="relative flex items-center justify-center">
-                                                <svg class="w-5 h-5 mr-2 group-hover:rotate-12 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                                                </svg>
-                                                <span class="text-base font-bold">Đăng Ký Ngay</span>
-                                            </span>
-                                        </button>
+                                                <span class="relative flex items-center justify-center">
+                                                    <svg class="w-5 h-5 mr-2 group-hover:rotate-12 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                                    </svg>
+                                                    <span class="text-base font-bold">Đăng Ký Ngay</span>
+                                                </span>
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <a href="@Url.Action("Login", "Auth")"
+                                               class="block w-full bg-gradient-to-r @gradientClass hover:shadow-xl text-white font-semibold py-4 px-6 rounded-xl transition-all duration-300 transform hover:scale-[1.02] hover:-translate-y-1 group relative overflow-hidden text-center">
+                                                <!-- Button Background Effect -->
+                                                <div class="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+
+                                                <span class="relative flex items-center justify-center">
+                                                    <svg class="w-5 h-5 mr-2 group-hover:rotate-12 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path>
+                                                    </svg>
+                                                    <span class="text-base font-bold">Đăng Nhập để Đăng Ký</span>
+                                                </span>
+                                            </a>
+                                        }
                                     }
                                     else
                                     {
@@ -502,6 +520,11 @@
     <script>
         let selectedClassId = null;
         let selectedClassName = null;
+
+        // Load thông tin quyền lợi member khi trang load
+        document.addEventListener('DOMContentLoaded', async function() {
+            await loadMemberBenefits();
+        });
 
         // Class registration function
         function registerClass(classId, className) {
@@ -908,12 +931,7 @@
     </style>
 }
 
-@section Scripts {
-    <script>
-        // Load thông tin quyền lợi member khi trang load
-        document.addEventListener('DOMContentLoaded', async function() {
-            await loadMemberBenefits();
-        });
+
 
         // Function load thông tin quyền lợi member
         async function loadMemberBenefits() {

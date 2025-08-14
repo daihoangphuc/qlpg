@@ -248,8 +248,16 @@ namespace GymManagement.Web.Controllers
             }
         }
 
+        // ✅ DTO for JSON binding
+        public class BookClassRequest
+        {
+            public int ClassId { get; set; }
+            public DateTime Date { get; set; }
+            public string? Note { get; set; }
+        }
+
         [HttpPost]
-        public async Task<IActionResult> BookClass(int classId, DateTime date, string? note = null)
+        public async Task<IActionResult> BookClass([FromBody] BookClassRequest request)
         {
             try
             {
@@ -259,9 +267,13 @@ namespace GymManagement.Web.Controllers
                     return Json(new { success = false, message = "Vui lòng đăng nhập để đặt lịch." });
                 }
 
+                // ✅ IMPROVED: Add logging for debugging date issues
+                _logger.LogInformation("📅 BookClass request: ClassId={ClassId}, Date={Date:yyyy-MM-dd HH:mm:ss}, User={UserId}",
+                    request.ClassId, request.Date, user.NguoiDungId.Value);
+
                 // 🚀 IMPROVED: Use transaction-safe booking method
                 var (success, errorMessage) = await _bookingService.BookClassWithTransactionAsync(
-                    user.NguoiDungId.Value, classId, date, note);
+                    user.NguoiDungId.Value, request.ClassId, request.Date, request.Note);
 
                 if (success)
                 {
@@ -270,7 +282,7 @@ namespace GymManagement.Web.Controllers
                     {
                         try
                         {
-                            await SendClassBookingConfirmationEmailAsync(user.NguoiDungId.Value, classId, date);
+                            await SendClassBookingConfirmationEmailAsync(user.NguoiDungId.Value, request.ClassId, request.Date);
                         }
                         catch (Exception emailEx)
                         {
@@ -831,5 +843,308 @@ namespace GymManagement.Web.Controllers
                 _ => ""
             };
         }
+
+        // ✅ NEW: API endpoints for booking management
+
+        /// <summary>
+        /// API để xem chi tiết booking
+        /// </summary>
+        [HttpGet]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetBookingDetails(int id)
+        {
+            try
+            {
+                var booking = await _bookingService.GetByIdAsync(id);
+                if (booking == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy đặt lịch." });
+                }
+
+                var details = new
+                {
+                    BookingId = booking.BookingId,
+                    ThanhVien = booking.ThanhVien != null ? new
+                    {
+                        HoTen = $"{booking.ThanhVien.Ho} {booking.ThanhVien.Ten}".Trim(),
+                        Email = booking.ThanhVien.Email,
+                        SoDienThoai = booking.ThanhVien.SoDienThoai,
+                        LoaiNguoiDung = booking.ThanhVien.LoaiNguoiDung
+                    } : null,
+                    LopHoc = booking.LopHoc != null ? new
+                    {
+                        TenLop = booking.LopHoc.TenLop,
+                        GioBatDau = booking.LopHoc.GioBatDau.ToString("HH:mm"),
+                        GioKetThuc = booking.LopHoc.GioKetThuc.ToString("HH:mm"),
+                        HuanLuyenVien = booking.LopHoc.Hlv != null ? $"{booking.LopHoc.Hlv.Ho} {booking.LopHoc.Hlv.Ten}".Trim() : "Chưa phân công",
+                        SucChua = booking.LopHoc.SucChua
+                    } : null,
+                    Ngay = booking.Ngay.ToString("dd/MM/yyyy"),
+                    TrangThai = booking.TrangThai,
+                    NgayTao = booking.NgayTao.ToString("dd/MM/yyyy HH:mm"),
+                    GhiChu = booking.GhiChu
+                };
+
+                return Json(new { success = true, data = details });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting booking details for ID: {BookingId}", id);
+                return Json(new { success = false, message = "Có lỗi xảy ra khi tải chi tiết đặt lịch." });
+            }
+        }
+
+        /// <summary>
+        /// API để hủy booking
+        /// </summary>
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> CancelBooking(int id)
+        {
+            try
+            {
+                var result = await _bookingService.CancelBookingAsync(id);
+                if (result)
+                {
+                    return Json(new { success = true, message = "Đã hủy đặt lịch thành công." });
+                }
+                else
+                {
+                    return Json(new { success = false, message = "Không thể hủy đặt lịch này." });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error canceling booking ID: {BookingId}", id);
+                return Json(new { success = false, message = "Có lỗi xảy ra khi hủy đặt lịch." });
+            }
+        }
+
+        /// <summary>
+        /// API để đánh dấu đã tham gia
+        /// </summary>
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> MarkAttended(int id)
+        {
+            try
+            {
+                var booking = await _bookingService.GetByIdAsync(id);
+                if (booking == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy đặt lịch." });
+                }
+
+                if (booking.TrangThai != "BOOKED")
+                {
+                    return Json(new { success = false, message = "Chỉ có thể điểm danh cho đặt lịch đã xác nhận." });
+                }
+
+                if (booking.Ngay != DateOnly.FromDateTime(DateTime.Today))
+                {
+                    return Json(new { success = false, message = "Chỉ có thể điểm danh cho lớp học hôm nay." });
+                }
+
+                // Update booking status to ATTENDED
+                booking.TrangThai = "ATTENDED";
+                await _bookingService.UpdateAsync(booking);
+
+                return Json(new { success = true, message = "Đã đánh dấu tham gia thành công." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error marking booking as attended ID: {BookingId}", id);
+                return Json(new { success = false, message = "Có lỗi xảy ra khi đánh dấu tham gia." });
+            }
+        }
+
+        /// <summary>
+        /// API để kiểm tra trạng thái thanh toán của booking
+        /// </summary>
+        [HttpGet]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> CheckBookingPaymentStatus(int id)
+        {
+            try
+            {
+                var booking = await _bookingService.GetByIdAsync(id);
+                if (booking == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy đặt lịch." });
+                }
+
+                if (booking.ThanhVienId == null)
+                {
+                    return Json(new { success = false, message = "Booking không có thông tin thành viên." });
+                }
+
+                // Kiểm tra member có gói tập không
+                var (canBook, isFree, fee, reason) = await _memberBenefitService.CanBookClassAsync(
+                    booking.ThanhVienId.Value, booking.LopHocId ?? 0);
+
+                return Json(new
+                {
+                    success = true,
+                    isFree = isFree,
+                    fee = fee,
+                    feeText = fee > 0 ? $"{fee:N0} VNĐ" : "Miễn phí",
+                    reason = reason,
+                    memberName = booking.ThanhVien != null ? $"{booking.ThanhVien.Ho} {booking.ThanhVien.Ten}".Trim() : "N/A",
+                    className = booking.LopHoc?.TenLop ?? "N/A"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error checking payment status for booking ID: {BookingId}", id);
+                return Json(new { success = false, message = "Có lỗi xảy ra khi kiểm tra trạng thái thanh toán." });
+            }
+        }
+
+        /// <summary>
+        /// API để thanh toán và check-in tại quầy
+        /// </summary>
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> PayAndCheckIn([FromBody] PayAndCheckInRequest request)
+        {
+            try
+            {
+                if (request == null || request.Id <= 0)
+                {
+                    return Json(new { success = false, message = "Dữ liệu không hợp lệ." });
+                }
+
+                var booking = await _bookingService.GetByIdAsync(request.Id);
+                if (booking == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy đặt lịch." });
+                }
+
+                if (booking.ThanhVienId == null || booking.LopHocId == null)
+                {
+                    return Json(new { success = false, message = "Booking thiếu thông tin cần thiết." });
+                }
+
+                if (booking.TrangThai != "BOOKED")
+                {
+                    return Json(new { success = false, message = "Chỉ có thể xử lý booking đã xác nhận." });
+                }
+
+                if (booking.Ngay != DateOnly.FromDateTime(DateTime.Today))
+                {
+                    return Json(new { success = false, message = "Chỉ có thể check-in cho lớp học hôm nay." });
+                }
+
+                // Kiểm tra phí
+                var (canBook, isFree, fee, reason) = await _memberBenefitService.CanBookClassAsync(
+                    booking.ThanhVienId.Value, booking.LopHocId.Value);
+
+                if (!canBook)
+                {
+                    return Json(new { success = false, message = reason });
+                }
+
+                // Nếu có phí, tạo payment record
+                if (!isFree && fee > 0)
+                {
+                    var thanhToanService = HttpContext.RequestServices.GetRequiredService<IThanhToanService>();
+
+                    // Tạo payment record cho booking
+                    var payment = new ThanhToan
+                    {
+                        SoTien = fee,
+                        PhuongThuc = "CASH", // Thanh toán tại quầy
+                        TrangThai = "SUCCESS", // Đã thanh toán
+                        NgayThanhToan = DateTime.Now,
+                        GhiChu = $"Thanh toán tại quầy cho booking ID: {booking.BookingId} - Lớp: {booking.LopHoc?.TenLop}"
+                    };
+
+                    await thanhToanService.CreateAsync(payment);
+                }
+
+                // Check-in member
+                var diemDanhService = HttpContext.RequestServices.GetRequiredService<IDiemDanhService>();
+                var checkInSuccess = await diemDanhService.CheckInWithClassAsync(
+                    booking.ThanhVienId.Value, booking.LopHocId.Value, "Check-in tại quầy");
+
+                if (!checkInSuccess)
+                {
+                    return Json(new { success = false, message = "Không thể check-in. Member có thể đã check-in rồi." });
+                }
+
+                // Update booking status
+                booking.TrangThai = "ATTENDED";
+                await _bookingService.UpdateAsync(booking);
+
+                var memberName = booking.ThanhVien != null ? $"{booking.ThanhVien.Ho} {booking.ThanhVien.Ten}".Trim() : "N/A";
+                var message = isFree ?
+                    $"Check-in thành công cho {memberName} (Miễn phí với gói tập)" :
+                    $"Thanh toán {fee:N0} VNĐ và check-in thành công cho {memberName}";
+
+                return Json(new { success = true, message = message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error processing pay and check-in for booking ID: {BookingId}", request?.Id ?? 0);
+                return Json(new { success = false, message = "Có lỗi xảy ra khi xử lý thanh toán và check-in." });
+            }
+        }
+
+        /// <summary>
+        /// API để xuất Excel
+        /// </summary>
+        [HttpGet]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> ExportExcel()
+        {
+            try
+            {
+                var bookings = await _bookingService.GetAllAsync();
+
+                // Create simple CSV content (can be enhanced to proper Excel later)
+                var csv = new System.Text.StringBuilder();
+                csv.AppendLine("Thành viên,Lớp học,Ngày,Thời gian,Trạng thái,Ngày đặt,Ghi chú");
+
+                foreach (var booking in bookings.OrderByDescending(b => b.NgayTao))
+                {
+                    var memberName = booking.ThanhVien != null ? $"{booking.ThanhVien.Ho} {booking.ThanhVien.Ten}".Trim() : "N/A";
+                    var className = booking.LopHoc?.TenLop ?? "N/A";
+                    var timeRange = booking.LopHoc != null ?
+                        $"{booking.LopHoc.GioBatDau:HH:mm} - {booking.LopHoc.GioKetThuc:HH:mm}" : "N/A";
+                    var statusText = booking.TrangThai switch
+                    {
+                        "BOOKED" => "Đã đặt",
+                        "CANCELED" => "Đã hủy",
+                        "ATTENDED" => "Đã tham gia",
+                        _ => booking.TrangThai
+                    };
+
+                    csv.AppendLine($"\"{memberName}\",\"{className}\",\"{booking.Ngay:dd/MM/yyyy}\",\"{timeRange}\",\"{statusText}\",\"{booking.NgayTao:dd/MM/yyyy HH:mm}\",\"{booking.GhiChu ?? ""}\"");
+                }
+
+                var bytes = System.Text.Encoding.UTF8.GetBytes(csv.ToString());
+                var fileName = $"DanhSachDatLich_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
+
+                return File(bytes, "text/csv", fileName);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error exporting bookings to Excel");
+                return Json(new { success = false, message = "Có lỗi xảy ra khi xuất file Excel." });
+            }
+        }
+    }
+
+    // ✅ DTO classes for API requests
+    public class BookClassRequest
+    {
+        public int ClassId { get; set; }
+        public DateTime Date { get; set; }
+        public string? Note { get; set; }
+    }
+
+    public class PayAndCheckInRequest
+    {
+        public int Id { get; set; }
     }
 }
