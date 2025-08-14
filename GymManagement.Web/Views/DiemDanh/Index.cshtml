@@ -93,10 +93,10 @@
                 🔍 Recognize Face & Check-in
             </button>
 
-            <!-- Debug button for testing -->
+            @* <!-- Debug button for testing -->
             <button onclick="openWalkInModal()" class="w-full bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-medium transition-colors mt-2">
                 🧪 Test Walk-in Modal
-            </button>
+            </button> *@
 
             <!-- Results -->
             <div id="recognizeResults" class="mt-4 hidden">
@@ -296,8 +296,10 @@
                     <label for="recognitionFilter" class="block text-sm font-medium text-gray-700 mb-2">🤖 Nhận diện</label>
                     <select id="recognitionFilter" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                         <option value="">Tất cả</option>
-                        <option value="true">✅ Thành công</option>
-                        <option value="false">❌ Thất bại</option>
+                        <option value="face">🤖 Face ID</option>
+                        <option value="qr">📱 QR Code</option>
+                        <option value="true">✅ AI Thành công</option>
+                        <option value="false">❌ AI Thất bại</option>
                         <option value="manual">👤 Thủ công</option>
                     </select>
                 </div>
@@ -387,11 +389,16 @@
                         <tbody id="attendanceTable" class="bg-white divide-y divide-gray-200">
                             @foreach (var diemDanh in Model.OrderByDescending(d => d.ThoiGian))
                             {
+                                var recognitionType = diemDanh.LoaiCheckIn == "FaceRecognition" ? "face" :
+                                                     diemDanh.LoaiCheckIn == "QRCode" ? "qr" :
+                                                     diemDanh.KetQuaNhanDang.HasValue ? (diemDanh.KetQuaNhanDang.Value ? "true" : "false") : "manual";
+
                                 <tr class="hover:bg-blue-50 attendance-row transition-colors duration-200"
                                     data-member="@((diemDanh.ThanhVien?.Ho + " " + diemDanh.ThanhVien?.Ten)?.ToLower())"
                                     data-status="@diemDanh.TrangThai"
-                                    data-recognition="@diemDanh.KetQuaNhanDang?.ToString().ToLower()"
-                                    data-date="@diemDanh.ThoiGian.ToString("yyyy-MM-dd")">
+                                    data-recognition="@recognitionType"
+                                    data-date="@diemDanh.ThoiGian.ToString("yyyy-MM-dd")"
+                                    data-checkin-type="@diemDanh.LoaiCheckIn">
 
                                     <!-- Member -->
                                     <td class="px-6 py-4 whitespace-nowrap">
@@ -457,18 +464,43 @@
 
                                     <!-- Recognition -->
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        @if (diemDanh.KetQuaNhanDang.HasValue)
-                                        {
-                                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium @(diemDanh.KetQuaNhanDang.Value ? "bg-blue-100 text-blue-800 border border-blue-200" : "bg-red-100 text-red-800 border border-red-200")">
-                                                @(diemDanh.KetQuaNhanDang.Value ? "🤖 AI Thành công" : "🚫 AI Thất bại")
-                                            </span>
+                                        @{
+                                            // Determine display based on LoaiCheckIn first, then KetQuaNhanDang
+                                            string displayText = "";
+                                            string cssClass = "";
+
+                                            if (diemDanh.LoaiCheckIn == "FaceRecognition")
+                                            {
+                                                displayText = "🤖 Face ID";
+                                                cssClass = "bg-blue-100 text-blue-800 border border-blue-200";
+                                            }
+                                            else if (diemDanh.LoaiCheckIn == "QRCode")
+                                            {
+                                                displayText = "📱 QR Code";
+                                                cssClass = "bg-green-100 text-green-800 border border-green-200";
+                                            }
+                                            else if (diemDanh.KetQuaNhanDang.HasValue)
+                                            {
+                                                if (diemDanh.KetQuaNhanDang.Value)
+                                                {
+                                                    displayText = "🤖 AI Thành công";
+                                                    cssClass = "bg-blue-100 text-blue-800 border border-blue-200";
+                                                }
+                                                else
+                                                {
+                                                    displayText = "🚫 AI Thất bại";
+                                                    cssClass = "bg-red-100 text-red-800 border border-red-200";
+                                                }
+                                            }
+                                            else
+                                            {
+                                                displayText = "👤 Thủ công";
+                                                cssClass = "bg-purple-100 text-purple-800 border border-purple-200";
+                                            }
                                         }
-                                        else
-                                        {
-                                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800 border border-purple-200">
-                                                👤 Thủ công
-                                            </span>
-                                        }
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium @cssClass">
+                                            @displayText
+                                        </span>
                                     </td>
 
                                     <!-- Notes -->
@@ -1143,6 +1175,7 @@
         // Walk-in face descriptor storage
         let pendingWalkInFaceDescriptor = null;
         let pendingWalkInFaceData = null;
+        let walkInModalTimeout = null;
 
         // Walk-in elements
         const guestName = document.getElementById('guestName');
@@ -1820,7 +1853,7 @@
                             `;
 
                             // Auto open walk-in modal after 3 seconds
-                            setTimeout(() => {
+                            walkInModalTimeout = setTimeout(() => {
                                 try {
                                     console.log('🚶 Opening walk-in registration modal...');
                                     console.log('🔍 currentRecognizeDescriptor:', currentRecognizeDescriptor);
@@ -1912,7 +1945,7 @@
                         `;
 
                         // Auto open walk-in modal after 3 seconds
-                        setTimeout(() => {
+                        walkInModalTimeout = setTimeout(() => {
                             try {
                                 console.log('🚶 Opening walk-in registration modal...');
                                 console.log('🔍 currentRecognizeDescriptor:', currentRecognizeDescriptor);
@@ -2051,6 +2084,46 @@
             }
         }
 
+        // Update Recognition Results after successful walk-in registration
+        function updateRecognitionResultsAfterWalkIn(customerName, transactionId) {
+            // Clear any pending timeout
+            if (walkInModalTimeout) {
+                clearTimeout(walkInModalTimeout);
+                walkInModalTimeout = null;
+                console.log('🗑️ Walk-in modal timeout cleared');
+            }
+
+            const recognizeResultContent = document.getElementById('recognizeResultContent');
+            if (recognizeResultContent) {
+                recognizeResultContent.innerHTML = `
+                    <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            <div class="ml-3">
+                                <h3 class="text-sm font-medium text-green-800">✅ ĐĂNG KÝ & CHECK-IN THÀNH CÔNG!</h3>
+                                <div class="mt-2 text-sm text-green-700">
+                                    <p><strong>Khách vãng lai:</strong> ${customerName}</p>
+                                    <p><strong>Mã giao dịch:</strong> ${transactionId}</p>
+                                    <p><strong>Trạng thái:</strong> Đã check-in</p>
+                                    <p class="mt-2 font-medium text-green-800">🎉 Khuôn mặt đã được lưu để checkout!</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                // Update confidence status
+                const recognizeConfidenceStatus = document.getElementById('recognizeConfidenceStatus');
+                if (recognizeConfidenceStatus) {
+                    recognizeConfidenceStatus.textContent = '🎯 Confidence: High (Walk-in Registered)';
+                }
+            }
+        }
+
         function openWalkInModal() {
             console.log('🚶 Opening walk-in modal');
             console.log('💾 Pending face descriptor:', pendingWalkInFaceDescriptor ? pendingWalkInFaceDescriptor.length + ' dimensions' : 'None');
@@ -2070,6 +2143,14 @@
 
         function closeWalkInModal() {
             console.log('❌ Closing walk-in modal');
+
+            // Clear any pending timeout
+            if (walkInModalTimeout) {
+                clearTimeout(walkInModalTimeout);
+                walkInModalTimeout = null;
+                console.log('🗑️ Walk-in modal timeout cleared on close');
+            }
+
             document.getElementById('walkInModal').classList.add('hidden');
 
             // Reset to step 1
@@ -2156,21 +2237,28 @@
                     console.warn('⚠️ No pending face descriptor available');
                 }
 
+                const requestData = {
+                    fullName: name,
+                    phoneNumber: phone,
+                    email: email,
+                    note: note,
+                    paymentMethod: 'CASH',
+                    amount: 50000,
+                    faceDescriptor: faceDescriptor
+                };
+
+                console.log('🔍 DEBUG: Sending request data:', {
+                    ...requestData,
+                    faceDescriptor: faceDescriptor ? `Array[${faceDescriptor.length}]` : 'null'
+                });
+
                 const response = await fetch('/Reception/WalkInRegisterWithPayment', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
                     },
-                    body: JSON.stringify({
-                        fullName: name,
-                        phoneNumber: phone,
-                        email: email,
-                        note: note,
-                        paymentMethod: 'CASH',
-                        amount: 50000,
-                        faceDescriptor: faceDescriptor
-                    })
+                    body: JSON.stringify(requestData)
                 });
 
                 const result = await response.json();
@@ -2186,6 +2274,9 @@
                         alert('✅ Thanh toán tiền mặt và check-in thành công!');
                     }
                     closeWalkInModal();
+
+                    // Update Recognition Results to show success
+                    updateRecognitionResultsAfterWalkIn(name, result.transactionId || 'CASH_' + Date.now());
 
                     // Show payment confirmation
                     showPaymentConfirmation({

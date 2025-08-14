@@ -471,7 +471,7 @@ namespace GymManagement.Web.Controllers
                 // Nếu thanh toán CASH thì tự động check-in
                 if (payment.TrangThai == "SUCCESS")
                 {
-                    var checkIn = await _walkInService.CheckInGuestAsync(request.GuestId, $"WALKIN - {packageName}");
+                    var checkIn = await _walkInService.CheckInGuestAsync(request.GuestId, $"WALKIN - {packageName}", "Manual");
                     return Ok(new
                     {
                         success = true,
@@ -518,7 +518,7 @@ namespace GymManagement.Web.Controllers
                 // Tự động check-in sau khi xác nhận thanh toán
                 if (request.GuestId > 0)
                 {
-                    var checkIn = await _walkInService.CheckInGuestAsync(request.GuestId, "WALKIN - Bank transfer confirmed");
+                    var checkIn = await _walkInService.CheckInGuestAsync(request.GuestId, "WALKIN - Bank transfer confirmed", "Manual");
                     return Ok(new
                     {
                         success = true,

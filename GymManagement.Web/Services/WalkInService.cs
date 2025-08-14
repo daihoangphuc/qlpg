@@ -278,17 +278,17 @@ namespace GymManagement.Web.Services
             }
         }
 
-        public async Task<DiemDanh> CheckInGuestAsync(int guestId, string? ghiChu = null)
+        public async Task<DiemDanh> CheckInGuestAsync(int guestId, string? ghiChu = null, string loaiCheckIn = "Manual")
         {
             try
             {
-                _logger.LogInformation("Checking in guest {GuestId}", guestId);
+                _logger.LogInformation("Checking in guest {GuestId} with check-in type: {LoaiCheckIn}", guestId, loaiCheckIn);
 
                 var diemDanh = new DiemDanh
                 {
                     ThanhVienId = guestId,
                     ThoiGianCheckIn = DateTime.Now,
-                    LoaiCheckIn = "Manual",
+                    LoaiCheckIn = loaiCheckIn,
                     GhiChu = ghiChu ?? "WALKIN_DAYPASS",
                     TrangThai = "Present"
                 };
@@ -474,7 +474,11 @@ namespace GymManagement.Web.Services
                 DiemDanh? checkIn = null;
                 if (payment.TrangThai == "SUCCESS")
                 {
-                    checkIn = await CheckInGuestAsync(guest.NguoiDungId, note ?? "Auto check-in after payment");
+                    // Determine check-in type based on whether face descriptor is provided
+                    string loaiCheckIn = faceDescriptor != null && faceDescriptor.Length > 0 ? "FaceRecognition" : "Manual";
+                    _logger.LogInformation("🔍 DEBUG: FaceDescriptor null? {IsNull}, Length: {Length}, LoaiCheckIn: {LoaiCheckIn}",
+                        faceDescriptor == null, faceDescriptor?.Length ?? 0, loaiCheckIn);
+                    checkIn = await CheckInGuestAsync(guest.NguoiDungId, note ?? "Auto check-in after payment", loaiCheckIn);
                 }
 
                 // 5. Lưu face descriptor nếu có (để có thể checkout bằng Face ID)

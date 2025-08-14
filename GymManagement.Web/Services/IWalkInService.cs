@@ -71,8 +71,9 @@ namespace GymManagement.Web.Services
         /// </summary>
         /// <param name="guestId">ID khách vãng lai</param>
         /// <param name="ghiChu">Ghi chú check-in</param>
+        /// <param name="loaiCheckIn">Loại check-in (Manual, FaceRecognition, QRCode)</param>
         /// <returns>Thông tin điểm danh</returns>
-        Task<DiemDanh> CheckInGuestAsync(int guestId, string? ghiChu = null);
+        Task<DiemDanh> CheckInGuestAsync(int guestId, string? ghiChu = null, string loaiCheckIn = "Manual");
 
         /// <summary>
         /// Check-out thủ công cho khách vãng lai

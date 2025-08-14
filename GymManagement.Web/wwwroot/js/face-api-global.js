@@ -141,16 +141,20 @@ window.FaceAPIGlobal = {
                 sessionStorage.setItem('faceapi-models-loaded', 'true');
                 sessionStorage.setItem('faceapi-models-loaded-time', Date.now().toString());
 
-                // Show global notification if function exists
-                if (typeof showNotification === 'function') {
+                // Show global notification only once per session
+                const hasShownNotification = sessionStorage.getItem('faceapi-notification-shown');
+                if (!hasShownNotification && typeof showNotification === 'function') {
                     showNotification('success', 'Face Recognition models loaded successfully!');
+                    sessionStorage.setItem('faceapi-notification-shown', 'true');
                 }
             }).catch(error => {
                 console.error('❌ Failed to auto-load Face-API models:', error);
 
-                // Show global error notification if function exists
-                if (typeof showNotification === 'function') {
+                // Show global error notification only once per session
+                const hasShownErrorNotification = sessionStorage.getItem('faceapi-error-notification-shown');
+                if (!hasShownErrorNotification && typeof showNotification === 'function') {
                     showNotification('error', 'Failed to load Face Recognition models');
+                    sessionStorage.setItem('faceapi-error-notification-shown', 'true');
                 }
             });
         } else {
