@@ -8,12 +8,29 @@ namespace GymManagement.Web.Data
     {
         public static async Task InitializeAsync(GymDbContext context, IAuthService authService)
         {
-            // Ensure database is created
-            await context.Database.EnsureCreatedAsync();
+            try
+            {
+                Console.WriteLine("🔧 Starting database initialization...");
 
-            // Check if data already exists
-            if (await context.VaiTros.AnyAsync())
-                return; // Database has been seeded
+                // Skip migration for now - database already exists
+                // TODO: Fix migration history properly later
+
+                // Check if data already exists
+                try
+                {
+                    if (await context.VaiTros.AnyAsync())
+                    {
+                        Console.WriteLine("✅ Database already seeded, skipping initialization");
+                        return; // Database has been seeded
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"⚠️ Database check warning: {ex.Message}");
+                    // Continue with seeding if table doesn't exist
+                }
+
+                Console.WriteLine("📝 Starting database seeding...");
 
             // Seed VaiTro (Identity Roles) - Simplified to 3 roles
             var roleNames = new[] { "Admin", "Trainer", "Member" };
@@ -228,6 +245,15 @@ namespace GymManagement.Web.Data
                 {
                     await authService.AssignRoleAsync(user.Id, account.Role);
                 }
+            }
+
+            Console.WriteLine("✅ Database initialization completed successfully!");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Database initialization failed: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                throw; // Re-throw to prevent application from starting with bad state
             }
         }
     }

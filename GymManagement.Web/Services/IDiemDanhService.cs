@@ -22,11 +22,8 @@ namespace GymManagement.Web.Services
         Task<int> GetMemberAttendanceCountAsync(int thanhVienId, DateTime startDate, DateTime endDate);
         Task<IEnumerable<DiemDanh>> GetAttendanceReportAsync(DateTime startDate, DateTime endDate);
 
-        // Methods for Trainer attendance management
-        Task<IEnumerable<DiemDanh>> GetAttendanceByClassScheduleAsync(int lichLopId);
-        Task<bool> TakeClassAttendanceAsync(int lichLopId, List<ClassAttendanceRecord> attendanceRecords);
-        Task<IEnumerable<NguoiDung>> GetStudentsInClassScheduleAsync(int lichLopId);
-        Task<bool> CanTrainerTakeAttendanceAsync(int trainerId, int lichLopId);
+        // Note: Methods using LichLop have been removed
+        // Use class-based attendance methods instead
         Task<DateTime?> GetFirstAttendanceDateAsync(int nguoiDungId);
         Task<IEnumerable<DiemDanh>> GetByDateRangeAsync(DateTime fromDate, DateTime toDate);
         Task<IEnumerable<object>> GetAvailableClassesAsync();

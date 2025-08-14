@@ -21,9 +21,7 @@ namespace GymManagement.Web.Data
         // Sản phẩm - Khuyến mãi
         public DbSet<GoiTap> GoiTaps { get; set; }
         public DbSet<LopHoc> LopHocs { get; set; }
-        public DbSet<LichLop> LichLops { get; set; }
         public DbSet<KhuyenMai> KhuyenMais { get; set; }
-    public DbSet<KhuyenMaiUsage> KhuyenMaiUsages { get; set; }
 
         // Đăng ký - Thanh toán
         public DbSet<DangKy> DangKys { get; set; }
@@ -162,18 +160,7 @@ namespace GymManagement.Web.Data
                     .HasForeignKey(d => d.HlvId);
             });
 
-            // Cấu hình bảng LichLop
-            modelBuilder.Entity<LichLop>(entity =>
-            {
-                entity.HasKey(e => e.LichLopId);
-                entity.Property(e => e.LichLopId).ValueGeneratedOnAdd();
-                entity.Property(e => e.TrangThai).HasMaxLength(20).HasDefaultValue("SCHEDULED");
-                
-                entity.HasOne(d => d.LopHoc)
-                    .WithMany(p => p.LichLops)
-                    .HasForeignKey(d => d.LopHocId)
-                    .OnDelete(DeleteBehavior.Cascade);
-            });
+
 
             // Cấu hình bảng KhuyenMai
             modelBuilder.Entity<KhuyenMai>(entity =>
@@ -258,10 +245,6 @@ namespace GymManagement.Web.Data
                 entity.HasOne(d => d.LopHoc)
                     .WithMany(p => p.Bookings)
                     .HasForeignKey(d => d.LopHocId);
-                    
-                entity.HasOne(d => d.LichLop)
-                    .WithMany(p => p.Bookings)
-                    .HasForeignKey(d => d.LichLopId);
             });
 
             // Cấu hình bảng BuoiHlv
@@ -321,10 +304,14 @@ namespace GymManagement.Web.Data
                 entity.Property(e => e.DiemDanhId).ValueGeneratedOnAdd();
                 entity.Property(e => e.ThoiGian).HasDefaultValueSql("GETDATE()");
                 entity.Property(e => e.AnhMinhChung).HasMaxLength(255);
-                
+
                 entity.HasOne(d => d.ThanhVien)
                     .WithMany(p => p.DiemDanhs)
                     .HasForeignKey(d => d.ThanhVienId);
+
+                entity.HasOne(d => d.LopHoc)
+                    .WithMany(p => p.DiemDanhs)
+                    .HasForeignKey(d => d.LopHocId);
             });
 
             // Cấu hình bảng CauHinhHoaHong

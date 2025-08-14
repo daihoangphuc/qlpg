@@ -75,9 +75,6 @@ namespace GymManagement.Web.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
-                    b.Property<int?>("LichLopId")
-                        .HasColumnType("int");
-
                     b.Property<int?>("LopHocId")
                         .HasColumnType("int");
 
@@ -101,8 +98,6 @@ namespace GymManagement.Web.Migrations
                         .HasDefaultValue("BOOKED");
 
                     b.HasKey("BookingId");
-
-                    b.HasIndex("LichLopId");
 
                     b.HasIndex("LopHocId");
 
@@ -290,12 +285,12 @@ namespace GymManagement.Web.Migrations
                     b.Property<bool?>("KetQuaNhanDang")
                         .HasColumnType("bit");
 
-                    b.Property<int?>("LichLopId")
-                        .HasColumnType("int");
-
                     b.Property<string>("LoaiCheckIn")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
+
+                    b.Property<int?>("LopHocId")
+                        .HasColumnType("int");
 
                     b.Property<int?>("ThanhVienId")
                         .HasColumnType("int");
@@ -318,7 +313,7 @@ namespace GymManagement.Web.Migrations
 
                     b.HasKey("DiemDanhId");
 
-                    b.HasIndex("LichLopId");
+                    b.HasIndex("LopHocId");
 
                     b.HasIndex("ThanhVienId");
 
@@ -434,92 +429,6 @@ namespace GymManagement.Web.Migrations
                         .IsUnique();
 
                     b.ToTable("KhuyenMais");
-                });
-
-            modelBuilder.Entity("GymManagement.Web.Data.Models.KhuyenMaiUsage", b =>
-                {
-                    b.Property<int>("KhuyenMaiUsageId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("KhuyenMaiUsageId"));
-
-                    b.Property<int?>("DangKyId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("GhiChu")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<int>("KhuyenMaiId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("NgaySuDung")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("NguoiDungId")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("SoTienCuoi")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("SoTienGiam")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("SoTienGoc")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<int?>("ThanhToanId")
-                        .HasColumnType("int");
-
-                    b.HasKey("KhuyenMaiUsageId");
-
-                    b.HasIndex("DangKyId");
-
-                    b.HasIndex("KhuyenMaiId");
-
-                    b.HasIndex("NguoiDungId");
-
-                    b.HasIndex("ThanhToanId");
-
-                    b.ToTable("KhuyenMaiUsages");
-                });
-
-            modelBuilder.Entity("GymManagement.Web.Data.Models.LichLop", b =>
-                {
-                    b.Property<int>("LichLopId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("LichLopId"));
-
-                    b.Property<TimeOnly>("GioBatDau")
-                        .HasColumnType("time");
-
-                    b.Property<TimeOnly>("GioKetThuc")
-                        .HasColumnType("time");
-
-                    b.Property<int>("LopHocId")
-                        .HasColumnType("int");
-
-                    b.Property<DateOnly>("Ngay")
-                        .HasColumnType("date");
-
-                    b.Property<int>("SoLuongDaDat")
-                        .HasColumnType("int");
-
-                    b.Property<string>("TrangThai")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)")
-                        .HasDefaultValue("SCHEDULED");
-
-                    b.HasKey("LichLopId");
-
-                    b.HasIndex("LopHocId");
-
-                    b.ToTable("LichLops");
                 });
 
             modelBuilder.Entity("GymManagement.Web.Data.Models.LichSuAnh", b =>
@@ -1054,10 +963,6 @@ namespace GymManagement.Web.Migrations
 
             modelBuilder.Entity("GymManagement.Web.Data.Models.Booking", b =>
                 {
-                    b.HasOne("GymManagement.Web.Data.Models.LichLop", "LichLop")
-                        .WithMany("Bookings")
-                        .HasForeignKey("LichLopId");
-
                     b.HasOne("GymManagement.Web.Data.Models.LopHoc", "LopHoc")
                         .WithMany("Bookings")
                         .HasForeignKey("LopHocId");
@@ -1065,8 +970,6 @@ namespace GymManagement.Web.Migrations
                     b.HasOne("GymManagement.Web.Data.Models.NguoiDung", "ThanhVien")
                         .WithMany("Bookings")
                         .HasForeignKey("ThanhVienId");
-
-                    b.Navigation("LichLop");
 
                     b.Navigation("LopHoc");
 
@@ -1143,15 +1046,15 @@ namespace GymManagement.Web.Migrations
 
             modelBuilder.Entity("GymManagement.Web.Data.Models.DiemDanh", b =>
                 {
-                    b.HasOne("GymManagement.Web.Data.Models.LichLop", "LichLop")
-                        .WithMany()
-                        .HasForeignKey("LichLopId");
+                    b.HasOne("GymManagement.Web.Data.Models.LopHoc", "LopHoc")
+                        .WithMany("DiemDanhs")
+                        .HasForeignKey("LopHocId");
 
                     b.HasOne("GymManagement.Web.Data.Models.NguoiDung", "ThanhVien")
                         .WithMany("DiemDanhs")
                         .HasForeignKey("ThanhVienId");
 
-                    b.Navigation("LichLop");
+                    b.Navigation("LopHoc");
 
                     b.Navigation("ThanhVien");
                 });
@@ -1165,48 +1068,6 @@ namespace GymManagement.Web.Migrations
                         .IsRequired();
 
                     b.Navigation("TaiKhoan");
-                });
-
-            modelBuilder.Entity("GymManagement.Web.Data.Models.KhuyenMaiUsage", b =>
-                {
-                    b.HasOne("GymManagement.Web.Data.Models.DangKy", "DangKy")
-                        .WithMany()
-                        .HasForeignKey("DangKyId");
-
-                    b.HasOne("GymManagement.Web.Data.Models.KhuyenMai", "KhuyenMai")
-                        .WithMany()
-                        .HasForeignKey("KhuyenMaiId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("GymManagement.Web.Data.Models.NguoiDung", "NguoiDung")
-                        .WithMany()
-                        .HasForeignKey("NguoiDungId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("GymManagement.Web.Data.Models.ThanhToan", "ThanhToan")
-                        .WithMany()
-                        .HasForeignKey("ThanhToanId");
-
-                    b.Navigation("DangKy");
-
-                    b.Navigation("KhuyenMai");
-
-                    b.Navigation("NguoiDung");
-
-                    b.Navigation("ThanhToan");
-                });
-
-            modelBuilder.Entity("GymManagement.Web.Data.Models.LichLop", b =>
-                {
-                    b.HasOne("GymManagement.Web.Data.Models.LopHoc", "LopHoc")
-                        .WithMany("LichLops")
-                        .HasForeignKey("LopHocId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("LopHoc");
                 });
 
             modelBuilder.Entity("GymManagement.Web.Data.Models.LichSuAnh", b =>
@@ -1319,11 +1180,6 @@ namespace GymManagement.Web.Migrations
                     b.Navigation("DangKys");
                 });
 
-            modelBuilder.Entity("GymManagement.Web.Data.Models.LichLop", b =>
-                {
-                    b.Navigation("Bookings");
-                });
-
             modelBuilder.Entity("GymManagement.Web.Data.Models.LopHoc", b =>
                 {
                     b.Navigation("Bookings");
@@ -1334,7 +1190,7 @@ namespace GymManagement.Web.Migrations
 
                     b.Navigation("DangKys");
 
-                    b.Navigation("LichLops");
+                    b.Navigation("DiemDanhs");
                 });
 
             modelBuilder.Entity("GymManagement.Web.Data.Models.NguoiDung", b =>

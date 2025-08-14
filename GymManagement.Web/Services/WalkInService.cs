@@ -144,6 +144,41 @@ namespace GymManagement.Web.Services
         }
 
         /// <summary>
+        /// ✅ NEW: Tạo vé tập với giá tùy chỉnh cho khách vãng lai
+        /// </summary>
+        public async Task<DangKy> CreateCustomPricePassAsync(int guestId, decimal customAmount)
+        {
+            try
+            {
+                _logger.LogInformation("Creating custom price pass for guest {GuestId}: {Price} VND", guestId, customAmount);
+
+                var today = DateOnly.FromDateTime(DateTime.Today);
+
+                var dangKy = new DangKy
+                {
+                    NguoiDungId = guestId,
+                    LoaiDangKy = "WALKIN_CUSTOM", // Loại đăng ký mới cho giá tùy chỉnh
+                    NgayBatDau = today,
+                    NgayKetThuc = today, // Vé trong ngày
+                    PhiDangKy = customAmount, // ✅ Sử dụng giá từ frontend
+                    TrangThai = "PENDING_PAYMENT",
+                    NgayTao = DateTime.Now
+                };
+
+                await _dangKyRepository.AddAsync(dangKy);
+                await _unitOfWork.SaveChangesAsync();
+
+                _logger.LogInformation("Successfully created custom price pass with ID: {DangKyId}", dangKy.DangKyId);
+                return dangKy;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating custom price pass for guest {GuestId}", guestId);
+                throw;
+            }
+        }
+
+        /// <summary>
         /// Backward compatibility - sẽ sử dụng giá cố định
         /// </summary>
         [Obsolete("Use CreateFixedPricePassAsync instead")]
@@ -422,14 +457,14 @@ namespace GymManagement.Web.Services
                 // 1. Tạo khách vãng lai
                 var guest = await CreateGuestAsync(fullName, phoneNumber, email);
 
-                // 2. Tạo vé với giá cố định
-                var dayPass = await CreateFixedPricePassAsync(guest.NguoiDungId);
+                // 2. ✅ FIX: Tạo vé với giá tùy chỉnh thay vì giá cố định
+                var dayPass = await CreateCustomPricePassAsync(guest.NguoiDungId, amount);
 
                 // 3. Xử lý thanh toán
                 var payment = await ProcessWalkInPaymentAsync(
                     dayPass.DangKyId,
                     paymentMethod,
-                    note ?? $"WALKIN - {_fixedPackageName}");
+                    note ?? $"WALKIN - Vé tập một buổi ({amount:N0} VNĐ)");
 
                 // 4. Tự động check-in nếu thanh toán thành công
                 DiemDanh? checkIn = null;
@@ -476,14 +511,14 @@ namespace GymManagement.Web.Services
                 // 1. Tạo khách vãng lai
                 var guest = await CreateGuestAsync(fullName, phoneNumber, email);
 
-                // 2. Tạo vé với giá cố định
-                var dayPass = await CreateFixedPricePassAsync(guest.NguoiDungId);
+                // 2. ✅ FIX: Tạo vé với giá tùy chỉnh thay vì giá cố định
+                var dayPass = await CreateCustomPricePassAsync(guest.NguoiDungId, amount);
 
                 // 3. Tạo thanh toán VNPay (PENDING)
                 var payment = await ProcessWalkInPaymentAsync(
                     dayPass.DangKyId,
                     "VNPAY",
-                    note ?? $"WALKIN - {_fixedPackageName}");
+                    note ?? $"WALKIN - Vé tập một buổi ({amount:N0} VNĐ)");
 
                 // 4. Tạo VNPay URL (giả lập - cần tích hợp thật)
                 var orderId = $"WALKIN_{payment.ThanhToanId}_{DateTime.Now:yyyyMMddHHmmss}";

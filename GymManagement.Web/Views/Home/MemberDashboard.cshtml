@@ -155,7 +155,7 @@
                                         <p class="text-sm font-medium text-gray-900">@(booking.LopHoc?.TenLop ?? "Lớp học")</p>
                                         <p class="text-sm text-gray-600">
                                             @booking.Ngay.ToString("dddd, dd/MM") - 
-                                            @(booking.LichLop?.GioBatDau.ToString("HH:mm") ?? "")
+                                            @(booking.LopHoc?.GioBatDau.ToString("HH:mm") ?? "")
                                         </p>
                                     </div>
                                     <div class="text-right">

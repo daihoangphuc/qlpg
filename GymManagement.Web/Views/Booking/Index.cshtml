@@ -192,11 +192,7 @@
 
                                 <!-- Time -->
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                    @if (booking.LichLop != null)
-                                    {
-                                        <span>@booking.LichLop.GioBatDau.ToString("HH:mm") - @booking.LichLop.GioKetThuc.ToString("HH:mm")</span>
-                                    }
-                                    else if (booking.LopHoc != null)
+                                    @if (booking.LopHoc != null)
                                     {
                                         <span>@booking.LopHoc.GioBatDau.ToString("HH:mm") - @booking.LopHoc.GioKetThuc.ToString("HH:mm")</span>
                                     }

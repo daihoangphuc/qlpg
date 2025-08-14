@@ -271,18 +271,9 @@ namespace GymManagement.Web.Services
             var startDateOnly = DateOnly.FromDateTime(startDate);
             var endDateOnly = DateOnly.FromDateTime(endDate);
 
-            var schedules = await _unitOfWork.Context.LichLops
-                .Include(l => l.LopHoc)
-                .Where(l => l.Ngay >= startDateOnly && l.Ngay <= endDateOnly)
-                .ToListAsync();
-
-            return schedules
-                .Where(s => s.LopHoc != null)
-                .GroupBy(s => s.LopHoc!.TenLop)
-                .ToDictionary(
-                    g => g.Key,
-                    g => g.Count(s => s.TrangThai == "CANCELED")
-                );
+            // Note: Class cancellation tracking has been simplified
+            // Return empty dictionary as LichLops table no longer exists
+            return new Dictionary<string, int>();
         }
 
         public async Task<Dictionary<string, decimal>> GetTrainerRevenueAsync(DateTime startDate, DateTime endDate)
@@ -309,15 +300,16 @@ namespace GymManagement.Web.Services
             var startDateOnly = DateOnly.FromDateTime(startDate);
             var endDateOnly = DateOnly.FromDateTime(endDate);
 
-            var schedules = await _unitOfWork.Context.LichLops
-                .Include(l => l.LopHoc)
-                    .ThenInclude(lh => lh.Hlv)
-                .Where(l => l.Ngay >= startDateOnly && l.Ngay <= endDateOnly && l.TrangThai != "CANCELED")
+            // Note: Trainer class count calculation simplified
+            // Use class registrations instead of schedules
+            var classes = await _unitOfWork.Context.LopHocs
+                .Include(lh => lh.Hlv)
+                .Where(lh => lh.NgayBatDauKhoa >= startDateOnly && lh.NgayBatDauKhoa <= endDateOnly)
                 .ToListAsync();
 
-            return schedules
-                .Where(s => s.LopHoc?.Hlv != null)
-                .GroupBy(s => $"{s.LopHoc!.Hlv!.Ho} {s.LopHoc.Hlv.Ten}")
+            return classes
+                .Where(c => c.Hlv != null)
+                .GroupBy(c => $"{c.Hlv!.Ho} {c.Hlv.Ten}")
                 .ToDictionary(g => g.Key, g => g.Count());
         }
 
@@ -379,6 +371,22 @@ namespace GymManagement.Web.Services
             return revenue - expenses;
         }
 
+        /// <summary>
+        /// ✅ NEW: Lấy tổng chi phí theo date range (cho Revenue Report)
+        /// </summary>
+        public async Task<decimal> GetTotalExpensesByDateRangeAsync(DateTime startDate, DateTime endDate)
+        {
+            return await GetTotalExpensesAsync(startDate, endDate);
+        }
+
+        /// <summary>
+        /// ✅ NEW: Lấy Net Profit theo date range (cho Revenue Report)
+        /// </summary>
+        public async Task<decimal> GetNetProfitByDateRangeAsync(DateTime startDate, DateTime endDate)
+        {
+            return await GetNetProfitAsync(startDate, endDate);
+        }
+
         public async Task<object> GetDashboardDataAsync()
         {
             const string cacheKey = "dashboard_data";
@@ -428,6 +436,60 @@ namespace GymManagement.Web.Services
         public async Task<IEnumerable<DangKy>> GetAllRegistrationsForDebugAsync()
         {
             return await _dangKyRepository.GetAllAsync();
+        }
+
+        public async Task<decimal> GetRevenueGrowthRateAsync(DateTime currentStartDate, DateTime currentEndDate, string source = "all")
+        {
+            try
+            {
+                // Calculate the same period length for previous period
+                var periodLength = (currentEndDate - currentStartDate).Days + 1;
+                var previousStartDate = currentStartDate.AddDays(-periodLength);
+                var previousEndDate = currentStartDate.AddDays(-1);
+
+                // Get current period revenue
+                var currentRevenue = await GetTotalRevenueForPeriodAsync(currentStartDate, currentEndDate, source);
+
+                // Get previous period revenue
+                var previousRevenue = await GetTotalRevenueForPeriodAsync(previousStartDate, previousEndDate, source);
+
+                // Calculate growth rate
+                if (previousRevenue == 0)
+                {
+                    return currentRevenue > 0 ? 100 : 0; // 100% growth if previous was 0 and current > 0
+                }
+
+                var growthRate = ((currentRevenue - previousRevenue) / previousRevenue) * 100;
+                return Math.Round(growthRate, 1);
+            }
+            catch (Exception)
+            {
+                return 0; // Return 0% if calculation fails
+            }
+        }
+
+        private async Task<decimal> GetTotalRevenueForPeriodAsync(DateTime startDate, DateTime endDate, string source = "all")
+        {
+            var payments = await _thanhToanRepository.GetPaymentsByDateRangeAsync(startDate, endDate);
+            var successfulPayments = payments.Where(p => p.TrangThai == "SUCCESS");
+
+            // Filter by source if specified
+            if (source != "all")
+            {
+                successfulPayments = successfulPayments.Where(p =>
+                {
+                    if (p.DangKy?.NguoiDung?.LoaiNguoiDung == null) return false;
+
+                    return source.ToLower() switch
+                    {
+                        "member" => p.DangKy.NguoiDung.LoaiNguoiDung == "THANHVIEN",
+                        "walkin" => p.DangKy.NguoiDung.LoaiNguoiDung == "VANGLAI",
+                        _ => true
+                    };
+                });
+            }
+
+            return successfulPayments.Sum(p => p.SoTien);
         }
     }
 }

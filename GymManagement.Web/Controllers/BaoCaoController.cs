@@ -78,6 +78,82 @@ namespace GymManagement.Web.Controllers
         }
 
         [HttpGet]
+        public async Task<IActionResult> GetRevenueGrowthRate(DateTime startDate, DateTime endDate, string source = "all")
+        {
+            try
+            {
+                // ✅ INPUT VALIDATION: Validate date parameters
+                var validationResult = ValidateDateRange(startDate, endDate);
+                if (!validationResult.IsValid)
+                {
+                    return Json(new { success = false, message = validationResult.ErrorMessage });
+                }
+
+                // ✅ VALIDATE: source parameter
+                if (!IsValidSource(source))
+                {
+                    return Json(new { success = false, message = "Tham số nguồn dữ liệu không hợp lệ." });
+                }
+
+                var growthRate = await _baoCaoService.GetRevenueGrowthRateAsync(startDate, endDate, source);
+                return Json(new { success = true, growthRate = growthRate });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while calculating revenue growth rate for range {StartDate} to {EndDate}", startDate, endDate);
+                return Json(new { success = false, message = "Có lỗi xảy ra khi tính tỷ lệ tăng trưởng doanh thu.", growthRate = 0 });
+            }
+        }
+
+        /// <summary>
+        /// ✅ NEW: API để lấy tổng chi phí theo date range
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> GetTotalExpenses(DateTime startDate, DateTime endDate)
+        {
+            try
+            {
+                var validationResult = ValidateDateRange(startDate, endDate);
+                if (!validationResult.IsValid)
+                {
+                    return Json(new { success = false, message = validationResult.ErrorMessage });
+                }
+
+                var totalExpenses = await _baoCaoService.GetTotalExpensesByDateRangeAsync(startDate, endDate);
+                return Json(new { success = true, totalExpenses = totalExpenses });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while getting total expenses for range {StartDate} to {EndDate}", startDate, endDate);
+                return Json(new { success = false, message = "Có lỗi xảy ra khi tải dữ liệu chi phí.", totalExpenses = 0 });
+            }
+        }
+
+        /// <summary>
+        /// ✅ NEW: API để lấy Net Profit theo date range
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> GetNetProfit(DateTime startDate, DateTime endDate)
+        {
+            try
+            {
+                var validationResult = ValidateDateRange(startDate, endDate);
+                if (!validationResult.IsValid)
+                {
+                    return Json(new { success = false, message = validationResult.ErrorMessage });
+                }
+
+                var netProfit = await _baoCaoService.GetNetProfitByDateRangeAsync(startDate, endDate);
+                return Json(new { success = true, netProfit = netProfit });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while calculating net profit for range {StartDate} to {EndDate}", startDate, endDate);
+                return Json(new { success = false, message = "Có lỗi xảy ra khi tính lợi nhuận ròng.", netProfit = 0 });
+            }
+        }
+
+        [HttpGet]
         public async Task<IActionResult> GetRevenueByPaymentMethod(DateTime startDate, DateTime endDate, string source = "all")
         {
             try

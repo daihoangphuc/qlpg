@@ -106,7 +106,7 @@
                             <div class="absolute left-6 top-0 bottom-0 w-px bg-gray-200"></div>
 
                             <div class="space-y-4">
-                                @foreach (var booking in monthGroup.OrderBy(b => b.Ngay).ThenBy(b => b.LichLop?.GioBatDau))
+                                @foreach (var booking in monthGroup.OrderBy(b => b.Ngay).ThenBy(b => b.LopHoc?.GioBatDau))
                                 {
                                     var isUpcoming = booking.Ngay >= DateOnly.FromDateTime(DateTime.Today);
                                     var isPast = booking.Ngay < DateOnly.FromDateTime(DateTime.Today);
@@ -147,10 +147,10 @@
                                                         <span class="text-sm font-medium text-gray-900">
                                                             @booking.Ngay.ToString("dddd, dd MMMM yyyy", new System.Globalization.CultureInfo("vi-VN"))
                                                         </span>
-                                                        @if (booking.LichLop != null)
+                                                        @if (booking.LopHoc != null)
                                                         {
                                                             <span class="ml-2 text-sm text-gray-600">
-                                                                @booking.LichLop.GioBatDau.ToString("HH:mm") - @booking.LichLop.GioKetThuc.ToString("HH:mm")
+                                                                @booking.LopHoc.GioBatDau.ToString("HH:mm") - @booking.LopHoc.GioKetThuc.ToString("HH:mm")
                                                             </span>
                                                         }
                                                     </div>

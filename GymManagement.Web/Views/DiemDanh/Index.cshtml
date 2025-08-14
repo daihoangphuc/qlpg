@@ -417,10 +417,10 @@
 
                                     <!-- Class -->
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        @if (diemDanh.LichLop?.LopHoc != null)
+                                        @if (diemDanh.LopHoc != null)
                                         {
-                                            <div class="text-sm font-medium text-gray-900">@diemDanh.LichLop.LopHoc.TenLop</div>
-                                            <div class="text-sm text-gray-500">@diemDanh.LichLop.GioBatDau.ToString("HH:mm") - @diemDanh.LichLop.GioKetThuc.ToString("HH:mm")</div>
+                                            <div class="text-sm font-medium text-gray-900">@diemDanh.LopHoc.TenLop</div>
+                                            <div class="text-sm text-gray-500">@diemDanh.LopHoc.GioBatDau.ToString("HH:mm") - @diemDanh.LopHoc.GioKetThuc.ToString("HH:mm")</div>
                                         }
                                         else
                                         {

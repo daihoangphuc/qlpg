@@ -17,11 +17,7 @@ namespace GymManagement.Web.Services
         Task<IEnumerable<KhuyenMai>> GetActivePromotionsAsync();
         Task<bool> DeactivateExpiredPromotionsAsync();
         Task<KhuyenMaiValidationResult> ValidatePromotionAsync(string code, decimal orderAmount = 0);
-        Task<bool> TrackUsageAsync(int khuyenMaiId, int nguoiDungId, decimal soTienGoc, decimal soTienGiam, decimal soTienCuoi, int? thanhToanId = null, int? dangKyId = null, string? ghiChu = null);
-        Task<IEnumerable<KhuyenMaiUsage>> GetUsageHistoryAsync(int khuyenMaiId);
-        Task<IEnumerable<KhuyenMaiUsage>> GetUserUsageHistoryAsync(int nguoiDungId);
-        Task<int> GetUsageCountAsync(int khuyenMaiId);
-        Task<decimal> GetTotalDiscountAmountAsync(int khuyenMaiId);
+
     }
 
     public class KhuyenMaiValidationResult

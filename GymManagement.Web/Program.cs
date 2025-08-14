@@ -155,6 +155,9 @@ builder.Services.AddScoped<VietQRService>();
 // Add Walk-In Services
 builder.Services.AddScoped<IWalkInService, WalkInService>();
 
+// Add Data Fix Service
+builder.Services.AddScoped<DataFixService>();
+
 // Add Face Recognition Services
 builder.Services.AddScoped<IFaceRecognitionService, FaceRecognitionService>();
 

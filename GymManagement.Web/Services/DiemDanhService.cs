@@ -288,94 +288,13 @@ namespace GymManagement.Web.Services
             return random.NextDouble() > 0.1;
         }
 
-        // Trainer attendance management methods
-        public async Task<IEnumerable<DiemDanh>> GetAttendanceByClassScheduleAsync(int lichLopId)
-        {
-            return await _diemDanhRepository.GetByClassScheduleAsync(lichLopId);
-        }
+        // Note: GetAttendanceByClassScheduleAsync method removed as LichLop no longer exists
 
-        public async Task<bool> TakeClassAttendanceAsync(int lichLopId, List<ClassAttendanceRecord> attendanceRecords)
-        {
-            try
-            {
-                // Verify the class schedule exists
-                var lichLop = await _unitOfWork.Context.LichLops
-                    .Include(l => l.LopHoc)
-                    .FirstOrDefaultAsync(l => l.LichLopId == lichLopId);
+        // Note: TakeClassAttendanceAsync method removed as it used LichLop
+        // Use TakeAttendanceAsync with lopHocId and date instead
 
-                if (lichLop == null)
-                    return false;
-
-                // Remove existing attendance for this class schedule
-                var existingAttendance = await _diemDanhRepository.GetByClassScheduleAsync(lichLopId);
-                foreach (var attendance in existingAttendance)
-                {
-                    await _diemDanhRepository.DeleteAsync(attendance);
-                }
-
-                // Create new attendance records
-                foreach (var record in attendanceRecords)
-                {
-                    var diemDanh = new DiemDanh
-                    {
-                        ThanhVienId = record.ThanhVienId,
-                        LichLopId = lichLopId,
-                        ThoiGian = DateTime.Now,
-                        ThoiGianCheckIn = DateTime.Now,
-                        TrangThai = record.TrangThai,
-                        GhiChu = record.GhiChu,
-                        KetQuaNhanDang = true // Trainer manually took attendance
-                    };
-
-                    await _diemDanhRepository.AddAsync(diemDanh);
-                }
-
-                await _unitOfWork.SaveChangesAsync();
-
-                // Send notifications to students
-                foreach (var record in attendanceRecords.Where(r => r.TrangThai == "Absent"))
-                {
-                    await _thongBaoService.CreateNotificationAsync(
-                        record.ThanhVienId,
-                        "Vắng mặt lớp học",
-                        $"Bạn đã vắng mặt lớp {lichLop.LopHoc.TenLop} ngày {lichLop.Ngay:dd/MM/yyyy}",
-                        "APP"
-                    );
-                }
-
-                return true;
-            }
-            catch (Exception)
-            {
-                return false;
-            }
-        }
-
-        public async Task<IEnumerable<NguoiDung>> GetStudentsInClassScheduleAsync(int lichLopId)
-        {
-            var lichLop = await _unitOfWork.Context.LichLops
-                .Include(l => l.LopHoc)
-                    .ThenInclude(lh => lh.DangKys.Where(d => d.TrangThai == "ACTIVE"))
-                        .ThenInclude(d => d.NguoiDung)
-                .FirstOrDefaultAsync(l => l.LichLopId == lichLopId);
-
-            if (lichLop?.LopHoc?.DangKys == null)
-                return new List<NguoiDung>();
-
-            return lichLop.LopHoc.DangKys
-                .Where(d => d.NguoiDung != null)
-                .Select(d => d.NguoiDung!)
-                .ToList();
-        }
-
-        public async Task<bool> CanTrainerTakeAttendanceAsync(int trainerId, int lichLopId)
-        {
-            var lichLop = await _unitOfWork.Context.LichLops
-                .Include(l => l.LopHoc)
-                .FirstOrDefaultAsync(l => l.LichLopId == lichLopId);
-
-            return lichLop?.LopHoc?.HlvId == trainerId;
-        }
+        // Note: Methods using LichLop have been removed
+        // Use class-based attendance methods instead
 
         public async Task<IEnumerable<object>> GetAvailableClassesAsync()
         {

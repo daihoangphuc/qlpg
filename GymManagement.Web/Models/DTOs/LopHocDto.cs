@@ -99,22 +99,5 @@ namespace GymManagement.Web.Models.DTOs
         public string TrangThai { get; set; } = "ACTIVE";
     }
 
-    public class LichLopDto
-    {
-        public int LichLopId { get; set; }
-        public int LopHocId { get; set; }
-        public string TenLop { get; set; } = null!;
-        public DateTime ThoiGianBatDau { get; set; }
-        public DateTime ThoiGianKetThuc { get; set; }
-        public string? TrainerName { get; set; }
-        public int SucChuaToiDa { get; set; }
-        public int RegisteredCount { get; set; }
-        public string TrangThai { get; set; } = "SCHEDULED";
-
-        [Display(Name = "Còn trống")]
-        public int AvailableSlots => SucChuaToiDa - RegisteredCount;
-
-        [Display(Name = "Có thể đăng ký")]
-        public bool CanRegister => AvailableSlots > 0 && TrangThai == "SCHEDULED" && ThoiGianBatDau > DateTime.Now;
-    }
+    // Note: LichLopDto has been removed as LichLop table no longer exists
 }

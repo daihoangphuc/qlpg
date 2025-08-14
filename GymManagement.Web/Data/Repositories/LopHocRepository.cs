@@ -47,7 +47,7 @@ namespace GymManagement.Web.Data.Repositories
                 .Include(x => x.Hlv)
                 .Include(x => x.DangKys.Where(d => d.TrangThai == "ACTIVE"))
                     .ThenInclude(d => d.NguoiDung)
-                .Include(x => x.LichLops.Where(l => l.Ngay >= DateOnly.FromDateTime(DateTime.Today)))
+
                 .Include(x => x.Bookings.Where(b => b.Ngay >= DateOnly.FromDateTime(DateTime.Today)))
                 .Include(x => x.BuoiTaps)
                 .AsSplitQuery()
@@ -140,16 +140,7 @@ namespace GymManagement.Web.Data.Repositories
                 .ToListAsync();
         }
 
-        /// <summary>
-        /// Get class with schedules
-        /// </summary>
-        public async Task<LopHoc?> GetWithLichLopsAsync(int lopHocId)
-        {
-            return await _dbSet
-                .Include(x => x.LichLops)
-                .Include(x => x.Hlv)
-                .FirstOrDefaultAsync(x => x.LopHocId == lopHocId);
-        }
+
 
         /// <summary>
         /// Get classes with available slots

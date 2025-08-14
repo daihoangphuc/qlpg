@@ -12,9 +12,8 @@ namespace GymManagement.Web.Data.Repositories
         Task<int> CountAttendanceByDateAsync(DateTime date);
         Task<int> CountAttendanceByMemberAsync(int thanhVienId, DateTime startDate, DateTime endDate);
         Task<IEnumerable<DiemDanh>> GetSuccessfulAttendanceAsync(DateTime startDate, DateTime endDate);
-        Task<IEnumerable<DiemDanh>> GetByClassScheduleAsync(int lichLopId);
         Task<int> GetAttendanceCountByDateRangeAsync(int thanhVienId, DateTime fromDate, DateTime toDate);
         Task<IEnumerable<DiemDanh>> GetByNguoiDungIdAsync(int nguoiDungId);
-        Task<IEnumerable<NguoiDung>> GetStudentsInClassScheduleAsync(int lichLopId);
+        // Note: Methods using LichLop have been removed
     }
 }

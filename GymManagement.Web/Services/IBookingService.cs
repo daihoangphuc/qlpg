@@ -14,7 +14,7 @@ namespace GymManagement.Web.Services
         Task<IEnumerable<Booking>> GetTodayBookingsAsync();
         Task<bool> BookClassAsync(int thanhVienId, int lopHocId, DateTime date, string? ghiChu = null);
         Task<(bool Success, string ErrorMessage)> BookClassWithTransactionAsync(int thanhVienId, int lopHocId, DateTime date, string? ghiChu = null);
-        Task<bool> BookScheduleAsync(int thanhVienId, int lichLopId);
+        // Note: BookScheduleAsync removed as LichLop no longer exists
         Task<bool> CancelBookingAsync(int bookingId);
         Task<bool> CanBookAsync(int thanhVienId, int lopHocId, DateTime date);
         Task<int> GetAvailableSlotsAsync(int lopHocId, DateTime date);

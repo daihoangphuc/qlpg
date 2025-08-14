@@ -14,7 +14,6 @@ namespace GymManagement.Web.Data.Repositories
             return await _context.Bookings
                 .Include(b => b.ThanhVien)
                 .Include(b => b.LopHoc)
-                .Include(b => b.LichLop)
                 .Where(b => b.ThanhVienId == thanhVienId)
                 .OrderByDescending(b => b.Ngay)
                 .ToListAsync();
@@ -25,22 +24,12 @@ namespace GymManagement.Web.Data.Repositories
             return await _context.Bookings
                 .Include(b => b.ThanhVien)
                 .Include(b => b.LopHoc)
-                .Include(b => b.LichLop)
                 .Where(b => b.LopHocId == lopHocId)
                 .OrderByDescending(b => b.Ngay)
                 .ToListAsync();
         }
 
-        public async Task<IEnumerable<Booking>> GetByLichLopIdAsync(int lichLopId)
-        {
-            return await _context.Bookings
-                .Include(b => b.ThanhVien)
-                .Include(b => b.LopHoc)
-                .Include(b => b.LichLop)
-                .Where(b => b.LichLopId == lichLopId)
-                .OrderByDescending(b => b.Ngay)
-                .ToListAsync();
-        }
+        // Note: GetByLichLopIdAsync method removed as LichLop table no longer exists
 
         public async Task<IEnumerable<Booking>> GetBookingsByDateAsync(DateTime date)
         {
@@ -48,9 +37,8 @@ namespace GymManagement.Web.Data.Repositories
             return await _context.Bookings
                 .Include(b => b.ThanhVien)
                 .Include(b => b.LopHoc)
-                .Include(b => b.LichLop)
                 .Where(b => b.Ngay == dateOnly)
-                .OrderBy(b => b.LichLop.GioBatDau)
+                .OrderBy(b => b.LopHoc.GioBatDau)
                 .ToListAsync();
         }
 
@@ -59,10 +47,9 @@ namespace GymManagement.Web.Data.Repositories
             return await _context.Bookings
                 .Include(b => b.ThanhVien)
                 .Include(b => b.LopHoc)
-                .Include(b => b.LichLop)
                 .Where(b => b.TrangThai == "BOOKED" && b.Ngay >= DateOnly.FromDateTime(DateTime.Today))
                 .OrderBy(b => b.Ngay)
-                .ThenBy(b => b.LichLop.GioBatDau)
+                .ThenBy(b => b.LopHoc.GioBatDau)
                 .ToListAsync();
         }
 
@@ -75,33 +62,26 @@ namespace GymManagement.Web.Data.Repositories
                                 b.TrangThai == "BOOKED");
         }
 
-        public async Task<int> CountBookingsForScheduleAsync(int lichLopId)
-        {
-            return await _context.Bookings
-                .CountAsync(b => b.LichLopId == lichLopId && b.TrangThai == "BOOKED");
-        }
+        // Note: Methods using LichLop have been simplified to use LopHoc only
 
-        public async Task<bool> HasBookingAsync(int thanhVienId, int? lopHocId, int? lichLopId, DateTime date)
+        public async Task<bool> HasBookingAsync(int thanhVienId, int lopHocId, DateTime date)
         {
             var dateOnly = DateOnly.FromDateTime(date);
             return await _context.Bookings
                 .AnyAsync(b => b.ThanhVienId == thanhVienId &&
                               b.LopHocId == lopHocId &&
-                              b.LichLopId == lichLopId &&
                               b.Ngay == dateOnly &&
                               b.TrangThai == "BOOKED");
         }
 
-        public async Task<Booking?> GetActiveBookingAsync(int thanhVienId, int? lopHocId, int? lichLopId, DateTime date)
+        public async Task<Booking?> GetActiveBookingAsync(int thanhVienId, int lopHocId, DateTime date)
         {
             var dateOnly = DateOnly.FromDateTime(date);
             return await _context.Bookings
                 .Include(b => b.ThanhVien)
                 .Include(b => b.LopHoc)
-                .Include(b => b.LichLop)
                 .FirstOrDefaultAsync(b => b.ThanhVienId == thanhVienId &&
                                          b.LopHocId == lopHocId &&
-                                         b.LichLopId == lichLopId &&
                                          b.Ngay == dateOnly &&
                                          b.TrangThai == "BOOKED");
         }

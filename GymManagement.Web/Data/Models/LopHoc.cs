@@ -59,10 +59,10 @@ namespace GymManagement.Web.Data.Models
 
         // Navigation properties
         public virtual NguoiDung? Hlv { get; set; }
-        public virtual ICollection<LichLop> LichLops { get; set; } = new List<LichLop>();
         public virtual ICollection<DangKy> DangKys { get; set; } = new List<DangKy>();
         public virtual ICollection<Booking> Bookings { get; set; } = new List<Booking>();
         public virtual ICollection<BuoiHlv> BuoiHlvs { get; set; } = new List<BuoiHlv>();
         public virtual ICollection<BuoiTap> BuoiTaps { get; set; } = new List<BuoiTap>();
+        public virtual ICollection<DiemDanh> DiemDanhs { get; set; } = new List<DiemDanh>();
     }
 }

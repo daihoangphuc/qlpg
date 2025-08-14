@@ -20,7 +20,8 @@ namespace GymManagement.Web.Data.Models
         // Add CheckOut functionality
         public DateTime? ThoiGianCheckOut { get; set; }
 
-        public int? LichLopId { get; set; }
+        // Direct class reference (LichLop table was removed)
+        public int? LopHocId { get; set; }
 
         [StringLength(20)]
         public string TrangThai { get; set; } = "Present"; // Present, Absent, Late
@@ -36,6 +37,6 @@ namespace GymManagement.Web.Data.Models
 
         // Navigation properties
         public virtual NguoiDung? ThanhVien { get; set; }
-        public virtual LichLop? LichLop { get; set; }
+        public virtual LopHoc? LopHoc { get; set; }
     }
 }

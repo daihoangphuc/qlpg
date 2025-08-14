@@ -26,6 +26,10 @@ namespace GymManagement.Web.Data.Repositories
 
         public async Task<IEnumerable<ThanhToan>> GetPaymentsByDateRangeAsync(DateTime startDate, DateTime endDate)
         {
+            // Ensure full day coverage: start at 00:00:00 and end at 23:59:59.999
+            var adjustedStartDate = startDate.Date;
+            var adjustedEndDate = endDate.Date.AddDays(1).AddTicks(-1);
+
             return await _context.ThanhToans
                 .Include(t => t.DangKy)
                     .ThenInclude(d => d.NguoiDung)
@@ -33,7 +37,7 @@ namespace GymManagement.Web.Data.Repositories
                     .ThenInclude(d => d.GoiTap)
                 .Include(t => t.DangKy)
                     .ThenInclude(d => d.LopHoc)
-                .Where(t => t.NgayThanhToan >= startDate && t.NgayThanhToan <= endDate)
+                .Where(t => t.NgayThanhToan >= adjustedStartDate && t.NgayThanhToan <= adjustedEndDate)
                 .OrderByDescending(t => t.NgayThanhToan)
                 .ToListAsync();
         }
@@ -60,10 +64,14 @@ namespace GymManagement.Web.Data.Repositories
 
         public async Task<decimal> GetTotalRevenueByDateRangeAsync(DateTime startDate, DateTime endDate)
         {
+            // Ensure full day coverage: start at 00:00:00 and end at 23:59:59.999
+            var adjustedStartDate = startDate.Date;
+            var adjustedEndDate = endDate.Date.AddDays(1).AddTicks(-1);
+
             return await _context.ThanhToans
-                .Where(t => t.TrangThai == "SUCCESS" && 
-                           t.NgayThanhToan >= startDate && 
-                           t.NgayThanhToan <= endDate)
+                .Where(t => t.TrangThai == "SUCCESS" &&
+                           t.NgayThanhToan >= adjustedStartDate &&
+                           t.NgayThanhToan <= adjustedEndDate)
                 .SumAsync(t => t.SoTien);
         }
 

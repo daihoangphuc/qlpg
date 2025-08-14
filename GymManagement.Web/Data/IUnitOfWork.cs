@@ -13,7 +13,7 @@ namespace GymManagement.Web.Data
         ILopHocRepository LopHocs { get; }
         IRepository<Models.VaiTro> VaiTros { get; }
         IRepository<Models.TaiKhoan> TaiKhoans { get; }
-        IRepository<Models.LichLop> LichLops { get; }
+
         IRepository<Models.KhuyenMai> KhuyenMais { get; }
         IRepository<Models.DangKy> DangKys { get; }
         IRepository<Models.ThanhToan> ThanhToans { get; }

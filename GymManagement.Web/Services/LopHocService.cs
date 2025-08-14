@@ -144,12 +144,7 @@ namespace GymManagement.Web.Services
                     return (false, $"Không thể xóa lớp học này vì đang có {futureBookings} lịch đặt trong tương lai.");
                 }
 
-                // Check for future schedules
-                var futureSchedules = lopHoc.LichLops?.Count(l => l.Ngay >= DateOnly.FromDateTime(DateTime.Today)) ?? 0;
-                if (futureSchedules > 0)
-                {
-                    return (false, $"Không thể xóa lớp học này vì đang có {futureSchedules} buổi học được lên lịch trong tương lai.");
-                }
+                // Note: LichLops table has been removed - no need to check schedules
 
                 // Check for completed sessions that need to be preserved
                 var completedSessions = lopHoc.BuoiTaps?.Count() ?? 0;
@@ -203,68 +198,7 @@ namespace GymManagement.Web.Services
             return Math.Max(0, lopHoc.SucChua - bookingCount);
         }
 
-        public async Task GenerateScheduleAsync(int lopHocId, DateTime startDate, DateTime endDate)
-        {
-            var lopHoc = await _lopHocRepository.GetByIdAsync(lopHocId);
-            if (lopHoc == null) return;
 
-            var thuTrongTuan = lopHoc.ThuTrongTuan.Split(',').Select(t => t.Trim()).ToList();
-            var currentDate = startDate;
-
-            while (currentDate <= endDate)
-            {
-                var dayOfWeek = GetVietnameseDayOfWeek(currentDate.DayOfWeek);
-                if (thuTrongTuan.Contains(dayOfWeek))
-                {
-                    // Check if schedule already exists
-                    var currentDateOnly = DateOnly.FromDateTime(currentDate);
-                    var existingSchedule = await _unitOfWork.Context.LichLops
-                        .FirstOrDefaultAsync(l => l.LopHocId == lopHocId && l.Ngay == currentDateOnly);
-
-                    if (existingSchedule == null)
-                    {
-                        var lichLop = new LichLop
-                        {
-                            LopHocId = lopHocId,
-                            Ngay = currentDateOnly,
-                            GioBatDau = lopHoc.GioBatDau,
-                            GioKetThuc = lopHoc.GioKetThuc,
-                            TrangThai = "SCHEDULED"
-                        };
-
-                        await _unitOfWork.Context.LichLops.AddAsync(lichLop);
-                    }
-                }
-                currentDate = currentDate.AddDays(1);
-            }
-
-            await _unitOfWork.SaveChangesAsync();
-        }
-
-        public async Task<IEnumerable<LichLop>> GetClassScheduleAsync(int lopHocId, DateTime startDate, DateTime endDate)
-        {
-            var startDateOnly = DateOnly.FromDateTime(startDate);
-            var endDateOnly = DateOnly.FromDateTime(endDate);
-
-            return await _unitOfWork.Context.LichLops
-                .Include(l => l.LopHoc)
-                .Where(l => l.LopHocId == lopHocId && l.Ngay >= startDateOnly && l.Ngay <= endDateOnly)
-                .OrderBy(l => l.Ngay)
-                .ThenBy(l => l.GioBatDau)
-                .ToListAsync();
-        }
-
-        public async Task<bool> CancelClassAsync(int lichLopId, string reason)
-        {
-            var lichLop = await _unitOfWork.Context.LichLops.FindAsync(lichLopId);
-            if (lichLop == null) return false;
-
-            lichLop.TrangThai = "CANCELED";
-            await _unitOfWork.SaveChangesAsync();
-
-            // TODO: Send notifications to booked members
-            return true;
-        }
 
         private string GetVietnameseDayOfWeek(DayOfWeek dayOfWeek)
         {

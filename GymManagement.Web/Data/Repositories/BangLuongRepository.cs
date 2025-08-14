@@ -56,6 +56,7 @@ namespace GymManagement.Web.Data.Repositories
 
         public async Task<decimal> GetTotalSalaryByMonthAsync(string thang)
         {
+            // ✅ FIX: Tính cả lương chưa thanh toán để có Net Profit chính xác
             return await _context.BangLuongs
                 .Where(b => b.Thang == thang)
                 .SumAsync(b => b.LuongCoBan);
@@ -63,8 +64,24 @@ namespace GymManagement.Web.Data.Repositories
 
         public async Task<decimal> GetTotalCommissionByMonthAsync(string thang)
         {
+            // ✅ FIX: Tính cả hoa hồng chưa thanh toán để có Net Profit chính xác
             return await _context.BangLuongs
                 .Where(b => b.Thang == thang)
+                .SumAsync(b => b.TienHoaHong);
+        }
+
+        // ✅ NEW: Methods để tính riêng lương đã thanh toán (nếu cần)
+        public async Task<decimal> GetPaidSalaryByMonthAsync(string thang)
+        {
+            return await _context.BangLuongs
+                .Where(b => b.Thang == thang && b.NgayThanhToan != null)
+                .SumAsync(b => b.LuongCoBan);
+        }
+
+        public async Task<decimal> GetPaidCommissionByMonthAsync(string thang)
+        {
+            return await _context.BangLuongs
+                .Where(b => b.Thang == thang && b.NgayThanhToan != null)
                 .SumAsync(b => b.TienHoaHong);
         }
 

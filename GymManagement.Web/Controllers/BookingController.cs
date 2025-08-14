@@ -303,7 +303,8 @@ namespace GymManagement.Web.Controllers
                     return Json(new { success = false, message = "Vui lòng đăng nhập để đặt lịch." });
                 }
 
-                var result = await _bookingService.BookScheduleAsync(user.NguoiDungId.Value, scheduleId);
+                // Note: BookScheduleAsync method removed - use BookClassAsync instead
+                var result = await _bookingService.BookClassAsync(user.NguoiDungId.Value, scheduleId, DateTime.Now);
                 if (result)
                 {
                     return Json(new { success = true, message = "Đặt lịch thành công!" });
@@ -459,8 +460,8 @@ namespace GymManagement.Web.Controllers
                         .Select(b => new {
                             id = b.BookingId,
                             title = $"✅ {GetShortClassName(b.LopHoc?.TenLop)}",
-                            start = b.Ngay.ToString("yyyy-MM-dd") + "T" + (b.LichLop?.GioBatDau.ToString("HH:mm") ?? b.LopHoc?.GioBatDau.ToString("HH:mm") ?? "08:00"),
-                            end = b.Ngay.ToString("yyyy-MM-dd") + "T" + (b.LichLop?.GioKetThuc.ToString("HH:mm") ?? b.LopHoc?.GioKetThuc.ToString("HH:mm") ?? "09:00"),
+                            start = b.Ngay.ToString("yyyy-MM-dd") + "T" + (b.LopHoc?.GioBatDau.ToString("HH:mm") ?? "08:00"),
+                            end = b.Ngay.ToString("yyyy-MM-dd") + "T" + (b.LopHoc?.GioKetThuc.ToString("HH:mm") ?? "09:00"),
                             backgroundColor = GetEventColor(b.TrangThai),
                             borderColor = GetEventColor(b.TrangThai),
                             textColor = "#FFFFFF",
@@ -478,49 +479,36 @@ namespace GymManagement.Web.Controllers
                         availableClasses = availableClasses.Where(c => c.LopHocId == classId.Value);
                     }
 
-                    // For classes with LichLop schedules
-                    var classEventsWithSchedule = availableClasses
-                        .Where(c => c.LichLops != null && c.LichLops.Any())
-                        .SelectMany(c => c.LichLops.Where(l => 
-                            l.Ngay >= startDateOnly && 
-                            l.Ngay <= endDateOnly &&
-                            l.TrangThai == "SCHEDULED"))
-                        .Select(l => new {
-                            id = $"class_{l.LichLopId}_{l.Ngay:yyyyMMdd}",
-                            title = $"🏃 {GetShortClassName(l.LopHoc?.TenLop)}",
-                            start = l.Ngay.ToString("yyyy-MM-dd") + "T" + l.GioBatDau.ToString("HH:mm"),
-                            end = l.Ngay.ToString("yyyy-MM-dd") + "T" + l.GioKetThuc.ToString("HH:mm"),
-                            backgroundColor = "#059669",
-                            borderColor = "#059669",
-                            textColor = "#FFFFFF",
-                            status = "AVAILABLE",
-                            type = "class",
-                            lopHocId = l.LopHocId,
-                            lichLopId = l.LichLopId,
-                            fullTitle = l.LopHoc?.TenLop ?? "Lớp học"
-                        });
-
+                    // Generate dynamic schedules for classes (no LichLops table)
+                    var classEventsWithSchedule = new List<object>();
+                    foreach (var lopHoc in availableClasses)
+                    {
+                        var thuTrongTuan = lopHoc.ThuTrongTuan.Split(',').Select(t => t.Trim()).ToList();
+                        var currentDate = start;
+                        while (currentDate <= end)
+                        {
+                            var dayOfWeek = GetVietnameseDayOfWeek(currentDate.DayOfWeek);
+                            if (thuTrongTuan.Contains(dayOfWeek))
+                            {
+                                classEventsWithSchedule.Add(new {
+                                    id = $"class_{lopHoc.LopHocId}_{currentDate:yyyyMMdd}",
+                                    title = $"📚 {GetShortClassName(lopHoc.TenLop)}",
+                                    start = currentDate.ToString("yyyy-MM-dd") + "T" + lopHoc.GioBatDau.ToString("HH:mm"),
+                                    end = currentDate.ToString("yyyy-MM-dd") + "T" + lopHoc.GioKetThuc.ToString("HH:mm"),
+                                    backgroundColor = "#3B82F6",
+                                    borderColor = "#2563EB",
+                                    textColor = "#FFFFFF",
+                                    type = "class",
+                                    classId = lopHoc.LopHocId,
+                                    fullTitle = lopHoc.TenLop
+                                });
+                            }
+                            currentDate = currentDate.AddDays(1);
+                        }
+                    }
                     events.AddRange(classEventsWithSchedule);
 
-                    // For classes without LichLop schedules (regular weekly classes)
-                    var classEventsWithoutSchedule = availableClasses
-                        .Where(c => c.LichLops == null || !c.LichLops.Any())
-                        .SelectMany(c => GenerateWeeklyClassEvents(c, startDateOnly, endDateOnly))
-                        .Select(evt => new {
-                            id = $"weekly_class_{evt.LopHocId}_{evt.Date:yyyyMMdd}",
-                            title = $"📅 {GetShortClassName(evt.TenLop)}",
-                            start = evt.Date.ToString("yyyy-MM-dd") + "T" + evt.GioBatDau.ToString("HH:mm"),
-                            end = evt.Date.ToString("yyyy-MM-dd") + "T" + evt.GioKetThuc.ToString("HH:mm"),
-                            backgroundColor = "#0891B2",
-                            borderColor = "#0891B2",
-                            textColor = "#FFFFFF",
-                            status = "AVAILABLE",
-                            type = "weekly_class",
-                            lopHocId = evt.LopHocId,
-                            fullTitle = evt.TenLop
-                        });
-
-                    events.AddRange(classEventsWithoutSchedule);
+                    // Note: All classes now use dynamic schedule generation
                 }
                 else if (User.IsInRole("Admin"))
                 {
@@ -534,8 +522,8 @@ namespace GymManagement.Web.Controllers
                         .Select(b => new {
                             id = b.BookingId,
                             title = $"{GetShortClassName(b.LopHoc?.TenLop)} - {GetShortMemberName(b.ThanhVien)}",
-                            start = b.Ngay.ToString("yyyy-MM-dd") + "T" + (b.LichLop?.GioBatDau.ToString("HH:mm") ?? b.LopHoc?.GioBatDau.ToString("HH:mm") ?? "08:00"),
-                            end = b.Ngay.ToString("yyyy-MM-dd") + "T" + (b.LichLop?.GioKetThuc.ToString("HH:mm") ?? b.LopHoc?.GioKetThuc.ToString("HH:mm") ?? "09:00"),
+                            start = b.Ngay.ToString("yyyy-MM-dd") + "T" + (b.LopHoc?.GioBatDau.ToString("HH:mm") ?? "08:00"),
+                            end = b.Ngay.ToString("yyyy-MM-dd") + "T" + (b.LopHoc?.GioKetThuc.ToString("HH:mm") ?? "09:00"),
                             backgroundColor = GetEventColor(b.TrangThai),
                             borderColor = GetEventColor(b.TrangThai),
                             textColor = "#FFFFFF",
@@ -824,6 +812,24 @@ namespace GymManagement.Web.Controllers
                 ViewBag.Classes = new SelectList(new List<LopHoc>(), "LopHocId", "TenLop");
                 ViewBag.Members = new SelectList(new List<NguoiDung>(), "NguoiDungId", "Ho");
             }
+        }
+
+        /// <summary>
+        /// Helper method to convert DayOfWeek to Vietnamese
+        /// </summary>
+        private string GetVietnameseDayOfWeek(DayOfWeek dayOfWeek)
+        {
+            return dayOfWeek switch
+            {
+                DayOfWeek.Monday => "Thứ 2",
+                DayOfWeek.Tuesday => "Thứ 3",
+                DayOfWeek.Wednesday => "Thứ 4",
+                DayOfWeek.Thursday => "Thứ 5",
+                DayOfWeek.Friday => "Thứ 6",
+                DayOfWeek.Saturday => "Thứ 7",
+                DayOfWeek.Sunday => "Chủ nhật",
+                _ => ""
+            };
         }
     }
 }

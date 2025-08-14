@@ -4,7 +4,7 @@
     Layout = "~/Views/Shared/_TrainerLayout.cshtml";
     
     var myClasses = ViewBag.MyClasses as IEnumerable<GymManagement.Web.Data.Models.LopHoc> ?? new List<GymManagement.Web.Data.Models.LopHoc>();
-    var selectedSchedule = ViewBag.SelectedSchedule as GymManagement.Web.Data.Models.LichLop;
+    // Note: LichLop model has been removed - using class and date info instead
     var students = ViewBag.Students as IEnumerable<GymManagement.Web.Data.Models.NguoiDung> ?? new List<GymManagement.Web.Data.Models.NguoiDung>();
     var existingAttendance = ViewBag.ExistingAttendance as Dictionary<int, GymManagement.Web.Data.Models.DiemDanh> ?? new Dictionary<int, GymManagement.Web.Data.Models.DiemDanh>();
     var selectedClassId = ViewBag.SelectedClassId as int? ?? 0;
@@ -107,7 +107,7 @@
             </div>
         </div>
 
-        @if (selectedSchedule != null && students.Any())
+        @if (selectedClassId > 0 && students.Any())
         {
             <!-- Class Info Card -->
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
@@ -118,15 +118,15 @@
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <div>
                             <dt class="text-sm font-medium text-gray-500">Tên lớp</dt>
-                            <dd class="mt-1 text-sm text-gray-900 font-semibold">@selectedSchedule.LopHoc?.TenLop</dd>
+                            <dd class="mt-1 text-sm text-gray-900 font-semibold">@(myClasses.FirstOrDefault(c => c.LopHocId == selectedClassId)?.TenLop ?? "Không xác định")</dd>
                         </div>
                         <div>
                             <dt class="text-sm font-medium text-gray-500">Ngày học</dt>
-                            <dd class="mt-1 text-sm text-gray-900">@selectedSchedule.Ngay.ToString("dd/MM/yyyy")</dd>
+                            <dd class="mt-1 text-sm text-gray-900">@selectedDate.ToString("dd/MM/yyyy")</dd>
                         </div>
                         <div>
                             <dt class="text-sm font-medium text-gray-500">Thời gian</dt>
-                            <dd class="mt-1 text-sm text-gray-900">@selectedSchedule.GioBatDau.ToString("HH:mm") - @selectedSchedule.GioKetThuc.ToString("HH:mm")</dd>
+                            <dd class="mt-1 text-sm text-gray-900">@(myClasses.FirstOrDefault(c => c.LopHocId == selectedClassId)?.GioBatDau.ToString("HH:mm") ?? "08:00") - @(myClasses.FirstOrDefault(c => c.LopHocId == selectedClassId)?.GioKetThuc.ToString("HH:mm") ?? "09:00")</dd>
                         </div>
                         <div>
                             <dt class="text-sm font-medium text-gray-500">Số học viên</dt>
@@ -159,7 +159,8 @@
                 </div>
                 <div class="px-6 py-4">
                     <form id="attendanceForm">
-                        <input type="hidden" id="lichLopId" value="@selectedSchedule.LichLopId" />
+                        <input type="hidden" id="selectedClassId" value="@selectedClassId" />
+                        <input type="hidden" id="selectedDate" value="@selectedDate.ToString("yyyy-MM-dd")" />
                         
                         <div class="space-y-4">
                             @{int index = 0;}
@@ -286,7 +287,8 @@ document.addEventListener('DOMContentLoaded', function() {
         submitButton.innerHTML = '<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Đang lưu...';
 
         const formData = new FormData(this);
-        const lichLopId = document.getElementById('lichLopId').value;
+        const selectedClassId = document.getElementById('selectedClassId').value;
+        const selectedDate = document.getElementById('selectedDate').value;
 
         // Collect attendance records
         const attendanceRecords = [];
@@ -314,7 +316,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
             },
             body: JSON.stringify({
-                lichLopId: parseInt(lichLopId),
+                lopHocId: parseInt(selectedClassId),
+                attendanceDate: selectedDate,
                 attendanceRecords: attendanceRecords
             })
         })

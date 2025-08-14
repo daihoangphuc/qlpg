@@ -544,17 +544,36 @@ namespace GymManagement.Web.Services
             var monthStartDateOnly = DateOnly.FromDateTime(monthStart);
             var monthEndDateOnly = DateOnly.FromDateTime(monthEnd);
 
-            var totalSessions = await _unitOfWork.Context.LichLops
-                .Where(ll => ll.LopHoc != null && ll.LopHoc.HlvId == hlvId)
-                .Where(ll => ll.Ngay >= monthStartDateOnly && ll.Ngay <= monthEndDateOnly)
-                .CountAsync();
+            // Calculate total sessions from class schedules (dynamic calculation)
+            var trainerClasses = await _unitOfWork.Context.LopHocs
+                .Where(lh => lh.HlvId == hlvId)
+                .ToListAsync();
+
+            var totalSessions = 0;
+            foreach (var lopHoc in trainerClasses)
+            {
+                var thuTrongTuan = lopHoc.ThuTrongTuan.Split(',').Select(t => t.Trim()).ToList();
+                var currentDate = monthStart;
+                while (currentDate <= monthEnd)
+                {
+                    var dayOfWeek = GetVietnameseDayOfWeek(currentDate.DayOfWeek);
+                    if (thuTrongTuan.Contains(dayOfWeek))
+                    {
+                        totalSessions++;
+                    }
+                    currentDate = currentDate.AddDays(1);
+                }
+            }
 
             if (totalSessions == 0) return 0;
 
-            var attendedSessions = await _unitOfWork.Context.DiemDanhs
-                .Where(dd => dd.LichLop != null && dd.LichLop.LopHoc != null && dd.LichLop.LopHoc.HlvId == hlvId)
-                .Where(dd => dd.ThoiGian >= monthStart && dd.ThoiGian <= monthEnd)
-                .Where(dd => dd.TrangThai == "Present")
+            // Note: Attendance calculation simplified as LichLop no longer exists
+            // Use booking records for trainer's classes only
+            var attendedSessions = await _unitOfWork.Context.Bookings
+                .Include(b => b.LopHoc)
+                .Where(b => b.LopHoc != null && b.LopHoc.HlvId == hlvId)
+                .Where(b => b.Ngay >= DateOnly.FromDateTime(monthStart) && b.Ngay <= DateOnly.FromDateTime(monthEnd))
+                .Where(b => b.TrangThai == "BOOKED")
                 .CountAsync();
 
             var attendanceRate = (decimal)attendedSessions / totalSessions;
@@ -630,12 +649,27 @@ namespace GymManagement.Web.Services
                 .Where(d => d.TrangThai == "ACTIVE")
                 .CountAsync();
 
-            // Count classes taught
-            breakdown.ClassesTaught = await _unitOfWork.Context.LichLops
-                .Include(l => l.LopHoc)
-                .Where(l => l.Ngay >= monthStartDateOnly && l.Ngay <= monthEndDateOnly)
-                .Where(l => l.LopHoc != null && l.LopHoc.HlvId == hlvId)
-                .CountAsync();
+            // Count classes taught (calculate from class schedules)
+            var trainerClasses = await _unitOfWork.Context.LopHocs
+                .Where(lh => lh.HlvId == hlvId)
+                .ToListAsync();
+
+            var classesTaught = 0;
+            foreach (var lopHoc in trainerClasses)
+            {
+                var thuTrongTuan = lopHoc.ThuTrongTuan.Split(',').Select(t => t.Trim()).ToList();
+                var currentDate = monthStart;
+                while (currentDate <= monthEnd)
+                {
+                    var dayOfWeek = GetVietnameseDayOfWeek(currentDate.DayOfWeek);
+                    if (thuTrongTuan.Contains(dayOfWeek))
+                    {
+                        classesTaught++;
+                    }
+                    currentDate = currentDate.AddDays(1);
+                }
+            }
+            breakdown.ClassesTaught = classesTaught;
         }
 
         // Simplified email notification
@@ -848,6 +882,22 @@ namespace GymManagement.Web.Services
         {
             _cache.Remove($"salary_month_{thang}");
             _cache.Remove($"salary_expense_{thang}");
+        }
+
+        // Helper method to convert DayOfWeek to Vietnamese
+        private string GetVietnameseDayOfWeek(DayOfWeek dayOfWeek)
+        {
+            return dayOfWeek switch
+            {
+                DayOfWeek.Monday => "Thứ 2",
+                DayOfWeek.Tuesday => "Thứ 3",
+                DayOfWeek.Wednesday => "Thứ 4",
+                DayOfWeek.Thursday => "Thứ 5",
+                DayOfWeek.Friday => "Thứ 6",
+                DayOfWeek.Saturday => "Thứ 7",
+                DayOfWeek.Sunday => "Chủ nhật",
+                _ => ""
+            };
         }
 
         // Helper class for commission breakdown

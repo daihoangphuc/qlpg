@@ -64,14 +64,8 @@ namespace GymManagement.Web.Data.Repositories
                 .CountAsync();
         }
 
-        public async Task<IEnumerable<NguoiDung>> GetStudentsInClassScheduleAsync(int lichLopId)
-        {
-            return await _context.DiemDanhs
-                .Where(d => d.LichLopId == lichLopId)
-                .Select(d => d.ThanhVien!)
-                .Distinct()
-                .ToListAsync();
-        }
+        // Note: GetStudentsInClassScheduleAsync method removed as LichLop no longer exists
+        // Use GetStudentsInClassAsync with lopHocId and date instead
 
         public async Task<bool> HasAttendanceToday(int thanhVienId)
         {
@@ -112,16 +106,7 @@ namespace GymManagement.Web.Data.Repositories
                 .ToListAsync();
         }
 
-        public async Task<IEnumerable<DiemDanh>> GetByClassScheduleAsync(int lichLopId)
-        {
-            return await _context.DiemDanhs
-                .Include(d => d.ThanhVien)
-                .Include(d => d.LichLop)
-                    .ThenInclude(l => l!.LopHoc)
-                .Where(d => d.LichLopId == lichLopId)
-                .OrderBy(d => d.ThanhVien!.Ho)
-                .ThenBy(d => d.ThanhVien!.Ten)
-                .ToListAsync();
-        }
+        // Note: GetByClassScheduleAsync method removed as LichLop no longer exists
+        // Use GetByClassAndDateAsync with lopHocId and date instead
     }
 }

@@ -328,7 +328,7 @@ public class HomeController : BaseController
                            b.Ngay <= upcomingDate &&
                            b.TrangThai == "BOOKED")
                 .OrderBy(b => b.Ngay)
-                .ThenBy(b => b.LichLop?.GioBatDau)
+                .ThenBy(b => b.LopHoc?.GioBatDau)
                 .Take(5)
                 .ToList();
 
@@ -386,9 +386,9 @@ public class HomeController : BaseController
 
             // Next class time
             var nextBooking = dashboardModel.UpcomingBookings.FirstOrDefault();
-            if (nextBooking != null && nextBooking.LichLop != null)
+            if (nextBooking != null && nextBooking.LopHoc != null)
             {
-                dashboardModel.QuickStats.NextClassTime = $"{nextBooking.Ngay:dd/MM} {nextBooking.LichLop.GioBatDau:HH:mm}";
+                dashboardModel.QuickStats.NextClassTime = $"{nextBooking.Ngay:dd/MM} {nextBooking.LopHoc.GioBatDau:HH:mm}";
             }
 
             return View(dashboardModel);

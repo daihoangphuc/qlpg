@@ -10,8 +10,6 @@ namespace GymManagement.Web.Data.Models
         
         public int? LopHocId { get; set; }
         
-        public int? LichLopId { get; set; }
-        
         [Required]
         public DateOnly Ngay { get; set; }
         
@@ -28,6 +26,5 @@ namespace GymManagement.Web.Data.Models
         // Navigation properties
         public virtual NguoiDung? ThanhVien { get; set; }
         public virtual LopHoc? LopHoc { get; set; }
-        public virtual LichLop? LichLop { get; set; }
     }
 }

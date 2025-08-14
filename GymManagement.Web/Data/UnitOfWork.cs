@@ -14,7 +14,7 @@ namespace GymManagement.Web.Data
         private ILopHocRepository? _lopHocs;
         private IRepository<Models.VaiTro>? _vaiTros;
         private IRepository<Models.TaiKhoan>? _taiKhoans;
-        private IRepository<Models.LichLop>? _lichLops;
+
         private IRepository<Models.KhuyenMai>? _khuyenMais;
         private IRepository<Models.DangKy>? _dangKys;
         private IRepository<Models.ThanhToan>? _thanhToans;
@@ -53,8 +53,7 @@ namespace GymManagement.Web.Data
         public IRepository<Models.TaiKhoan> TaiKhoans => 
             _taiKhoans ??= new Repository<Models.TaiKhoan>(_context);
 
-        public IRepository<Models.LichLop> LichLops => 
-            _lichLops ??= new Repository<Models.LichLop>(_context);
+
 
         public IRepository<Models.KhuyenMai> KhuyenMais => 
             _khuyenMais ??= new Repository<Models.KhuyenMai>(_context);

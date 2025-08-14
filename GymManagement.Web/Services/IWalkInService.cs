@@ -31,6 +31,14 @@ namespace GymManagement.Web.Services
         Task<DangKy> CreateFixedPricePassAsync(int guestId);
 
         /// <summary>
+        /// Tạo vé tập với giá tùy chỉnh cho khách vãng lai
+        /// </summary>
+        /// <param name="guestId">ID khách vãng lai</param>
+        /// <param name="customAmount">Giá tùy chỉnh</param>
+        /// <returns>Thông tin đăng ký vé</returns>
+        Task<DangKy> CreateCustomPricePassAsync(int guestId, decimal customAmount);
+
+        /// <summary>
         /// Tạo vé ngày/giờ cho khách vãng lai (Backward compatibility)
         /// </summary>
         /// <param name="guestId">ID khách vãng lai</param>

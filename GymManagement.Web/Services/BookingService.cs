@@ -172,52 +172,8 @@ namespace GymManagement.Web.Services
             return result.Success;
         }
 
-        public async Task<bool> BookScheduleAsync(int thanhVienId, int lichLopId)
-        {
-            // Check if schedule exists
-            var lichLop = await _unitOfWork.Context.LichLops
-                .Include(l => l.LopHoc)
-                .FirstOrDefaultAsync(l => l.LichLopId == lichLopId);
-
-            if (lichLop == null || lichLop.TrangThai != "SCHEDULED")
-                return false;
-
-            // Check if member already has a booking for this schedule
-            if (await _bookingRepository.HasBookingAsync(thanhVienId, lichLop.LopHocId, lichLopId, lichLop.Ngay.ToDateTime(TimeOnly.MinValue)))
-                return false;
-
-            // Check if class has available slots
-            var bookingCount = await _bookingRepository.CountBookingsForScheduleAsync(lichLopId);
-            if (bookingCount >= lichLop.LopHoc.SucChua)
-                return false;
-
-            // Create booking
-            var booking = new Booking
-            {
-                ThanhVienId = thanhVienId,
-                LopHocId = lichLop.LopHocId,
-                LichLopId = lichLopId,
-                Ngay = lichLop.Ngay,
-                TrangThai = "BOOKED"
-            };
-
-            await _bookingRepository.AddAsync(booking);
-            await _unitOfWork.SaveChangesAsync();
-
-            // Send notification
-            var thanhVien = await _unitOfWork.Context.NguoiDungs.FindAsync(thanhVienId);
-            if (thanhVien != null)
-            {
-                await _thongBaoService.CreateNotificationAsync(
-                    thanhVienId,
-                    "Đặt lịch thành công",
-                    $"Bạn đã đặt lịch thành công lớp {lichLop.LopHoc.TenLop} vào ngày {lichLop.Ngay:dd/MM/yyyy}",
-                    "APP"
-                );
-            }
-
-            return true;
-        }
+        // Note: BookScheduleAsync method removed as it used LichLop
+        // Use BookClassAsync method instead for direct class booking
 
         public async Task<bool> CancelBookingAsync(int bookingId)
         {
@@ -262,7 +218,7 @@ namespace GymManagement.Web.Services
                 return false;
 
             // Check if member already has a booking for this class on this date
-            if (await _bookingRepository.HasBookingAsync(thanhVienId, lopHocId, null, date))
+            if (await _bookingRepository.HasBookingAsync(thanhVienId, lopHocId, date))
                 return false;
 
             // Check if class has available slots
