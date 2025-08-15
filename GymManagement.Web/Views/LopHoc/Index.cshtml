@@ -231,11 +231,12 @@
                                     <div class="flex items-center">
                                         <div class="text-sm text-gray-900">
                                             @{
-                                                var registeredCount = lopHoc.DangKys.Count(d => d.TrangThai == "ACTIVE");
-                                                var capacityPercentage = lopHoc.SucChua > 0 ? (registeredCount * 100 / lopHoc.SucChua) : 0;
+                                                var bookingCounts = ViewBag.BookingCounts as Dictionary<int, int>;
+                                                var bookingCount = bookingCounts?.ContainsKey(lopHoc.LopHocId) == true ? bookingCounts[lopHoc.LopHocId] : 0;
+                                                var capacityPercentage = lopHoc.SucChua > 0 ? (bookingCount * 100 / lopHoc.SucChua) : 0;
                                                 var capacityColor = capacityPercentage >= 90 ? "bg-red-500" : capacityPercentage >= 70 ? "bg-yellow-500" : "bg-green-500";
                                             }
-                                            <span class="font-medium">@registeredCount/@lopHoc.SucChua</span>
+                                            <span class="font-medium">@bookingCount/@lopHoc.SucChua</span>
                                         </div>
                                         <div class="ml-2 w-16 bg-gray-200 rounded-full h-2">
                                             <div class="@capacityColor h-2 rounded-full" style="width: @(capacityPercentage)%"></div>

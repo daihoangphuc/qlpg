@@ -91,13 +91,21 @@ namespace GymManagement.Web.Authorization
         private static bool IsOwner(ClaimsPrincipal user, Booking booking)
         {
             var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            
+
             if (string.IsNullOrEmpty(userId))
                 return false;
 
             // Check if the booking belongs to the current user
-            // We need to compare with the TaiKhoanId from the booking's ThanhVien
-            return booking.ThanhVien?.TaiKhoan?.Id == userId;
+            // Compare TaiKhoan.Id with userId from claims
+            // booking.ThanhVienId corresponds to NguoiDung.NguoiDungId
+            // We need to check if the TaiKhoan.Id matches the userId
+            if (booking.ThanhVien?.TaiKhoan?.Id == userId)
+                return true;
+
+            // Alternative check: if ThanhVien navigation property is not loaded,
+            // we can check through the ThanhVienId directly
+            // This requires the booking to have ThanhVien with TaiKhoan loaded
+            return false;
         }
     }
 

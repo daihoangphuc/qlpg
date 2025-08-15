@@ -14,6 +14,7 @@ namespace GymManagement.Web.Controllers
         private readonly IDangKyService _dangKyService;
         private readonly INguoiDungService _nguoiDungService;
         private readonly IMemberBenefitService _memberBenefitService;
+        private readonly IBookingService _bookingService;
 
         public MemberController(
             IUserSessionService userSessionService,
@@ -22,13 +23,15 @@ namespace GymManagement.Web.Controllers
             ILopHocService lopHocService,
             IDangKyService dangKyService,
             INguoiDungService nguoiDungService,
-            IMemberBenefitService memberBenefitService) : base(userSessionService, logger)
+            IMemberBenefitService memberBenefitService,
+            IBookingService bookingService) : base(userSessionService, logger)
         {
             _goiTapService = goiTapService;
             _lopHocService = lopHocService;
             _dangKyService = dangKyService;
             _nguoiDungService = nguoiDungService;
             _memberBenefitService = memberBenefitService;
+            _bookingService = bookingService;
         }
 
         /// <summary>
@@ -296,6 +299,11 @@ namespace GymManagement.Web.Controllers
                 {
                     ViewBag.IsUserRegistered = false;
                 }
+
+                // Add total active count (booking + registration)
+                var totalActiveCount = await _bookingService.GetTotalActiveCountAsync(id);
+                ViewBag.ActiveBookingCount = totalActiveCount;
+                ViewBag.AvailableSlots = Math.Max(0, lopHoc.SucChua - totalActiveCount);
 
                 return View(lopHoc);
             }

@@ -10,17 +10,20 @@ namespace GymManagement.Web.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly IBookingRepository _bookingRepository;
         private readonly ILopHocRepository _lopHocRepository;
+        private readonly IDangKyRepository _dangKyRepository;
         private readonly IThongBaoService _thongBaoService;
 
         public BookingService(
             IUnitOfWork unitOfWork,
             IBookingRepository bookingRepository,
             ILopHocRepository lopHocRepository,
+            IDangKyRepository dangKyRepository,
             IThongBaoService thongBaoService)
         {
             _unitOfWork = unitOfWork;
             _bookingRepository = bookingRepository;
             _lopHocRepository = lopHocRepository;
+            _dangKyRepository = dangKyRepository;
             _thongBaoService = thongBaoService;
         }
 
@@ -99,6 +102,13 @@ namespace GymManagement.Web.Services
 
                 if (lopHoc.TrangThai != "OPEN")
                     return (false, "Lớp học đã đóng hoặc không khả dụng");
+
+                // ✅ NEW: Check if the booking date matches the class schedule
+                if (!IsValidBookingDate(lopHoc, date))
+                {
+                    var validDays = GetValidDaysText(lopHoc.ThuTrongTuan);
+                    return (false, $"Lớp học này chỉ diễn ra vào: {validDays}. Vui lòng chọn ngày phù hợp.");
+                }
 
                 // Check if member already has a booking for this class on this date
                 var existingBooking = await _unitOfWork.Context.Bookings
@@ -222,6 +232,10 @@ namespace GymManagement.Web.Services
             if (lopHoc == null || lopHoc.TrangThai != "OPEN")
                 return false;
 
+            // ✅ NEW: Check if the booking date matches the class schedule
+            if (!IsValidBookingDate(lopHoc, date))
+                return false;
+
             // Check if member already has a booking for this class on this date
             if (await _bookingRepository.HasBookingAsync(thanhVienId, lopHocId, date))
                 return false;
@@ -240,10 +254,131 @@ namespace GymManagement.Web.Services
             return Math.Max(0, lopHoc.SucChua - bookingCount);
         }
 
+        public async Task<int> GetBookingCountForDateAsync(int lopHocId, DateTime date)
+        {
+            return await _bookingRepository.CountBookingsForClassAsync(lopHocId, date);
+        }
+
+        public async Task<int> GetActiveBookingCountAsync(int lopHocId)
+        {
+            // Count all bookings that are BOOKED or ATTENDED (active bookings)
+            var bookings = await _bookingRepository.GetByLopHocIdAsync(lopHocId);
+            return bookings.Count(b => b.TrangThai == "BOOKED" || b.TrangThai == "ATTENDED");
+        }
+
+        /// <summary>
+        /// Get booking count for today's date specifically
+        /// </summary>
+        public async Task<int> GetTodayBookingCountAsync(int lopHocId)
+        {
+            return await _bookingRepository.CountBookingsForClassAsync(lopHocId, DateTime.Today);
+        }
+
+        /// <summary>
+        /// Get total active count (bookings + registrations) for a class
+        /// </summary>
+        public async Task<int> GetTotalActiveCountAsync(int lopHocId)
+        {
+            var bookingCount = await _bookingRepository.CountAllActiveBookingsForClassAsync(lopHocId);
+            var registrationCount = await _dangKyRepository.CountActiveRegistrationsForClassAsync(lopHocId);
+            return bookingCount + registrationCount;
+        }
+
         public async Task<IEnumerable<Booking>> GetUpcomingBookingsAsync(int thanhVienId)
         {
             var bookings = await _bookingRepository.GetByThanhVienIdAsync(thanhVienId);
             return bookings.Where(b => b.TrangThai == "BOOKED" && b.Ngay >= DateOnly.FromDateTime(DateTime.Today));
+        }
+
+        /// <summary>
+        /// Check if the booking date matches the class schedule (ThuTrongTuan)
+        /// </summary>
+        private bool IsValidBookingDate(LopHoc lopHoc, DateTime date)
+        {
+            if (string.IsNullOrEmpty(lopHoc.ThuTrongTuan))
+                return false;
+
+            var validDays = ParseDaysOfWeek(lopHoc.ThuTrongTuan);
+            var bookingDayOfWeek = GetDayOfWeekNumber(date.DayOfWeek);
+
+            return validDays.Contains(bookingDayOfWeek);
+        }
+
+        /// <summary>
+        /// Parse days of week string to list of integers (1=Monday, 7=Sunday)
+        /// </summary>
+        private List<int> ParseDaysOfWeek(string thuTrongTuan)
+        {
+            var days = new List<int>();
+            if (string.IsNullOrEmpty(thuTrongTuan)) return days;
+
+            var dayStrings = thuTrongTuan.Split(',', StringSplitOptions.RemoveEmptyEntries);
+            foreach (var dayStr in dayStrings)
+            {
+                var trimmed = dayStr.Trim();
+
+                // Try to parse as number first
+                if (int.TryParse(trimmed, out int dayNum) && dayNum >= 1 && dayNum <= 7)
+                {
+                    days.Add(dayNum);
+                }
+                else
+                {
+                    // Try to parse Vietnamese day names
+                    var dayNumber = trimmed switch
+                    {
+                        "Thứ 2" => 1,
+                        "Thứ 3" => 2,
+                        "Thứ 4" => 3,
+                        "Thứ 5" => 4,
+                        "Thứ 6" => 5,
+                        "Thứ 7" => 6,
+                        "Chủ nhật" => 7,
+                        _ => 0
+                    };
+                    if (dayNumber > 0) days.Add(dayNumber);
+                }
+            }
+            return days.Distinct().ToList();
+        }
+
+        /// <summary>
+        /// Convert .NET DayOfWeek to our numbering system (1=Monday, 7=Sunday)
+        /// </summary>
+        private int GetDayOfWeekNumber(DayOfWeek dayOfWeek)
+        {
+            return dayOfWeek switch
+            {
+                DayOfWeek.Monday => 1,
+                DayOfWeek.Tuesday => 2,
+                DayOfWeek.Wednesday => 3,
+                DayOfWeek.Thursday => 4,
+                DayOfWeek.Friday => 5,
+                DayOfWeek.Saturday => 6,
+                DayOfWeek.Sunday => 7,
+                _ => 0
+            };
+        }
+
+        /// <summary>
+        /// Get human-readable text for valid days
+        /// </summary>
+        private string GetValidDaysText(string thuTrongTuan)
+        {
+            var validDays = ParseDaysOfWeek(thuTrongTuan);
+            var dayNames = validDays.Select(day => day switch
+            {
+                1 => "Thứ 2",
+                2 => "Thứ 3",
+                3 => "Thứ 4",
+                4 => "Thứ 5",
+                5 => "Thứ 6",
+                6 => "Thứ 7",
+                7 => "Chủ nhật",
+                _ => ""
+            }).Where(name => !string.IsNullOrEmpty(name));
+
+            return string.Join(", ", dayNames);
         }
     }
 }

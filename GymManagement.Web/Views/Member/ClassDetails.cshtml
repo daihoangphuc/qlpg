@@ -104,11 +104,11 @@
                                     <div class="text-sm opacity-90">Sức chứa</div>
                                 </div>
                                 <div class="text-center">
-                                    <div class="text-2xl font-bold">@(Model.DangKys?.Count(d => d.TrangThai == "ACTIVE") ?? 0)</div>
-                                    <div class="text-sm opacity-90">Đã đăng ký</div>
+                                    <div class="text-2xl font-bold">@ViewBag.ActiveBookingCount</div>
+                                    <div class="text-sm opacity-90">Đã booking</div>
                                 </div>
                                 <div class="text-center">
-                                    <div class="text-2xl font-bold">@(Model.SucChua - (Model.DangKys?.Count(d => d.TrangThai == "ACTIVE") ?? 0))</div>
+                                    <div class="text-2xl font-bold">@ViewBag.AvailableSlots</div>
                                     <div class="text-sm opacity-90">Còn trống</div>
                                 </div>
                             </div>
@@ -171,18 +171,18 @@
                                         <span class="font-medium">@Model.SucChua người</span>
                                     </div>
                                     <div class="flex items-center justify-between">
-                                        <span class="text-gray-600">Đã đăng ký:</span>
-                                        <span class="font-medium text-blue-600">@(Model.DangKys?.Count(d => d.TrangThai == "ACTIVE") ?? 0) người</span>
+                                        <span class="text-gray-600">Đã booking:</span>
+                                        <span class="font-medium text-blue-600">@ViewBag.ActiveBookingCount người</span>
                                     </div>
                                     <div class="flex items-center justify-between">
                                         <span class="text-gray-600">Còn trống:</span>
-                                        <span class="font-medium text-green-600">@(Model.SucChua - (Model.DangKys?.Count(d => d.TrangThai == "ACTIVE") ?? 0)) chỗ</span>
+                                        <span class="font-medium text-green-600">@ViewBag.AvailableSlots chỗ</span>
                                     </div>
                                     
                                     <!-- Progress Bar -->
                                     @{
-                                        var registeredCount = Model.DangKys?.Count(d => d.TrangThai == "ACTIVE") ?? 0;
-                                        var fillPercentage = Model.SucChua > 0 ? (double)registeredCount / Model.SucChua * 100 : 0;
+                                        var activeBookingCount = (int)ViewBag.ActiveBookingCount;
+                                        var fillPercentage = Model.SucChua > 0 ? (double)activeBookingCount / Model.SucChua * 100 : 0;
                                     }
                                     <div class="mt-4">
                                         <div class="flex justify-between text-sm text-gray-600 mb-1">
@@ -301,7 +301,7 @@
                                 </div>
                             </div>
                         }
-                        else if (Model.SucChua > (Model.DangKys?.Count(d => d.TrangThai == "ACTIVE") ?? 0))
+                        else if ((int)ViewBag.AvailableSlots > 0)
                         {
                             <!-- Available for Registration -->
                             <div class="space-y-4">

@@ -5,6 +5,8 @@
     Layout = "_MemberLayout";
 }
 
+@Html.AntiForgeryToken()
+
 <div class="min-h-screen bg-white">
     <!-- Header Section -->
     <div class="bg-white border-b border-gray-200">
@@ -326,33 +328,36 @@
 
             const reason = document.getElementById('cancelBookingReason').value.trim();
 
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = '@Url.Action("CancelBooking", "Booking")';
-
+            // Use AJAX instead of form submission for better error handling
             const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
-            const tokenInput = document.createElement('input');
-            tokenInput.type = 'hidden';
-            tokenInput.name = '__RequestVerificationToken';
-            tokenInput.value = token;
-            form.appendChild(tokenInput);
 
-            const idInput = document.createElement('input');
-            idInput.type = 'hidden';
-            idInput.name = 'bookingId';
-            idInput.value = currentCancelBookingId;
-            form.appendChild(idInput);
-
-            if (reason) {
-                const reasonInput = document.createElement('input');
-                reasonInput.type = 'hidden';
-                reasonInput.name = 'reason';
-                reasonInput.value = reason;
-                form.appendChild(reasonInput);
-            }
-
-            document.body.appendChild(form);
-            form.submit();
+            fetch('@Url.Action("Cancel", "Booking")', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'RequestVerificationToken': token
+                },
+                body: new URLSearchParams({
+                    'id': currentCancelBookingId,
+                    'reason': reason || '',
+                    '__RequestVerificationToken': token
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    location.reload(); // Refresh page to show updated data
+                } else {
+                    alert(data.message || 'Có lỗi xảy ra khi hủy đặt lịch');
+                }
+                hideCancelBookingModal();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Có lỗi xảy ra khi hủy đặt lịch');
+                hideCancelBookingModal();
+            });
         }
     </script>
 }

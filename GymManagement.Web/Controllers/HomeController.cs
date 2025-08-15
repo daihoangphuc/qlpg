@@ -190,19 +190,27 @@ public class HomeController : BaseController
         try
         {
             var classes = await _lopHocService.GetActiveClassesAsync();
-            var classDtos = classes.Select(c => new LopHocDto
+            var classDtos = new List<LopHocDto>();
+
+            foreach (var c in classes)
             {
-                LopHocId = c.LopHocId,
-                TenLop = c.TenLop,
-                MoTa = c.MoTa,
-                SucChuaToiDa = c.SucChua,
-                ThoiLuongPhut = c.ThoiLuong,
-                MucDo = GetMucDoFromPrice(c.GiaTuyChinh), // Determine level based on price
-                TrangThai = c.TrangThai == "OPEN" ? "ACTIVE" : c.TrangThai,
-                NgayTao = DateTime.Now,
-                TrainerName = c.Hlv != null ? $"{c.Hlv.Ho} {c.Hlv.Ten}".Trim() : "Chưa phân công",
-                RegisteredCount = c.DangKys?.Count(d => d.TrangThai == "ACTIVE") ?? 0
-            }).ToList();
+                // Get active booking count instead of DangKy count
+                var bookingCount = await _bookingService.GetActiveBookingCountAsync(c.LopHocId);
+
+                classDtos.Add(new LopHocDto
+                {
+                    LopHocId = c.LopHocId,
+                    TenLop = c.TenLop,
+                    MoTa = c.MoTa,
+                    SucChuaToiDa = c.SucChua,
+                    ThoiLuongPhut = c.ThoiLuong,
+                    MucDo = GetMucDoFromPrice(c.GiaTuyChinh), // Determine level based on price
+                    TrangThai = c.TrangThai == "OPEN" ? "ACTIVE" : c.TrangThai,
+                    NgayTao = DateTime.Now,
+                    TrainerName = c.Hlv != null ? $"{c.Hlv.Ho} {c.Hlv.Ten}".Trim() : "Chưa phân công",
+                    RegisteredCount = bookingCount // Now shows active booking count
+                });
+            }
 
             return View(classDtos);
         }

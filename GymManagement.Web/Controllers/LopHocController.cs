@@ -13,17 +13,20 @@ namespace GymManagement.Web.Controllers
         private readonly ILopHocService _lopHocService;
         private readonly INguoiDungService _nguoiDungService;
         private readonly IEmailService _emailService;
+        private readonly IBookingService _bookingService;
 
         public LopHocController(
             ILopHocService lopHocService,
             INguoiDungService nguoiDungService,
             IEmailService emailService,
+            IBookingService bookingService,
             IUserSessionService userSessionService,
             ILogger<LopHocController> logger) : base(userSessionService, logger)
         {
             _lopHocService = lopHocService;
             _nguoiDungService = nguoiDungService;
             _emailService = emailService;
+            _bookingService = bookingService;
         }
 
         /// <summary>
@@ -52,13 +55,22 @@ namespace GymManagement.Web.Controllers
                 var skip = (page - 1) * pageSize;
                 var lopHocs = allLopHocs.Skip(skip).Take(pageSize).ToList();
 
-                // Pass pagination info to view
+                // Calculate total active counts (booking + registration) for each class
+                var bookingCounts = new Dictionary<int, int>();
+                foreach (var lopHoc in lopHocs)
+                {
+                    var totalActiveCount = await _bookingService.GetTotalActiveCountAsync(lopHoc.LopHocId);
+                    bookingCounts[lopHoc.LopHocId] = totalActiveCount;
+                }
+
+                // Pass pagination info and booking counts to view
                 ViewBag.CurrentPage = page;
                 ViewBag.TotalPages = totalPages;
                 ViewBag.PageSize = pageSize;
                 ViewBag.TotalItems = totalItems;
                 ViewBag.HasPreviousPage = page > 1;
                 ViewBag.HasNextPage = page < totalPages;
+                ViewBag.BookingCounts = bookingCounts;
 
                 _logger.LogInformation("Returning {Count} classes for page {Page}", lopHocs.Count, page);
                 return View(lopHocs);
@@ -382,18 +394,25 @@ namespace GymManagement.Web.Controllers
             try
             {
                 var classes = await _lopHocService.GetActiveClassesAsync();
-                
-                var result = classes.Select(c => new {
-                    id = c.LopHocId,
-                    text = $"{c.TenLop} - {c.GioBatDau:HH:mm}-{c.GioKetThuc:HH:mm}",
-                    trainer = c.Hlv != null ? $"{c.Hlv.Ho} {c.Hlv.Ten}" : "Chưa phân công",
-                    capacity = c.SucChua,
-                    registered = c.DangKys?.Count(d => d.TrangThai == "ACTIVE") ?? 0,
-                    available = c.SucChua - (c.DangKys?.Count(d => d.TrangThai == "ACTIVE") ?? 0),
-                    price = c.GiaTuyChinh,
-                    schedule = c.ThuTrongTuan,
-                    status = c.TrangThai
-                });
+                var result = new List<object>();
+
+                foreach (var c in classes)
+                {
+                    // Get active booking count instead of DangKy count
+                    var bookingCount = await _bookingService.GetActiveBookingCountAsync(c.LopHocId);
+
+                    result.Add(new {
+                        id = c.LopHocId,
+                        text = $"{c.TenLop} - {c.GioBatDau:HH:mm}-{c.GioKetThuc:HH:mm}",
+                        trainer = c.Hlv != null ? $"{c.Hlv.Ho} {c.Hlv.Ten}" : "Chưa phân công",
+                        capacity = c.SucChua,
+                        registered = bookingCount, // Now shows active booking count
+                        available = c.SucChua - bookingCount,
+                        price = c.GiaTuyChinh,
+                        schedule = c.ThuTrongTuan,
+                        status = c.TrangThai
+                    });
+                }
 
                 return Json(result);
             }
@@ -487,19 +506,20 @@ namespace GymManagement.Web.Controllers
                     var lopHoc = await _lopHocService.GetByIdAsync(classId);
                     if (lopHoc != null)
                     {
-                        var registeredCount = lopHoc.DangKys?.Count(d => d.TrangThai == "ACTIVE") ?? 0;
-                        var availableSlots = Math.Max(0, lopHoc.SucChua - registeredCount);
+                        // Get active booking count instead of DangKy count
+                        var bookingCount = await _bookingService.GetActiveBookingCountAsync(classId);
+                        var availableSlots = Math.Max(0, lopHoc.SucChua - bookingCount);
 
                         capacityData.Add(new
                         {
                             classId = classId,
                             className = lopHoc.TenLop,
                             capacity = lopHoc.SucChua,
-                            registeredCount = registeredCount,
+                            registeredCount = bookingCount, // Now shows active booking count
                             availableSlots = availableSlots,
                             isFull = availableSlots == 0,
                             status = lopHoc.TrangThai,
-                            percentFull = lopHoc.SucChua > 0 ? (registeredCount * 100.0 / lopHoc.SucChua) : 0
+                            percentFull = lopHoc.SucChua > 0 ? (bookingCount * 100.0 / lopHoc.SucChua) : 0
                         });
                     }
                 }

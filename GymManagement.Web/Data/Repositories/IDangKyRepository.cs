@@ -12,6 +12,7 @@ namespace GymManagement.Web.Data.Repositories
         Task<bool> HasActiveRegistrationAsync(int nguoiDungId, int? goiTapId, int? lopHocId);
         Task<IEnumerable<DangKy>> GetRegistrationsByDateRangeAsync(DateTime startDate, DateTime endDate);
         Task<int> CountActiveRegistrationsAsync();
+        Task<int> CountActiveRegistrationsForClassAsync(int lopHocId);
         Task<(IEnumerable<DangKy> registrations, int totalCount)> GetPagedAsync(int page, int pageSize, string searchTerm = "", string status = "", string type = "");
     }
 }

@@ -9,13 +9,25 @@ namespace GymManagement.Web.Data.Repositories
         {
         }
 
+        // ✅ OVERRIDE: GetByIdAsync with proper includes for navigation properties
+        public override async Task<Booking?> GetByIdAsync(int id)
+        {
+            return await _context.Bookings
+                .Include(b => b.ThanhVien)
+                    .ThenInclude(tv => tv!.TaiKhoan) // Include TaiKhoan for authorization
+                .Include(b => b.LopHoc)
+                    .ThenInclude(l => l!.Hlv) // Include trainer info
+                .FirstOrDefaultAsync(b => b.BookingId == id);
+        }
+
         // ✅ OVERRIDE: GetAllAsync with proper includes for navigation properties
         public override async Task<IEnumerable<Booking>> GetAllAsync()
         {
             return await _context.Bookings
                 .Include(b => b.ThanhVien)
+                    .ThenInclude(tv => tv!.TaiKhoan) // Include TaiKhoan for authorization
                 .Include(b => b.LopHoc)
-                    .ThenInclude(l => l.Hlv) // Include trainer info
+                    .ThenInclude(l => l!.Hlv) // Include trainer info
                 .OrderByDescending(b => b.NgayTao)
                 .ToListAsync();
         }
@@ -70,7 +82,16 @@ namespace GymManagement.Web.Data.Repositories
             return await _context.Bookings
                 .CountAsync(b => b.LopHocId == lopHocId &&
                                 b.Ngay == dateOnly &&
-                                b.TrangThai == "BOOKED");
+                                (b.TrangThai == "BOOKED" || b.TrangThai == "ATTENDED"));
+        }
+
+        public async Task<int> CountAllActiveBookingsForClassAsync(int lopHocId)
+        {
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            return await _context.Bookings
+                .CountAsync(b => b.LopHocId == lopHocId &&
+                                b.Ngay >= today &&
+                                (b.TrangThai == "BOOKED" || b.TrangThai == "ATTENDED"));
         }
 
         // Note: Methods using LichLop have been simplified to use LopHoc only

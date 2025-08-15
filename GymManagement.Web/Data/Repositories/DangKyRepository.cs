@@ -82,6 +82,14 @@ namespace GymManagement.Web.Data.Repositories
                 .CountAsync(d => d.TrangThai == "ACTIVE" && d.NgayKetThuc >= DateOnly.FromDateTime(DateTime.Today));
         }
 
+        public async Task<int> CountActiveRegistrationsForClassAsync(int lopHocId)
+        {
+            return await _context.DangKys
+                .CountAsync(d => d.LopHocId == lopHocId &&
+                                d.TrangThai == "ACTIVE" &&
+                                d.NgayKetThuc >= DateOnly.FromDateTime(DateTime.Today));
+        }
+
         public async Task<IEnumerable<DangKy>> GetByMemberIdAsync(int nguoiDungId)
         {
             return await _context.DangKys

@@ -9,6 +9,7 @@ namespace GymManagement.Web.Data.Repositories
         Task<IEnumerable<Booking>> GetBookingsByDateAsync(DateTime date);
         Task<IEnumerable<Booking>> GetActiveBookingsAsync();
         Task<int> CountBookingsForClassAsync(int lopHocId, DateTime date);
+        Task<int> CountAllActiveBookingsForClassAsync(int lopHocId);
         Task<bool> HasBookingAsync(int thanhVienId, int lopHocId, DateTime date);
         Task<Booking?> GetActiveBookingAsync(int thanhVienId, int lopHocId, DateTime date);
     }

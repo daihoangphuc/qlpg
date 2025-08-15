@@ -59,15 +59,18 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="classesGrid">
             @foreach (var lopHoc in Model.Where(c => c.TrangThai == "OPEN"))
             {
-                var registeredCount = lopHoc.DangKys.Count(d => d.TrangThai == "ACTIVE");
-                var availableSlots = lopHoc.SucChua - registeredCount;
-                var fillRate = lopHoc.SucChua > 0 ? (double)registeredCount / lopHoc.SucChua * 100 : 0;
+                // Note: We'll use JavaScript to load booking count dynamically
+                // For now, show placeholder values that will be updated by JS
+                var registeredCount = 0; // Will be updated by JavaScript
+                var availableSlots = lopHoc.SucChua; // Will be updated by JavaScript
+                var fillRate = 0.0; // Will be updated by JavaScript
                 var startHour = lopHoc.GioBatDau.Hour;
                 var timeCategory = startHour < 12 ? "morning" : startHour < 18 ? "afternoon" : "evening";
                 var availabilityCategory = fillRate >= 100 ? "full" : fillRate > 80 ? "almost-full" : "available";
                 
-                <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow class-card" 
-                     data-name="@lopHoc.TenLop.ToLower()" 
+                <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow class-card"
+                     data-class-id="@lopHoc.LopHocId"
+                     data-name="@lopHoc.TenLop.ToLower()"
                      data-time="@timeCategory"
                      data-day="@lopHoc.ThuTrongTuan"
                      data-availability="@availabilityCategory">
@@ -157,12 +160,12 @@
                             <!-- Capacity Progress -->
                             <div class="bg-gray-100 rounded-lg p-3">
                                 <div class="flex justify-between text-sm mb-2">
-                                    <span class="text-gray-600">Đã đăng ký</span>
-                                    <span class="font-medium">@registeredCount/@lopHoc.SucChua</span>
+                                    <span class="text-gray-600">Đã booking</span>
+                                    <span class="font-medium registered-count">0/@lopHoc.SucChua</span>
                                 </div>
                                 <div class="w-full bg-gray-200 rounded-full h-2">
-                                    <div class="h-2 rounded-full @(fillRate >= 100 ? "bg-red-500" : fillRate > 80 ? "bg-yellow-500" : "bg-green-500")" 
-                                         style="width: @Math.Min(fillRate, 100)%"></div>
+                                    <div class="capacity-progress h-2 rounded-full bg-green-500"
+                                         style="width: 0%"></div>
                                 </div>
                                 <div class="text-xs text-gray-500 mt-1">
                                     @if (fillRate >= 100)
@@ -345,6 +348,63 @@
                 closeRegistrationModal();
             }
         });
+
+        // Load booking counts for all classes
+        async function loadBookingCounts() {
+            try {
+                const classIds = @Html.Raw(Json.Serialize(Model.Where(c => c.TrangThai == "OPEN").Select(c => c.LopHocId).ToList()));
+
+                const response = await fetch('/LopHoc/GetCapacityData', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ classIds: classIds })
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.success) {
+                        result.data.forEach(classData => {
+                            updateClassCapacity(classData);
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading booking counts:', error);
+            }
+        }
+
+        function updateClassCapacity(classData) {
+            const classCard = document.querySelector(`[data-class-id="${classData.classId}"]`);
+            if (classCard) {
+                // Update registered count display
+                const registeredSpan = classCard.querySelector('.registered-count');
+                if (registeredSpan) {
+                    registeredSpan.textContent = `${classData.registeredCount}/${classData.capacity}`;
+                }
+
+                // Update progress bar
+                const progressBar = classCard.querySelector('.capacity-progress');
+                if (progressBar) {
+                    const fillRate = classData.percentFull;
+                    progressBar.style.width = `${Math.min(fillRate, 100)}%`;
+
+                    // Update color based on fill rate
+                    progressBar.className = progressBar.className.replace(/bg-(red|yellow|green)-500/, '');
+                    if (fillRate >= 100) {
+                        progressBar.classList.add('bg-red-500');
+                    } else if (fillRate > 80) {
+                        progressBar.classList.add('bg-yellow-500');
+                    } else {
+                        progressBar.classList.add('bg-green-500');
+                    }
+                }
+            }
+        }
+
+        // Load booking counts when page loads
+        document.addEventListener('DOMContentLoaded', loadBookingCounts);
 
         // Load more functionality (placeholder)
         document.getElementById('loadMoreBtn').addEventListener('click', function() {

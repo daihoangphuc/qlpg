@@ -18,6 +18,10 @@ namespace GymManagement.Web.Services
         Task<bool> CancelBookingAsync(int bookingId);
         Task<bool> CanBookAsync(int thanhVienId, int lopHocId, DateTime date);
         Task<int> GetAvailableSlotsAsync(int lopHocId, DateTime date);
+        Task<int> GetBookingCountForDateAsync(int lopHocId, DateTime date);
+        Task<int> GetActiveBookingCountAsync(int lopHocId);
+        Task<int> GetTodayBookingCountAsync(int lopHocId);
+        Task<int> GetTotalActiveCountAsync(int lopHocId);
         Task<IEnumerable<Booking>> GetUpcomingBookingsAsync(int thanhVienId);
     }
 }
