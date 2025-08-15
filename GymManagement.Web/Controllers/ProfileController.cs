@@ -312,8 +312,33 @@ namespace GymManagement.Web.Controllers
 
         private int? GetCurrentNguoiDungIdSafe()
         {
-            var userIdClaim = User.FindFirst("NguoiDungId")?.Value;
-            return int.TryParse(userIdClaim, out var userId) ? userId : null;
+            try
+            {
+                var userIdClaim = User.FindFirst("NguoiDungId")?.Value;
+                _logger.LogInformation("Getting NguoiDungId claim: {UserIdClaim}, IsAuthenticated: {IsAuthenticated}",
+                    userIdClaim, User.Identity?.IsAuthenticated);
+
+                if (string.IsNullOrEmpty(userIdClaim))
+                {
+                    _logger.LogWarning("NguoiDungId claim is null or empty. Available claims: {Claims}",
+                        string.Join(", ", User.Claims.Select(c => $"{c.Type}={c.Value}")));
+                    return null;
+                }
+
+                if (int.TryParse(userIdClaim, out var userId))
+                {
+                    _logger.LogInformation("Successfully parsed NguoiDungId: {UserId}", userId);
+                    return userId;
+                }
+
+                _logger.LogError("Failed to parse NguoiDungId claim: {UserIdClaim}", userIdClaim);
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting current NguoiDungId safely");
+                return null;
+            }
         }
 
         [HttpGet]
@@ -321,47 +346,78 @@ namespace GymManagement.Web.Controllers
         {
             try
             {
+                _logger.LogInformation("GetPersonalStats called");
                 var nguoiDungId = GetCurrentNguoiDungIdSafe();
                 if (!nguoiDungId.HasValue)
                 {
+                    _logger.LogWarning("GetPersonalStats: No NguoiDungId found");
                     return Json(new { success = false, message = "Không tìm thấy thông tin người dùng." });
                 }
 
-                // Get user registrations and attendance
+                _logger.LogInformation("GetPersonalStats: Processing for NguoiDungId: {NguoiDungId}", nguoiDungId.Value);
+
+                // DEBUG: Check attendance data for this user
+                var attendanceCount = await _diemDanhService.GetAttendanceCountByUserIdAsync(nguoiDungId.Value);
+                _logger.LogInformation("DEBUG: User {UserId} has {AttendanceCount} attendance records", nguoiDungId.Value, attendanceCount);
+
+                // Get user registrations and calculate total cost (including completed registrations)
                 var registrations = await _dangKyService.GetByMemberIdAsync(nguoiDungId.Value);
-                var totalCost = registrations.Where(r => r.TrangThai == "ACTIVE").Sum(r => r.PhiDangKy ?? 0);
-                
-                // Get attendance stats
+                var totalCost = registrations
+                    .Where(r => r.TrangThai == "ACTIVE" || r.TrangThai == "COMPLETED" || r.TrangThai == "EXPIRED")
+                    .Sum(r => r.PhiDangKy ?? 0);
+
+                // Calculate date ranges more accurately
+                var now = DateTime.Now;
+                var today = DateTime.Today;
+
+                // This month: from 1st day of current month to now
+                var thisMonthStart = new DateTime(now.Year, now.Month, 1);
+
+                // This week: from Monday to Sunday (Vietnamese week starts on Monday)
+                var daysFromMonday = ((int)today.DayOfWeek + 6) % 7; // Convert Sunday=0 to Monday=0
+                var thisWeekStart = today.AddDays(-daysFromMonday);
+                var thisWeekEnd = thisWeekStart.AddDays(7);
+
+                // Get attendance stats with improved date ranges
                 var attendanceStats = new
                 {
-                    TotalSessions = await _diemDanhService.GetMemberAttendanceCountAsync(nguoiDungId.Value, DateTime.MinValue, DateTime.MaxValue),
-                    ThisMonth = await _diemDanhService.GetMemberAttendanceCountAsync(nguoiDungId.Value, 
-                        new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1), DateTime.Now),
-                    ThisWeek = await _diemDanhService.GetMemberAttendanceCountAsync(nguoiDungId.Value, 
-                        DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek), DateTime.Today.AddDays(1))
+                    TotalSessions = await _diemDanhService.GetMemberAttendanceCountAsync(nguoiDungId.Value, DateTime.MinValue, now),
+                    ThisMonth = await _diemDanhService.GetMemberAttendanceCountAsync(nguoiDungId.Value, thisMonthStart, now),
+                    ThisWeek = await _diemDanhService.GetMemberAttendanceCountAsync(nguoiDungId.Value, thisWeekStart, thisWeekEnd),
+                    LastMonth = await _diemDanhService.GetMemberAttendanceCountAsync(nguoiDungId.Value,
+                        thisMonthStart.AddMonths(-1), thisMonthStart.AddDays(-1))
                 };
 
-                // Calculate frequency (sessions per week average)
+                // Calculate frequency more accurately
                 var firstAttendance = await _diemDanhService.GetFirstAttendanceDateAsync(nguoiDungId.Value);
-                var weeksSinceFirst = firstAttendance.HasValue ? 
-                    Math.Max(1, (DateTime.Now - firstAttendance.Value).Days / 7) : 1;
-                var frequency = (double)attendanceStats.TotalSessions / weeksSinceFirst;
+                double frequency = 0;
+                if (firstAttendance.HasValue && attendanceStats.TotalSessions > 0)
+                {
+                    var daysSinceFirst = Math.Max(1, (now - firstAttendance.Value).Days);
+                    var weeksSinceFirst = Math.Max(1, daysSinceFirst / 7.0);
+                    frequency = attendanceStats.TotalSessions / weeksSinceFirst;
+                }
 
-                // Monthly attendance data for chart (last 6 months)
+                // Get monthly attendance data sequentially to avoid DbContext concurrency issues
                 var monthlyData = new List<object>();
+
                 for (int i = 5; i >= 0; i--)
                 {
-                    var month = DateTime.Now.AddMonths(-i);
+                    var month = now.AddMonths(-i);
                     var startOfMonth = new DateTime(month.Year, month.Month, 1);
                     var endOfMonth = startOfMonth.AddMonths(1);
+
                     var count = await _diemDanhService.GetMemberAttendanceCountAsync(nguoiDungId.Value, startOfMonth, endOfMonth);
-                    
-                    monthlyData.Add(new
-                    {
-                        Month = month.ToString("MMM yyyy", new System.Globalization.CultureInfo("vi-VN")),
-                        Count = count
-                    });
+                    var monthName = month.ToString("MMM yyyy", new System.Globalization.CultureInfo("vi-VN"));
+
+                    monthlyData.Add(new { Month = monthName, Count = count });
                 }
+
+                // Calculate additional metrics
+                var monthlyDataCounts = monthlyData.Select(m => (int)((dynamic)m).Count).Where(c => c > 0).ToList();
+                var averageSessionsPerMonth = monthlyDataCounts.Any() ? monthlyDataCounts.Average() : 0;
+                var monthlyGrowth = attendanceStats.LastMonth > 0 ?
+                    Math.Round(((double)(attendanceStats.ThisMonth - attendanceStats.LastMonth) / attendanceStats.LastMonth) * 100, 1) : 0;
 
                 return Json(new
                 {
@@ -372,8 +428,12 @@ namespace GymManagement.Web.Controllers
                         TotalCost = totalCost,
                         Frequency = Math.Round(frequency, 1),
                         ThisMonth = attendanceStats.ThisMonth,
+                        LastMonth = attendanceStats.LastMonth,
                         ThisWeek = attendanceStats.ThisWeek,
-                        MonthlyData = monthlyData
+                        MonthlyData = monthlyData,
+                        AverageSessionsPerMonth = Math.Round(averageSessionsPerMonth, 1),
+                        MonthlyGrowth = monthlyGrowth,
+                        FirstAttendanceDate = firstAttendance?.ToString("dd/MM/yyyy")
                     }
                 });
             }
@@ -382,6 +442,176 @@ namespace GymManagement.Web.Controllers
                 _logger.LogError(ex, "Error occurred while getting personal stats");
                 return Json(new { success = false, message = "Có lỗi xảy ra khi tải thống kê." });
             }
+        }
+
+
+
+        [HttpGet]
+        public async Task<IActionResult> GetDetailedStats()
+        {
+            try
+            {
+                _logger.LogInformation("GetDetailedStats called");
+                var nguoiDungId = GetCurrentNguoiDungIdSafe();
+                if (!nguoiDungId.HasValue)
+                {
+                    _logger.LogWarning("GetDetailedStats: No NguoiDungId found");
+                    return Json(new { success = false, message = "Không tìm thấy thông tin người dùng." });
+                }
+
+                _logger.LogInformation("GetDetailedStats: Processing for NguoiDungId: {NguoiDungId}", nguoiDungId.Value);
+
+                var now = DateTime.Now;
+                var today = DateTime.Today;
+
+                // Calculate workout streak (consecutive days with attendance)
+                var workoutStreak = await CalculateWorkoutStreakAsync(nguoiDungId.Value);
+
+                // Calculate average session duration
+                var averageSessionDuration = await CalculateAverageSessionDurationAsync(nguoiDungId.Value);
+
+                // Get most active day of week
+                var mostActiveDay = await GetMostActiveDayOfWeekAsync(nguoiDungId.Value);
+
+                // Get favorite time slot
+                var favoriteTimeSlot = await GetFavoriteTimeSlotAsync(nguoiDungId.Value);
+
+                // Calculate consistency score (percentage of weeks with at least one workout in last 3 months)
+                var consistencyScore = await CalculateConsistencyScoreAsync(nguoiDungId.Value);
+
+                return Json(new
+                {
+                    success = true,
+                    detailedStats = new
+                    {
+                        WorkoutStreak = workoutStreak,
+                        AverageSessionDuration = averageSessionDuration,
+                        MostActiveDay = mostActiveDay,
+                        FavoriteTimeSlot = favoriteTimeSlot,
+                        ConsistencyScore = consistencyScore
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while getting detailed stats");
+                return Json(new { success = false, message = "Có lỗi xảy ra khi tải thống kê chi tiết." });
+            }
+        }
+
+        private async Task<int> CalculateWorkoutStreakAsync(int nguoiDungId)
+        {
+            var attendances = await _diemDanhService.GetAttendanceReportAsync(DateTime.Today.AddDays(-90), DateTime.Today);
+            var attendanceDates = attendances
+                .Where(a => a.ThanhVienId == nguoiDungId)
+                .Select(a => a.ThoiGian.Date)
+                .Distinct()
+                .OrderByDescending(d => d)
+                .ToList();
+
+            if (!attendanceDates.Any()) return 0;
+
+            int streak = 0;
+            var currentDate = DateTime.Today;
+
+            foreach (var date in attendanceDates)
+            {
+                if (date == currentDate || date == currentDate.AddDays(-1))
+                {
+                    streak++;
+                    currentDate = date.AddDays(-1);
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            return streak;
+        }
+
+        private async Task<string> CalculateAverageSessionDurationAsync(int nguoiDungId)
+        {
+            // This would require session duration data - for now return placeholder
+            // In a real implementation, you'd track check-in and check-out times
+            return "1.5 giờ"; // Placeholder
+        }
+
+        private async Task<string> GetMostActiveDayOfWeekAsync(int nguoiDungId)
+        {
+            var attendances = await _diemDanhService.GetAttendanceReportAsync(DateTime.Today.AddDays(-90), DateTime.Today);
+            var dayStats = attendances
+                .Where(a => a.ThanhVienId == nguoiDungId)
+                .GroupBy(a => a.ThoiGian.DayOfWeek)
+                .Select(g => new { Day = g.Key, Count = g.Count() })
+                .OrderByDescending(x => x.Count)
+                .FirstOrDefault();
+
+            if (dayStats == null) return "Chưa có dữ liệu";
+
+            var dayNames = new Dictionary<DayOfWeek, string>
+            {
+                { DayOfWeek.Monday, "Thứ 2" },
+                { DayOfWeek.Tuesday, "Thứ 3" },
+                { DayOfWeek.Wednesday, "Thứ 4" },
+                { DayOfWeek.Thursday, "Thứ 5" },
+                { DayOfWeek.Friday, "Thứ 6" },
+                { DayOfWeek.Saturday, "Thứ 7" },
+                { DayOfWeek.Sunday, "Chủ nhật" }
+            };
+
+            return dayNames[dayStats.Day];
+        }
+
+        private async Task<string> GetFavoriteTimeSlotAsync(int nguoiDungId)
+        {
+            var attendances = await _diemDanhService.GetAttendanceReportAsync(DateTime.Today.AddDays(-90), DateTime.Today);
+            var timeSlots = attendances
+                .Where(a => a.ThanhVienId == nguoiDungId)
+                .GroupBy(a => a.ThoiGian.Hour switch
+                {
+                    >= 6 and < 12 => "Sáng (6:00-12:00)",
+                    >= 12 and < 18 => "Chiều (12:00-18:00)",
+                    >= 18 and < 22 => "Tối (18:00-22:00)",
+                    _ => "Khác"
+                })
+                .Select(g => new { TimeSlot = g.Key, Count = g.Count() })
+                .OrderByDescending(x => x.Count)
+                .FirstOrDefault();
+
+            return timeSlots?.TimeSlot ?? "Chưa có dữ liệu";
+        }
+
+        private async Task<double> CalculateConsistencyScoreAsync(int nguoiDungId)
+        {
+            var threeMonthsAgo = DateTime.Today.AddDays(-90);
+            var attendances = await _diemDanhService.GetAttendanceReportAsync(threeMonthsAgo, DateTime.Today);
+
+            var attendanceDates = attendances
+                .Where(a => a.ThanhVienId == nguoiDungId)
+                .Select(a => a.ThoiGian.Date)
+                .Distinct()
+                .ToList();
+
+            if (!attendanceDates.Any()) return 0;
+
+            // Calculate weeks with at least one workout
+            var weeksWithWorkout = 0;
+            var totalWeeks = 0;
+            var currentWeekStart = threeMonthsAgo;
+
+            while (currentWeekStart <= DateTime.Today)
+            {
+                var weekEnd = currentWeekStart.AddDays(7);
+                if (attendanceDates.Any(d => d >= currentWeekStart && d < weekEnd))
+                {
+                    weeksWithWorkout++;
+                }
+                totalWeeks++;
+                currentWeekStart = weekEnd;
+            }
+
+            return totalWeeks > 0 ? Math.Round((double)weeksWithWorkout / totalWeeks * 100, 1) : 0;
         }
 
         [HttpGet]
@@ -441,5 +671,88 @@ namespace GymManagement.Web.Controllers
                 return RedirectToAction("Index");
             }
         }
+
+        [HttpGet]
+        public async Task<IActionResult> DebugCurrentUser()
+        {
+            try
+            {
+                var nguoiDungId = GetCurrentNguoiDungIdSafe();
+                var user = nguoiDungId.HasValue ? await _nguoiDungService.GetByIdAsync(nguoiDungId.Value) : null;
+                var attendanceCount = nguoiDungId.HasValue ? await _diemDanhService.GetAttendanceCountByUserIdAsync(nguoiDungId.Value) : 0;
+                var registrationCount = nguoiDungId.HasValue ? await _dangKyService.GetRegistrationCountByUserIdAsync(nguoiDungId.Value) : 0;
+
+                return Json(new {
+                    success = true,
+                    currentUserId = nguoiDungId,
+                    userName = user?.Ho + " " + user?.Ten,
+                    email = user?.Email,
+                    attendanceCount = attendanceCount,
+                    registrationCount = registrationCount,
+                    claims = User.Claims.Select(c => new { c.Type, c.Value }).ToList()
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in DebugCurrentUser");
+                return Json(new { success = false, error = ex.Message });
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> DebugDiemDanhData()
+        {
+            try
+            {
+                var nguoiDungId = GetCurrentNguoiDungIdSafe();
+                if (!nguoiDungId.HasValue)
+                {
+                    return Json(new { success = false, message = "No user ID found" });
+                }
+
+                // Get raw attendance data to check field values
+                var allAttendances = await _diemDanhService.GetByMemberIdAsync(nguoiDungId.Value);
+                var attendanceData = allAttendances.Take(10).Select(d => new {
+                    DiemDanhId = d.DiemDanhId,
+                    ThanhVienId = d.ThanhVienId,
+                    ThoiGian = d.ThoiGian,
+                    ThoiGianCheckIn = d.ThoiGianCheckIn,
+                    ThoiGianCheckOut = d.ThoiGianCheckOut,
+                    TrangThai = d.TrangThai
+                }).ToList();
+
+                // Test different count methods
+                var countByThoiGian = await _diemDanhService.GetMemberAttendanceCountAsync(nguoiDungId.Value, DateTime.MinValue, DateTime.Now);
+                var countByUserId = await _diemDanhService.GetAttendanceCountByUserIdAsync(nguoiDungId.Value);
+
+                // Test personal stats methods - using existing methods
+                var currentMonth = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+                var nextMonth = currentMonth.AddMonths(1);
+                var thisMonthCount = await _diemDanhService.GetMemberAttendanceCountAsync(nguoiDungId.Value, currentMonth, nextMonth.AddDays(-1));
+
+                return Json(new {
+                    success = true,
+                    userId = nguoiDungId.Value,
+                    totalRecords = allAttendances.Count(),
+                    countByThoiGian = countByThoiGian,
+                    countByUserId = countByUserId,
+                    thisMonthAttendance = thisMonthCount,
+                    sampleData = attendanceData,
+                    dateRangeTest = new {
+                        thisMonth = await _diemDanhService.GetMemberAttendanceCountAsync(nguoiDungId.Value,
+                            new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1), DateTime.Now),
+                        last30Days = await _diemDanhService.GetMemberAttendanceCountAsync(nguoiDungId.Value,
+                            DateTime.Now.AddDays(-30), DateTime.Now)
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while debugging DiemDanh data");
+                return Json(new { success = false, message = ex.Message, stackTrace = ex.StackTrace });
+            }
+        }
+
+
     }
 }

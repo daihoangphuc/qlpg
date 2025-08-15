@@ -268,6 +268,12 @@ namespace GymManagement.Web.Services
             return await _diemDanhRepository.CountAttendanceByMemberAsync(thanhVienId, startDate, endDate);
         }
 
+        public async Task<int> GetAttendanceCountByUserIdAsync(int thanhVienId)
+        {
+            var attendances = await _diemDanhRepository.GetByThanhVienIdAsync(thanhVienId);
+            return attendances.Count();
+        }
+
         public async Task<IEnumerable<DiemDanh>> GetAttendanceReportAsync(DateTime startDate, DateTime endDate)
         {
             return await _diemDanhRepository.GetByDateRangeAsync(startDate, endDate);

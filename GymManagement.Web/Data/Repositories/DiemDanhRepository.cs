@@ -52,7 +52,7 @@ namespace GymManagement.Web.Data.Repositories
         {
             return await _context.DiemDanhs
                 .Where(d => d.ThanhVienId == thanhVienId)
-                .OrderByDescending(d => d.ThoiGianCheckIn)
+                .OrderByDescending(d => d.ThoiGian)
                 .FirstOrDefaultAsync();
         }
 
@@ -60,16 +60,16 @@ namespace GymManagement.Web.Data.Repositories
         {
             return await _context.DiemDanhs
                 .Where(d => d.ThanhVienId == nguoiDungId)
-                .OrderByDescending(d => d.ThoiGianCheckIn)
+                .OrderByDescending(d => d.ThoiGian)
                 .ToListAsync();
         }
 
         public async Task<int> GetAttendanceCountByDateRangeAsync(int thanhVienId, DateTime fromDate, DateTime toDate)
         {
             return await _context.DiemDanhs
-                .Where(d => d.ThanhVienId == thanhVienId && 
-                           d.ThoiGianCheckIn >= fromDate && 
-                           d.ThoiGianCheckIn <= toDate)
+                .Where(d => d.ThanhVienId == thanhVienId &&
+                           d.ThoiGian >= fromDate &&
+                           d.ThoiGian <= toDate)
                 .CountAsync();
         }
 

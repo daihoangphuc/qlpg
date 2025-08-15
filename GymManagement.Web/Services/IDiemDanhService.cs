@@ -20,6 +20,7 @@ namespace GymManagement.Web.Services
         Task<bool> HasCheckedInTodayAsync(int thanhVienId);
         Task<int> GetTodayAttendanceCountAsync();
         Task<int> GetMemberAttendanceCountAsync(int thanhVienId, DateTime startDate, DateTime endDate);
+        Task<int> GetAttendanceCountByUserIdAsync(int thanhVienId);
         Task<IEnumerable<DiemDanh>> GetAttendanceReportAsync(DateTime startDate, DateTime endDate);
 
         // Note: Methods using LichLop have been removed

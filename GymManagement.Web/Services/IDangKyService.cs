@@ -28,7 +28,8 @@ namespace GymManagement.Web.Services
         Task<bool> CreatePackageRegistrationAfterPaymentAsync(int nguoiDungId, int goiTapId, int thoiHanThang, int thanhToanId);
         Task<bool> CreateClassRegistrationAfterPaymentAsync(int nguoiDungId, int lopHocId, DateTime ngayBatDau, DateTime ngayKetThuc, int thanhToanId);
         Task<bool> CreateFixedClassRegistrationAfterPaymentAsync(int nguoiDungId, int lopHocId, int thanhToanId);
-        
+        Task<int> GetRegistrationCountByUserIdAsync(int nguoiDungId);
+
         // Add missing methods to fix compilation errors
         Task<IEnumerable<DangKy>> GetActiveRegistrationsByMemberIdAsync(int nguoiDungId);
         Task<int> GetActiveClassRegistrationCountAsync(int lopHocId);

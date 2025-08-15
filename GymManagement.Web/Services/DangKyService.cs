@@ -99,6 +99,12 @@ namespace GymManagement.Web.Services
             return await _dangKyRepository.GetByNguoiDungIdAsync(nguoiDungId);
         }
 
+        public async Task<int> GetRegistrationCountByUserIdAsync(int nguoiDungId)
+        {
+            var registrations = await _dangKyRepository.GetByNguoiDungIdAsync(nguoiDungId);
+            return registrations.Count();
+        }
+
         public async Task<IEnumerable<DangKy>> GetActiveRegistrationsAsync()
         {
             return await _dangKyRepository.GetActiveRegistrationsAsync();

@@ -5,6 +5,67 @@
     Layout = "_MemberLayout";
 }
 
+<style>
+    .tab-button {
+        transition: all 0.3s ease;
+    }
+    .tab-button.active {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+    .tab-content {
+        animation: fadeIn 0.5s ease-in-out;
+    }
+    @@keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .stat-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    }
+    .progress-ring {
+        transform: rotate(-90deg);
+    }
+    .progress-ring-circle {
+        transition: stroke-dasharray 0.35s;
+        transform: rotate(-90deg);
+        transform-origin: 50% 50%;
+    }
+    .metric-icon {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 48px;
+        height: 48px;
+        color: white;
+        font-size: 20px;
+    }
+    .growth-positive {
+        color: #10b981;
+    }
+    .growth-negative {
+        color: #ef4444;
+    }
+    .growth-neutral {
+        color: #6b7280;
+    }
+    .pulse-animation {
+        animation: pulse 2s infinite;
+    }
+    @@keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+</style>
+
 <div class="min-h-screen bg-gray-50 py-8">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <!-- Header -->
@@ -125,60 +186,118 @@
 
             <!-- Workout Stats Tab -->
             <div id="content-stats" class="tab-content p-6 hidden">
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
                     <!-- Stats Cards -->
-                    <div class="lg:col-span-1 space-y-6">
-                        <div class="bg-blue-50 p-6 rounded-lg">
+                    <div class="xl:col-span-1 space-y-4">
+                        <div class="bg-blue-50 p-6 rounded-lg stat-card">
                             <div class="flex items-center">
                                 <div class="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center mr-4">
                                     <span class="text-white text-xl">🏃</span>
                                 </div>
                                 <div>
-                                    <div class="text-2xl font-bold text-blue-600" id="total-sessions">--</div>
+                                    <div class="text-2xl font-bold text-blue-600 pulse-animation" id="total-sessions">--</div>
                                     <div class="text-sm text-gray-600">Tổng buổi tập</div>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="bg-green-50 p-6 rounded-lg">
+                        <div class="bg-green-50 p-6 rounded-lg stat-card">
                             <div class="flex items-center">
                                 <div class="w-12 h-12 bg-green-500 rounded-lg flex items-center justify-center mr-4">
                                     <span class="text-white text-xl">💰</span>
                                 </div>
                                 <div>
-                                    <div class="text-2xl font-bold text-green-600" id="total-cost">--</div>
+                                    <div class="text-2xl font-bold text-green-600 pulse-animation" id="total-cost">--</div>
                                     <div class="text-sm text-gray-600">Tổng chi phí</div>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="bg-purple-50 p-6 rounded-lg">
+                        <div class="bg-purple-50 p-6 rounded-lg stat-card">
                             <div class="flex items-center">
                                 <div class="w-12 h-12 bg-purple-500 rounded-lg flex items-center justify-center mr-4">
                                     <span class="text-white text-xl">📈</span>
                                 </div>
                                 <div>
-                                    <div class="text-2xl font-bold text-purple-600" id="frequency">--</div>
+                                    <div class="text-2xl font-bold text-purple-600 pulse-animation" id="frequency">--</div>
                                     <div class="text-sm text-gray-600">Lần/tuần (TB)</div>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="bg-yellow-50 p-6 rounded-lg">
+                        <div class="bg-yellow-50 p-6 rounded-lg stat-card">
                             <div class="text-center">
                                 <div class="text-lg font-semibold text-gray-900 mb-2">Tháng này</div>
-                                <div class="text-3xl font-bold text-yellow-600" id="this-month">--</div>
+                                <div class="text-3xl font-bold text-yellow-600 pulse-animation" id="this-month">--</div>
                                 <div class="text-sm text-gray-600">buổi tập</div>
+                                <div class="text-xs mt-1">
+                                    <span id="monthly-growth" class="growth-neutral">--</span>% so với tháng trước
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-indigo-50 p-6 rounded-lg stat-card">
+                            <div class="flex items-center">
+                                <div class="w-12 h-12 bg-indigo-500 rounded-lg flex items-center justify-center mr-4">
+                                    <span class="text-white text-xl">🔥</span>
+                                </div>
+                                <div>
+                                    <div class="text-2xl font-bold text-indigo-600 pulse-animation" id="workout-streak">--</div>
+                                    <div class="text-sm text-gray-600">Streak (ngày)</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-teal-50 p-6 rounded-lg stat-card">
+                            <div class="flex items-center">
+                                <div class="w-12 h-12 bg-teal-500 rounded-lg flex items-center justify-center mr-4">
+                                    <span class="text-white text-xl">📊</span>
+                                </div>
+                                <div>
+                                    <div class="text-2xl font-bold text-teal-600 pulse-animation" id="consistency-score">--</div>
+                                    <div class="text-sm text-gray-600">Điểm nhất quán (%)</div>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Chart Area -->
-                    <div class="lg:col-span-2">
+                    <!-- Chart and Additional Stats Area -->
+                    <div class="xl:col-span-2 space-y-6">
                         <div class="bg-white p-6 border border-gray-200 rounded-lg">
                             <h3 class="text-lg font-semibold text-gray-900 mb-4">📊 Thống kê 6 tháng gần đây</h3>
                             <div class="relative h-80">
                                 <canvas id="monthlyChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Additional Stats -->
+                        <div class="bg-white p-6 border border-gray-200 rounded-lg">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">📈 Thông tin chi tiết</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="bg-gray-50 p-4 rounded-lg">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm font-medium text-gray-600">Ngày hoạt động nhiều nhất</span>
+                                        <span class="text-sm font-bold text-gray-900" id="most-active-day">--</span>
+                                    </div>
+                                </div>
+                                <div class="bg-gray-50 p-4 rounded-lg">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm font-medium text-gray-600">Khung giờ yêu thích</span>
+                                        <span class="text-sm font-bold text-gray-900" id="favorite-time-slot">--</span>
+                                    </div>
+                                </div>
+                                <div class="bg-gray-50 p-4 rounded-lg">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm font-medium text-gray-600">Thời gian tập TB</span>
+                                        <span class="text-sm font-bold text-gray-900" id="avg-session-duration">--</span>
+                                    </div>
+                                </div>
+                                <div class="bg-gray-50 p-4 rounded-lg">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm font-medium text-gray-600">Ngày bắt đầu tập</span>
+                                        <span class="text-sm font-bold text-gray-900" id="first-attendance">--</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -240,30 +359,72 @@
         }
 
         function loadPersonalStats() {
+            // Load basic stats
             fetch('/Profile/GetPersonalStats')
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
                         const stats = data.stats;
-                        
-                        // Update stats cards
-                        document.getElementById('total-sessions').textContent = stats.TotalSessions;
-                        document.getElementById('total-cost').textContent = stats.TotalCost.toLocaleString('vi-VN') + ' VNĐ';
-                        document.getElementById('frequency').textContent = stats.Frequency;
-                        document.getElementById('this-month').textContent = stats.ThisMonth;
 
-                        // Update quick stats in personal tab
-                        document.getElementById('quick-sessions').textContent = stats.TotalSessions;
-                        document.getElementById('quick-frequency').textContent = stats.Frequency;
+                        // Update stats cards with null checks (match API response case)
+                        document.getElementById('total-sessions').textContent = stats.totalSessions || 0;
+                        document.getElementById('total-cost').textContent = (stats.totalCost || 0).toLocaleString('vi-VN') + ' VNĐ';
+                        document.getElementById('frequency').textContent = stats.frequency || 0;
+                        document.getElementById('this-month').textContent = stats.thisMonth || 0;
 
-                        // Create chart
-                        createMonthlyChart(stats.MonthlyData);
+                        // Update new metrics with animation (match API response case)
+                        const growthElement = document.getElementById('monthly-growth');
+                        if (growthElement) {
+                            const growth = stats.monthlyGrowth || 0;
+                            growthElement.textContent = growth > 0 ? `+${growth}` : growth;
+                            growthElement.className = growth > 0 ? 'growth-positive' : growth < 0 ? 'growth-negative' : 'growth-neutral';
+                        }
+
+                        // Remove pulse animation after data loads
+                        setTimeout(() => {
+                            document.querySelectorAll('.pulse-animation').forEach(el => {
+                                el.classList.remove('pulse-animation');
+                            });
+                        }, 1000);
+
+                        // Update additional info (match API response case)
+                        if (stats.firstAttendanceDate) {
+                            document.getElementById('first-attendance').textContent = stats.firstAttendanceDate;
+                        }
+
+                        // Update quick stats in personal tab with null checks
+                        document.getElementById('quick-sessions').textContent = stats.totalSessions || 0;
+                        document.getElementById('quick-frequency').textContent = stats.frequency || 0;
+
+                        // Create chart (match API response case)
+                        createMonthlyChart(stats.monthlyData);
                     } else {
                         console.error('Error loading stats:', data.message);
                     }
                 })
                 .catch(error => {
                     console.error('Error loading personal stats:', error);
+                });
+
+            // Load detailed stats
+            fetch('/Profile/GetDetailedStats')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const detailedStats = data.detailedStats;
+
+                        // Update detailed metrics with null checks (match API response case)
+                        document.getElementById('workout-streak').textContent = detailedStats.workoutStreak || 0;
+                        document.getElementById('consistency-score').textContent = detailedStats.consistencyScore || 0;
+                        document.getElementById('most-active-day').textContent = detailedStats.mostActiveDay || '--';
+                        document.getElementById('favorite-time-slot').textContent = detailedStats.favoriteTimeSlot || '--';
+                        document.getElementById('avg-session-duration').textContent = detailedStats.averageSessionDuration || '--';
+                    } else {
+                        console.error('Error loading detailed stats:', data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading detailed stats:', error);
                 });
         }
 
@@ -277,10 +438,10 @@
             monthlyChart = new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: monthlyData.map(d => d.Month),
+                    labels: monthlyData.map(d => d.month),
                     datasets: [{
                         label: 'Số buổi tập',
-                        data: monthlyData.map(d => d.Count),
+                        data: monthlyData.map(d => d.count),
                         borderColor: 'rgb(59, 130, 246)',
                         backgroundColor: 'rgba(59, 130, 246, 0.1)',
                         tension: 0.4,
