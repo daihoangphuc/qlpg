@@ -189,15 +189,44 @@ namespace GymManagement.Web.Areas.VNPayAPI.Controllers
                                 // This is a new registration payment
                                 registration.TrangThai = "ACTIVE";
                                 registration.TrangThaiChiTiet = isSimulation ? "Thanh toán thành công (Mô phỏng)" : "Thanh toán thành công";
+
+                                // Auto check-in for walk-in customers
+                                if (gateway.ThanhToan.GhiChu?.Contains("WALKIN") == true)
+                                {
+                                    var walkInService = HttpContext.RequestServices.GetRequiredService<IWalkInService>();
+                                    try
+                                    {
+                                        await walkInService.CheckInGuestAsync(
+                                            registration.NguoiDungId,
+                                            $"WALKIN - VNPay auto check-in",
+                                            "VNPay");
+                                        _logger.LogInformation("Auto check-in successful for walk-in customer: {UserId}", registration.NguoiDungId);
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        _logger.LogError(ex, "Failed to auto check-in walk-in customer: {UserId}", registration.NguoiDungId);
+                                    }
+                                }
                             }
                         }
                     }
 
                     await _context.SaveChangesAsync();
-                    
+
                     _logger.LogInformation($"VNPay payment successful for order: {vnp_OrderId}" + (isSimulation ? " (Simulation)" : ""));
                     var successMessage = isSimulation ? "Mô+phỏng+thanh+toán+thành+công" : "Thanh+toán+thành+công";
-                    return Redirect($"/Member/MyRegistrations?paymentStatus=success&message={successMessage}");
+
+                    // Check if this is a walk-in payment
+                    if (gateway.ThanhToan.GhiChu?.Contains("WALKIN") == true)
+                    {
+                        // Redirect to DiemDanh page for walk-in customers
+                        return Redirect($"/DiemDanh/Index?paymentStatus=success&message={successMessage}&walkIn=true");
+                    }
+                    else
+                    {
+                        // Redirect to Member page for regular members
+                        return Redirect($"/Member/MyRegistrations?paymentStatus=success&message={successMessage}");
+                    }
                 }
                 else
                 {
@@ -218,9 +247,20 @@ namespace GymManagement.Web.Areas.VNPayAPI.Controllers
                     }
 
                     await _context.SaveChangesAsync();
-                    
+
                     _logger.LogWarning($"VNPay payment failed for order: {vnp_OrderId}, response code: {vnp_ResponseCode}");
-                    return Redirect("/Member/MyRegistrations?paymentStatus=error&message=Thanh+toán+thất+bại");
+
+                    // Check if this is a walk-in payment
+                    if (gateway.ThanhToan.GhiChu?.Contains("WALKIN") == true)
+                    {
+                        // Redirect to DiemDanh page for walk-in customers
+                        return Redirect("/DiemDanh/Index?paymentStatus=error&message=Thanh+toán+thất+bại&walkIn=true");
+                    }
+                    else
+                    {
+                        // Redirect to Member page for regular members
+                        return Redirect("/Member/MyRegistrations?paymentStatus=error&message=Thanh+toán+thất+bại");
+                    }
                 }
             }
             catch (Exception ex)

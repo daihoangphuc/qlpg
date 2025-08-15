@@ -186,6 +186,9 @@ builder.Services.AddHttpContextAccessor();
 // Add User Session Service
 builder.Services.AddScoped<IUserSessionService, UserSessionService>();
 
+// Add Trainer Security Service - Enhanced security for Trainer role
+builder.Services.AddScoped<ITrainerSecurityService, TrainerSecurityService>();
+
 // Add Member Benefit Service - Logic đơn giản cho quyền lợi member
 builder.Services.AddScoped<IMemberBenefitService, MemberBenefitService>();
 
@@ -241,6 +244,7 @@ app.UseMiddleware<RateLimitingMiddleware>();
 
 app.UseAuthentication();
 app.UseUserSession(); // Custom middleware for user session management
+app.UseTrainerSecurity(); // Enhanced security for Trainer role
 app.UseAuthorization();
 
 // Add Health Check endpoint

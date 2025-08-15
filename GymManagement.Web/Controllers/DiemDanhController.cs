@@ -8,33 +8,52 @@ namespace GymManagement.Web.Controllers
 {
     [Authorize]
     [Route("[controller]")]
-    public class DiemDanhController : Controller
+    public class DiemDanhController : BaseController
     {
         private readonly IDiemDanhService _diemDanhService;
         private readonly INguoiDungService _nguoiDungService;
         private readonly IAuthService _authService;
-        private readonly ILogger<DiemDanhController> _logger;
+        private readonly IMemberBenefitService _memberBenefitService;
 
         public DiemDanhController(
             IDiemDanhService diemDanhService,
             INguoiDungService nguoiDungService,
             IAuthService authService,
+            IMemberBenefitService memberBenefitService,
+            IUserSessionService userSessionService,
             ILogger<DiemDanhController> logger)
+            : base(userSessionService, logger)
         {
             _diemDanhService = diemDanhService;
             _nguoiDungService = nguoiDungService;
             _authService = authService;
-            _logger = logger;
+            _memberBenefitService = memberBenefitService;
         }
 
-        // Helper method to get current user
+        // Helper method to get current user with enhanced security
         private async Task<TaiKhoan?> GetCurrentUserAsync()
         {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var userId = GetCurrentUserIdSafe();
             if (string.IsNullOrEmpty(userId))
+            {
+                LogUserAction("GetCurrentUser_Failed", "No user ID found");
                 return null;
+            }
 
-            return await _authService.GetUserByIdAsync(userId);
+            try
+            {
+                var user = await _authService.GetUserByIdAsync(userId);
+                if (user == null)
+                {
+                    LogUserAction("GetCurrentUser_NotFound", new { UserId = userId });
+                }
+                return user;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting current user for ID: {UserId}", userId);
+                return null;
+            }
         }
 
         [Authorize(Roles = "Admin,Trainer")]
@@ -44,14 +63,37 @@ namespace GymManagement.Web.Controllers
         {
             try
             {
+                LogUserAction("DiemDanh_Index_Access");
+
+                // Validate permissions
+                if (!IsInRoleSafe("Admin") && !IsInRoleSafe("Trainer"))
+                {
+                    return HandleUnauthorized("Bạn không có quyền xem danh sách điểm danh.");
+                }
+
                 var attendance = await _diemDanhService.GetAllAsync();
+
+                // If user is Trainer, filter to only their classes
+                if (IsInRoleSafe("Trainer") && !IsInRoleSafe("Admin"))
+                {
+                    var currentUser = await GetCurrentUserAsync();
+                    if (currentUser?.NguoiDungId != null)
+                    {
+                        // Filter attendance records for trainer's classes only
+                        attendance = attendance.Where(a => a.LopHoc?.HlvId == currentUser.NguoiDungId).ToList();
+                        LogUserAction("DiemDanh_Index_FilteredForTrainer", new {
+                            TrainerId = currentUser.NguoiDungId,
+                            RecordCount = attendance.Count()
+                        });
+                    }
+                }
+
+                LogUserAction("DiemDanh_Index_Success", new { RecordCount = attendance.Count() });
                 return View(attendance);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while getting attendance records");
-                TempData["ErrorMessage"] = "Có lỗi xảy ra khi tải danh sách điểm danh.";
-                return View(new List<DiemDanh>());
+                return HandleError(ex, "Có lỗi xảy ra khi tải danh sách điểm danh.");
             }
         }
 
@@ -209,6 +251,9 @@ namespace GymManagement.Web.Controllers
                             (await _diemDanhService.GetClassNameAsync(request.ClassId.Value)) ?? "Lớp học" :
                             "tập tự do";
 
+                        // Get member package information
+                        var packageInfo = await GetMemberPackageInfoAsync(memberId);
+
                         return Json(new
                         {
                             success = true,
@@ -217,7 +262,8 @@ namespace GymManagement.Web.Controllers
                             memberName = $"{member.Ho} {member.Ten}",
                             time = DateTime.Now.ToString("HH:mm dd/MM/yyyy"),
                             confidence = Math.Round(recognitionResult.Confidence * 100, 1),
-                            className = className
+                            className = className,
+                            packageInfo = packageInfo
                         });
                     }
                     else
@@ -586,6 +632,62 @@ namespace GymManagement.Web.Controllers
                     success = false,
                     message = "Có lỗi xảy ra khi xóa bản ghi. Vui lòng thử lại sau."
                 });
+            }
+        }
+
+        /// <summary>
+        /// Lấy thông tin gói tập của member
+        /// </summary>
+        private async Task<object> GetMemberPackageInfoAsync(int memberId)
+        {
+            try
+            {
+                var activePackage = await _memberBenefitService.GetActivePackageAsync(memberId);
+
+                if (activePackage?.GoiTap != null)
+                {
+                    var remainingDays = (activePackage.NgayKetThuc.ToDateTime(TimeOnly.MinValue) - DateTime.Today).Days;
+                    var status = remainingDays > 7 ? "Còn hiệu lực" :
+                                remainingDays > 0 ? "Sắp hết hạn" : "Hết hạn";
+
+                    return new
+                    {
+                        hasPackage = true,
+                        packageName = activePackage.GoiTap.TenGoi,
+                        expiryDate = activePackage.NgayKetThuc.ToString("dd/MM/yyyy"),
+                        remainingDays = Math.Max(0, remainingDays),
+                        status = status,
+                        isExpiring = remainingDays <= 7 && remainingDays > 0,
+                        isExpired = remainingDays <= 0
+                    };
+                }
+                else
+                {
+                    return new
+                    {
+                        hasPackage = false,
+                        packageName = "Không có gói tập",
+                        expiryDate = "",
+                        remainingDays = 0,
+                        status = "Chưa đăng ký gói tập",
+                        isExpiring = false,
+                        isExpired = false
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting package info for member {MemberId}", memberId);
+                return new
+                {
+                    hasPackage = false,
+                    packageName = "Lỗi tải thông tin",
+                    expiryDate = "",
+                    remainingDays = 0,
+                    status = "Không thể tải thông tin gói tập",
+                    isExpiring = false,
+                    isExpired = false
+                };
             }
         }
     }

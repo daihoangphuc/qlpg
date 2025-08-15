@@ -516,14 +516,21 @@ namespace GymManagement.Web.Controllers
                 }
 
                 // Tự động check-in sau khi xác nhận thanh toán
-                if (request.GuestId > 0)
+                // Tìm guest từ payment record thông qua service
+                var paymentInfo = await _thanhToanService.GetPaymentWithRegistrationAsync(request.PaymentId);
+
+                if (paymentInfo?.DangKy?.NguoiDung != null)
                 {
-                    var checkIn = await _walkInService.CheckInGuestAsync(request.GuestId, "WALKIN - Bank transfer confirmed", "Manual");
+                    var guestId = paymentInfo.DangKy.NguoiDungId;
+                    var guestName = $"{paymentInfo.DangKy.NguoiDung.Ho} {paymentInfo.DangKy.NguoiDung.Ten}".Trim();
+
+                    var checkIn = await _walkInService.CheckInGuestAsync(guestId, $"WALKIN - VNPay confirmed ({guestName})", "VNPay");
                     return Ok(new
                     {
                         success = true,
                         checkInId = checkIn.DiemDanhId,
-                        message = "Xác nhận thanh toán và check-in thành công!"
+                        guestName = guestName,
+                        message = $"Xác nhận thanh toán VNPay và check-in thành công cho {guestName}!"
                     });
                 }
 
@@ -735,7 +742,8 @@ namespace GymManagement.Web.Controllers
                         success = true,
                         message = "Tạo thanh toán VNPay thành công",
                         paymentUrl = result.PaymentUrl,
-                        orderId = result.OrderId
+                        orderId = result.OrderId,
+                        thanhToanId = result.ThanhToanId
                     });
                 }
                 else

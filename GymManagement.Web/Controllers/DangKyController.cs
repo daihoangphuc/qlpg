@@ -553,14 +553,19 @@ namespace GymManagement.Web.Controllers
             {
                 var packages = await _goiTapService.GetAllAsync();
                 var classes = await _lopHocService.GetActiveClassesAsync();
-                var members = await _nguoiDungService.GetMembersAsync();
+
+                // Get both THANHVIEN and VANGLAI users
+                var allUsers = await _nguoiDungService.GetAllAsync();
+                var membersAndWalkIns = allUsers.Where(u =>
+                    (u.LoaiNguoiDung == "THANHVIEN" || u.LoaiNguoiDung == "VANGLAI") &&
+                    u.TrangThai == "ACTIVE");
 
                 ViewBag.Packages = new SelectList(packages, "GoiTapId", "TenGoi");
                 ViewBag.Classes = new SelectList(classes, "LopHocId", "TenLop");
-                ViewBag.Members = new SelectList(members.Select(m => new {
+                ViewBag.Members = new SelectList(membersAndWalkIns.Select(m => new {
                     NguoiDungId = m.NguoiDungId,
-                    HoTen = $"{m.Ho} {m.Ten}".Trim()
-                }), "NguoiDungId", "HoTen");
+                    HoTen = $"{m.Ho} {m.Ten}".Trim() + $" ({(m.LoaiNguoiDung == "THANHVIEN" ? "Thành viên" : "Vãng lai")})"
+                }).OrderBy(m => m.HoTen), "NguoiDungId", "HoTen");
             }
             catch (Exception ex)
             {

@@ -1,10 +1,12 @@
 using GymManagement.Web.Data.Models;
 using GymManagement.Web.Services;
 using GymManagement.Web.Authorization;
+using GymManagement.Web.Data.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
 
 namespace GymManagement.Web.Controllers
 {
@@ -18,6 +20,7 @@ namespace GymManagement.Web.Controllers
         private readonly IEmailService _emailService;
         private readonly IAuthorizationService _authorizationService;
         private readonly IMemberBenefitService _memberBenefitService;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly ILogger<BookingController> _logger;
 
         public BookingController(
@@ -28,6 +31,7 @@ namespace GymManagement.Web.Controllers
             IEmailService emailService,
             IAuthorizationService authorizationService,
             IMemberBenefitService memberBenefitService,
+            IUnitOfWork unitOfWork,
             ILogger<BookingController> logger)
         {
             _bookingService = bookingService;
@@ -37,6 +41,7 @@ namespace GymManagement.Web.Controllers
             _emailService = emailService;
             _authorizationService = authorizationService;
             _memberBenefitService = memberBenefitService;
+            _unitOfWork = unitOfWork;
             _logger = logger;
         }
 
@@ -174,21 +179,11 @@ namespace GymManagement.Web.Controllers
 
                     if (success)
                     {
-                        // Send booking confirmation email (async, non-blocking)
-                        _ = Task.Run(async () =>
-                        {
-                            try
-                            {
-                                await SendClassBookingConfirmationEmailAsync(
-                                    booking.ThanhVienId.Value,
-                                    booking.LopHocId.Value,
-                                    bookingDate);
-                            }
-                            catch (Exception emailEx)
-                            {
-                                _logger.LogWarning(emailEx, "Failed to send booking confirmation email");
-                            }
-                        });
+                        // Send booking confirmation email (fire and forget)
+                        _ = SendClassBookingConfirmationEmailAsync(
+                            booking.ThanhVienId.Value,
+                            booking.LopHocId.Value,
+                            bookingDate);
 
                         TempData["SuccessMessage"] = "Đặt lịch thành công!";
                         return RedirectToAction(nameof(MyBookings));
@@ -277,18 +272,8 @@ namespace GymManagement.Web.Controllers
 
                 if (success)
                 {
-                    // Send booking confirmation email for class booking (async, non-blocking)
-                    _ = Task.Run(async () =>
-                    {
-                        try
-                        {
-                            await SendClassBookingConfirmationEmailAsync(user.NguoiDungId.Value, request.ClassId, request.Date);
-                        }
-                        catch (Exception emailEx)
-                        {
-                            _logger.LogWarning(emailEx, "Failed to send booking confirmation email");
-                        }
-                    });
+                    // Send booking confirmation email for class booking (fire and forget)
+                    _ = SendClassBookingConfirmationEmailAsync(user.NguoiDungId.Value, request.ClassId, request.Date);
 
                     return Json(new { success = true, message = "Đặt lịch thành công!" });
                 }
@@ -381,32 +366,7 @@ namespace GymManagement.Web.Controllers
             }
         }
 
-        [HttpGet]
-        public async Task<IActionResult> CheckAvailability(int classId, DateTime date)
-        {
-            try
-            {
-                var user = await GetCurrentUserAsync();
-                if (user?.NguoiDungId == null)
-                {
-                    return Json(new { canBook = false, message = "Vui lòng đăng nhập." });
-                }
 
-                var canBook = await _bookingService.CanBookAsync(user.NguoiDungId.Value, classId, date);
-                var availableSlots = await _bookingService.GetAvailableSlotsAsync(classId, date);
-
-                return Json(new { 
-                    canBook = canBook, 
-                    availableSlots = availableSlots,
-                    message = canBook ? "Có thể đặt lịch" : "Không thể đặt lịch"
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error occurred while checking booking availability");
-                return Json(new { canBook = false, message = "Có lỗi xảy ra." });
-            }
-        }
 
         [Authorize(Roles = "Admin,Trainer")]
         public async Task<IActionResult> TodayBookings()
@@ -491,7 +451,7 @@ namespace GymManagement.Web.Controllers
                         availableClasses = availableClasses.Where(c => c.LopHocId == classId.Value);
                     }
 
-                    // Generate dynamic schedules for classes (no LichLops table)
+                    // Generate dynamic schedules for classes with capacity check
                     var classEventsWithSchedule = new List<object>();
                     foreach (var lopHoc in availableClasses)
                     {
@@ -502,17 +462,74 @@ namespace GymManagement.Web.Controllers
                             var dayOfWeek = GetVietnameseDayOfWeek(currentDate.DayOfWeek);
                             if (thuTrongTuan.Contains(dayOfWeek))
                             {
+                                // Check capacity for this specific date (both Bookings and DangKys)
+                                var dateOnly = DateOnly.FromDateTime(currentDate);
+
+                                // Count individual bookings for this specific date
+                                var currentBookings = await _unitOfWork.Context.Bookings
+                                    .Where(b => b.LopHocId == lopHoc.LopHocId &&
+                                               b.Ngay == dateOnly &&
+                                               b.TrangThai == "BOOKED")
+                                    .CountAsync();
+
+                                // Count active registrations (DangKys) that cover this date
+                                var activeRegistrations = await _unitOfWork.Context.DangKys
+                                    .Where(d => d.LopHocId == lopHoc.LopHocId &&
+                                               d.TrangThai == "ACTIVE" &&
+                                               d.NgayBatDau <= dateOnly &&
+                                               d.NgayKetThuc >= dateOnly)
+                                    .CountAsync();
+
+                                // Total occupied slots = bookings + registrations
+                                var totalOccupied = currentBookings + activeRegistrations;
+                                var availableSlots = lopHoc.SucChua - totalOccupied;
+                                var fillRate = lopHoc.SucChua > 0 ? (double)totalOccupied / lopHoc.SucChua * 100 : 0;
+
+                                // Determine color and status based on capacity
+                                string backgroundColor, borderColor, status, icon;
+                                bool isFull = totalOccupied >= lopHoc.SucChua;
+
+                                if (isFull)
+                                {
+                                    backgroundColor = "#FCA5A5"; // Light red for full classes
+                                    borderColor = "#EF4444";     // Red border
+                                    status = "FULL";
+                                    icon = "🚫";
+                                }
+                                else if (fillRate >= 80)
+                                {
+                                    backgroundColor = "#FDE68A"; // Light yellow for nearly full
+                                    borderColor = "#F59E0B";     // Yellow border
+                                    status = "NEARLY_FULL";
+                                    icon = "⚠️";
+                                }
+                                else
+                                {
+                                    backgroundColor = "#86EFAC"; // Light green for available
+                                    borderColor = "#10B981";     // Green border
+                                    status = "AVAILABLE";
+                                    icon = "📚";
+                                }
+
                                 classEventsWithSchedule.Add(new {
                                     id = $"class_{lopHoc.LopHocId}_{currentDate:yyyyMMdd}",
-                                    title = $"📚 {GetShortClassName(lopHoc.TenLop)}",
+                                    title = $"{icon} {GetShortClassName(lopHoc.TenLop)} ({availableSlots}/{lopHoc.SucChua})",
                                     start = currentDate.ToString("yyyy-MM-dd") + "T" + lopHoc.GioBatDau.ToString("HH:mm"),
                                     end = currentDate.ToString("yyyy-MM-dd") + "T" + lopHoc.GioKetThuc.ToString("HH:mm"),
-                                    backgroundColor = "#3B82F6",
-                                    borderColor = "#2563EB",
-                                    textColor = "#FFFFFF",
+                                    backgroundColor = backgroundColor,
+                                    borderColor = borderColor,
+                                    textColor = isFull ? "#7F1D1D" : "#FFFFFF", // Dark red text for full classes
                                     type = "class",
-                                    classId = lopHoc.LopHocId,
-                                    fullTitle = lopHoc.TenLop
+                                    lopHocId = lopHoc.LopHocId,
+                                    fullTitle = lopHoc.TenLop,
+                                    status = status,
+                                    isFull = isFull,
+                                    availableSlots = availableSlots,
+                                    totalCapacity = lopHoc.SucChua,
+                                    currentBookings = currentBookings,
+                                    activeRegistrations = activeRegistrations,
+                                    totalOccupied = totalOccupied,
+                                    fillRate = Math.Round(fillRate, 1)
                                 });
                             }
                             currentDate = currentDate.AddDays(1);
@@ -546,23 +563,83 @@ namespace GymManagement.Web.Controllers
 
                     events.AddRange(adminEvents);
 
-                    // Also add available classes for admin
+                    // Also add available classes for admin with capacity info
                     var availableClasses = await _lopHocService.GetActiveClassesAsync();
-                    var availableClassEvents = availableClasses
-                        .SelectMany(c => GenerateWeeklyClassEvents(c, DateOnly.FromDateTime(start.Date), DateOnly.FromDateTime(end.Date)))
-                        .Select(evt => new {
-                            id = $"admin_class_{evt.LopHocId}_{evt.Date:yyyyMMdd}",
-                            title = $"📚 {GetShortClassName(evt.TenLop)}",
-                            start = evt.Date.ToString("yyyy-MM-dd") + "T" + evt.GioBatDau.ToString("HH:mm"),
-                            end = evt.Date.ToString("yyyy-MM-dd") + "T" + evt.GioKetThuc.ToString("HH:mm"),
-                            backgroundColor = "#6B7280",
-                            borderColor = "#6B7280",
-                            textColor = "#FFFFFF",
-                            status = "AVAILABLE",
-                            type = "admin_class",
-                            lopHocId = evt.LopHocId,
-                            fullTitle = evt.TenLop
-                        });
+                    var availableClassEvents = new List<object>();
+
+                    foreach (var lopHoc in availableClasses)
+                    {
+                        var weeklyEvents = GenerateWeeklyClassEvents(lopHoc, DateOnly.FromDateTime(start.Date), DateOnly.FromDateTime(end.Date));
+                        foreach (var evt in weeklyEvents)
+                        {
+                            // Check capacity for this specific date (both Bookings and DangKys)
+                            var currentBookings = await _unitOfWork.Context.Bookings
+                                .Where(b => b.LopHocId == evt.LopHocId &&
+                                           b.Ngay == evt.Date &&
+                                           b.TrangThai == "BOOKED")
+                                .CountAsync();
+
+                            // Count active registrations (DangKys) that cover this date
+                            var activeRegistrations = await _unitOfWork.Context.DangKys
+                                .Where(d => d.LopHocId == evt.LopHocId &&
+                                           d.TrangThai == "ACTIVE" &&
+                                           d.NgayBatDau <= evt.Date &&
+                                           d.NgayKetThuc >= evt.Date)
+                                .CountAsync();
+
+                            // Total occupied slots = bookings + registrations
+                            var totalOccupied = currentBookings + activeRegistrations;
+                            var availableSlots = lopHoc.SucChua - totalOccupied;
+                            var fillRate = lopHoc.SucChua > 0 ? (double)totalOccupied / lopHoc.SucChua * 100 : 0;
+
+                            // Determine color and status based on capacity
+                            string backgroundColor, borderColor, status, icon;
+                            bool isFull = totalOccupied >= lopHoc.SucChua;
+
+                            if (isFull)
+                            {
+                                backgroundColor = "#FCA5A5"; // Light red for full classes
+                                borderColor = "#EF4444";     // Red border
+                                status = "FULL";
+                                icon = "🚫";
+                            }
+                            else if (fillRate >= 80)
+                            {
+                                backgroundColor = "#FDE68A"; // Light yellow for nearly full
+                                borderColor = "#F59E0B";     // Yellow border
+                                status = "NEARLY_FULL";
+                                icon = "⚠️";
+                            }
+                            else
+                            {
+                                backgroundColor = "#D1D5DB"; // Light gray for admin view
+                                borderColor = "#6B7280";     // Gray border
+                                status = "AVAILABLE";
+                                icon = "📚";
+                            }
+
+                            availableClassEvents.Add(new {
+                                id = $"admin_class_{evt.LopHocId}_{evt.Date:yyyyMMdd}",
+                                title = $"{icon} {GetShortClassName(evt.TenLop)} ({totalOccupied}/{lopHoc.SucChua})",
+                                start = evt.Date.ToString("yyyy-MM-dd") + "T" + evt.GioBatDau.ToString("HH:mm"),
+                                end = evt.Date.ToString("yyyy-MM-dd") + "T" + evt.GioKetThuc.ToString("HH:mm"),
+                                backgroundColor = backgroundColor,
+                                borderColor = borderColor,
+                                textColor = isFull ? "#7F1D1D" : "#374151", // Dark text for admin view
+                                status = status,
+                                type = "admin_class",
+                                lopHocId = evt.LopHocId,
+                                fullTitle = evt.TenLop,
+                                isFull = isFull,
+                                availableSlots = availableSlots,
+                                totalCapacity = lopHoc.SucChua,
+                                currentBookings = currentBookings,
+                                activeRegistrations = activeRegistrations,
+                                totalOccupied = totalOccupied,
+                                fillRate = Math.Round(fillRate, 1)
+                            });
+                        }
+                    }
 
                     events.AddRange(availableClassEvents);
                 }
@@ -576,21 +653,22 @@ namespace GymManagement.Web.Controllers
             }
         }
 
-        private IEnumerable<dynamic> GenerateWeeklyClassEvents(LopHoc lopHoc, DateOnly startDate, DateOnly endDate)
+        private IEnumerable<WeeklyClassEvent> GenerateWeeklyClassEvents(LopHoc lopHoc, DateOnly startDate, DateOnly endDate)
         {
-            var events = new List<dynamic>();
-            
+            var events = new List<WeeklyClassEvent>();
+
             // Parse ThuTrongTuan (e.g., "Mon,Wed,Fri" or "2,4,6")
             var daysOfWeek = ParseDaysOfWeek(lopHoc.ThuTrongTuan);
-            
+
             for (var date = startDate; date <= endDate; date = date.AddDays(1))
             {
                 var dayOfWeek = (int)date.DayOfWeek;
                 if (dayOfWeek == 0) dayOfWeek = 7; // Convert Sunday from 0 to 7
-                
+
                 if (daysOfWeek.Contains(dayOfWeek))
                 {
-                    events.Add(new {
+                    events.Add(new WeeklyClassEvent
+                    {
                         LopHocId = lopHoc.LopHocId,
                         TenLop = lopHoc.TenLop,
                         Date = date,
@@ -599,7 +677,7 @@ namespace GymManagement.Web.Controllers
                     });
                 }
             }
-            
+
             return events;
         }
 
@@ -1133,6 +1211,57 @@ namespace GymManagement.Web.Controllers
                 return Json(new { success = false, message = "Có lỗi xảy ra khi xuất file Excel." });
             }
         }
+        // ✅ API endpoint to check class availability
+        [HttpGet]
+        public async Task<IActionResult> CheckAvailability(int classId, string date)
+        {
+            try
+            {
+                if (!DateOnly.TryParse(date, out var dateOnly))
+                {
+                    return Json(new { canBook = false, message = "Ngày không hợp lệ" });
+                }
+
+                var lopHoc = await _lopHocService.GetByIdAsync(classId);
+                if (lopHoc == null)
+                {
+                    return Json(new { canBook = false, message = "Lớp học không tồn tại" });
+                }
+
+                // Check capacity (both Bookings and DangKys)
+                var currentBookings = await _unitOfWork.Context.Bookings
+                    .Where(b => b.LopHocId == classId &&
+                               b.Ngay == dateOnly &&
+                               b.TrangThai == "BOOKED")
+                    .CountAsync();
+
+                var activeRegistrations = await _unitOfWork.Context.DangKys
+                    .Where(d => d.LopHocId == classId &&
+                               d.TrangThai == "ACTIVE" &&
+                               d.NgayBatDau <= dateOnly &&
+                               d.NgayKetThuc >= dateOnly)
+                    .CountAsync();
+
+                var totalOccupied = currentBookings + activeRegistrations;
+                var availableSlots = lopHoc.SucChua - totalOccupied;
+                var canBook = availableSlots > 0;
+
+                return Json(new {
+                    canBook = canBook,
+                    availableSlots = availableSlots,
+                    totalCapacity = lopHoc.SucChua,
+                    currentBookings = currentBookings,
+                    activeRegistrations = activeRegistrations,
+                    totalOccupied = totalOccupied,
+                    message = canBook ? "Có thể đặt lịch" : "Lớp học đã đầy"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error checking class availability for class {ClassId} on {Date}", classId, date);
+                return Json(new { canBook = false, message = "Lỗi hệ thống" });
+            }
+        }
     }
 
     // ✅ DTO classes for API requests
@@ -1141,6 +1270,15 @@ namespace GymManagement.Web.Controllers
         public int ClassId { get; set; }
         public DateTime Date { get; set; }
         public string? Note { get; set; }
+    }
+
+    public class WeeklyClassEvent
+    {
+        public int LopHocId { get; set; }
+        public string TenLop { get; set; } = string.Empty;
+        public DateOnly Date { get; set; }
+        public TimeOnly GioBatDau { get; set; }
+        public TimeOnly GioKetThuc { get; set; }
     }
 
     public class PayAndCheckInRequest

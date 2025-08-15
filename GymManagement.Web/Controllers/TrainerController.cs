@@ -7,7 +7,7 @@ using System.Security.Claims;
 namespace GymManagement.Web.Controllers
 {
     [Authorize(Roles = "Trainer")]
-    public class TrainerController : Controller
+    public class TrainerController : BaseController
     {
         private readonly ILopHocService _lopHocService;
         private readonly IBangLuongService _bangLuongService;
@@ -15,7 +15,6 @@ namespace GymManagement.Web.Controllers
         private readonly IDiemDanhService _diemDanhService;
         private readonly IBaoCaoService _baoCaoService;
         private readonly IAuthService _authService;
-        private readonly ILogger<TrainerController> _logger;
 
         public TrainerController(
             ILopHocService lopHocService,
@@ -24,7 +23,9 @@ namespace GymManagement.Web.Controllers
             IDiemDanhService diemDanhService,
             IBaoCaoService baoCaoService,
             IAuthService authService,
+            IUserSessionService userSessionService,
             ILogger<TrainerController> logger)
+            : base(userSessionService, logger)
         {
             _lopHocService = lopHocService;
             _bangLuongService = bangLuongService;
@@ -32,17 +33,32 @@ namespace GymManagement.Web.Controllers
             _diemDanhService = diemDanhService;
             _baoCaoService = baoCaoService;
             _authService = authService;
-            _logger = logger;
         }
 
-        // Helper method to get current user
+        // Helper method to get current user with enhanced security
         private async Task<TaiKhoan?> GetCurrentUserAsync()
         {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var userId = GetCurrentUserIdSafe();
             if (string.IsNullOrEmpty(userId))
+            {
+                LogUserAction("GetCurrentUser_Failed", "No user ID found");
                 return null;
+            }
 
-            return await _authService.GetUserByIdAsync(userId);
+            try
+            {
+                var user = await _authService.GetUserByIdAsync(userId);
+                if (user == null)
+                {
+                    LogUserAction("GetCurrentUser_NotFound", new { UserId = userId });
+                }
+                return user;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting current user for ID: {UserId}", userId);
+                return null;
+            }
         }
 
         // Debug method để kiểm tra dữ liệu database
@@ -87,69 +103,79 @@ namespace GymManagement.Web.Controllers
         {
             try
             {
+                LogUserAction("Dashboard_Access");
+
                 var user = await GetCurrentUserAsync();
                 if (user?.NguoiDungId == null)
                 {
                     _logger.LogWarning("Trainer user not found or NguoiDungId is null");
-                    return RedirectToAction("Login", "Auth");
+                    return HandleUserNotFound("Dashboard");
                 }
 
                 var trainerId = user.NguoiDungId.Value;
-                _logger.LogInformation("Loading dashboard for trainer with NguoiDungId: {TrainerId}", trainerId);
+                LogUserAction("Dashboard_LoadStart", new { TrainerId = trainerId });
+
+                // Validate trainer permissions
+                if (!IsInRoleSafe("Trainer"))
+                {
+                    return HandleUnauthorized("Bạn không có quyền truy cập dashboard huấn luyện viên.");
+                }
 
                 // Lấy thông tin trainer
                 var trainer = await _nguoiDungService.GetByIdAsync(trainerId);
+                if (trainer == null || trainer.LoaiNguoiDung != "HLV")
+                {
+                    _logger.LogWarning("Invalid trainer data for ID: {TrainerId}", trainerId);
+                    return HandleUnauthorized("Thông tin huấn luyện viên không hợp lệ.");
+                }
+
                 ViewBag.Trainer = trainer;
-                _logger.LogInformation("Trainer info loaded: {TrainerName}, Type: {TrainerType}", 
-                    trainer != null ? $"{trainer.Ho} {trainer.Ten}" : "NULL", 
-                    trainer?.LoaiNguoiDung);
+                LogUserAction("Dashboard_TrainerLoaded", new {
+                    TrainerName = $"{trainer.Ho} {trainer.Ten}",
+                    TrainerType = trainer.LoaiNguoiDung
+                });
 
                 // Lấy lớp học được phân công
                 var myClasses = await _lopHocService.GetClassesByTrainerAsync(trainerId);
-                var myClassesList = myClasses.ToList(); // Convert to list để có thể log
-                ViewBag.MyClasses = myClassesList.Take(5).ToList(); // Hiển thị 5 lớp gần nhất
-                
-                _logger.LogInformation("Found {ClassCount} classes for trainer {TrainerId}", myClassesList.Count, trainerId);
-                foreach (var cls in myClassesList.Take(3)) // Log first 3 classes
+                var myClassesList = myClasses.ToList();
+                ViewBag.MyClasses = myClassesList.Take(5).ToList();
+
+                LogUserAction("Dashboard_ClassesLoaded", new {
+                    ClassCount = myClassesList.Count,
+                    TrainerId = trainerId
+                });
+
+                // Lấy thông tin lương tháng hiện tại
+                var currentMonth = DateTime.Now.ToString("yyyy-MM");
+                try
                 {
-                    _logger.LogInformation("Class: {ClassName}, HlvId: {HlvId}, Status: {Status}", 
-                        cls.TenLop, cls.HlvId, cls.TrangThai);
+                    var currentSalary = await _bangLuongService.GetByTrainerAndMonthAsync(trainerId, currentMonth);
+                    ViewBag.CurrentSalary = currentSalary;
+                    LogUserAction("Dashboard_SalaryLoaded", new { Month = currentMonth, HasSalary = currentSalary != null });
+                }
+                catch (Exception salaryEx)
+                {
+                    _logger.LogWarning(salaryEx, "Could not load salary for trainer {TrainerId}, month {Month}", trainerId, currentMonth);
+                    ViewBag.CurrentSalary = null;
                 }
 
-                // Lấy thông tin lương tháng hiện tại (tạm bỏ qua để fix dashboard)
-                var currentMonth = DateTime.Now.ToString("yyyy-MM");
-                // var currentSalary = await _bangLuongService.GetByTrainerAndMonthAsync(trainerId, currentMonth);
-                ViewBag.CurrentSalary = null; // Tạm set null
-                _logger.LogInformation("Current salary loading skipped for month {Month}", currentMonth);
-
-                // Thống kê cơ bản với debug chi tiết
+                // Thống kê cơ bản
                 var totalClasses = myClassesList.Count;
                 var activeClasses = myClassesList.Count(c => c.TrangThai == "OPEN");
-                
+
                 ViewBag.TotalClasses = totalClasses;
                 ViewBag.ActiveClasses = activeClasses;
-                
-                _logger.LogInformation("DEBUG: myClassesList count = {Count}", myClassesList.Count);
-                _logger.LogInformation("DEBUG: ViewBag.TotalClasses = {Total}", totalClasses);
-                _logger.LogInformation("DEBUG: ViewBag.ActiveClasses = {Active}", activeClasses);
-                
-                // Log chi tiết từng lớp học
-                foreach (var cls in myClassesList)
-                {
-                    _logger.LogInformation("DEBUG Class: {Name}, Status: {Status}, HlvId: {HlvId}", 
-                        cls.TenLop, cls.TrangThai, cls.HlvId);
-                }
-                
-                _logger.LogInformation("Dashboard stats - Total: {Total}, Active: {Active}", 
-                    totalClasses, activeClasses);
+
+                LogUserAction("Dashboard_StatsCalculated", new {
+                    TotalClasses = totalClasses,
+                    ActiveClasses = activeClasses
+                });
 
                 return View();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while loading trainer dashboard for user {UserId}", User.Identity?.Name);
-                TempData["ErrorMessage"] = "Có lỗi xảy ra khi tải dashboard.";
-                return View();
+                return HandleError(ex, "Có lỗi xảy ra khi tải dashboard.");
             }
         }
 
@@ -158,23 +184,34 @@ namespace GymManagement.Web.Controllers
         {
             try
             {
+                LogUserAction("MyClasses_Access");
+
                 var user = await GetCurrentUserAsync();
                 if (user?.NguoiDungId == null)
                 {
-                    _logger.LogWarning("Trainer user not found or NguoiDungId is null");
-                    return RedirectToAction("Login", "Auth");
+                    return HandleUserNotFound("MyClasses");
                 }
 
                 var trainerId = user.NguoiDungId.Value;
+
+                // Validate trainer permissions
+                if (!IsInRoleSafe("Trainer"))
+                {
+                    return HandleUnauthorized("Bạn không có quyền xem danh sách lớp học.");
+                }
+
                 var myClasses = await _lopHocService.GetClassesByTrainerAsync(trainerId);
+
+                LogUserAction("MyClasses_Loaded", new {
+                    TrainerId = trainerId,
+                    ClassCount = myClasses.Count()
+                });
 
                 return View(myClasses);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while loading trainer classes for user {UserId}", User.Identity?.Name);
-                TempData["ErrorMessage"] = "Có lỗi xảy ra khi tải danh sách lớp học.";
-                return View(new List<LopHoc>());
+                return HandleError(ex, "Có lỗi xảy ra khi tải danh sách lớp học.");
             }
         }
 
@@ -183,26 +220,36 @@ namespace GymManagement.Web.Controllers
         {
             try
             {
+                LogUserAction("Schedule_Access");
+
                 var user = await GetCurrentUserAsync();
                 if (user?.NguoiDungId == null)
                 {
-                    _logger.LogWarning("Trainer user not found or NguoiDungId is null");
-                    return RedirectToAction("Login", "Auth");
+                    return HandleUserNotFound("Schedule");
                 }
 
                 var trainerId = user.NguoiDungId.Value;
-                
+
+                // Validate trainer permissions
+                if (!IsInRoleSafe("Trainer"))
+                {
+                    return HandleUnauthorized("Bạn không có quyền xem lịch dạy.");
+                }
+
                 // Lấy lớp học của trainer
                 var myClasses = await _lopHocService.GetClassesByTrainerAsync(trainerId);
                 ViewBag.MyClasses = myClasses;
+
+                LogUserAction("Schedule_Loaded", new {
+                    TrainerId = trainerId,
+                    ClassCount = myClasses.Count()
+                });
 
                 return View();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while loading trainer schedule for user {UserId}", User.Identity?.Name);
-                TempData["ErrorMessage"] = "Có lỗi xảy ra khi tải lịch dạy.";
-                return View();
+                return HandleError(ex, "Có lỗi xảy ra khi tải lịch dạy.");
             }
         }
 
@@ -212,47 +259,57 @@ namespace GymManagement.Web.Controllers
         {
             try
             {
-                _logger.LogInformation("GetScheduleEvents called with start: {Start}, end: {End}, classId: {ClassId}", start, end, classId);
-                
+                LogUserAction("GetScheduleEvents_Access", new { Start = start, End = end, ClassId = classId });
+
+                // Validate date range to prevent abuse
+                var maxRange = TimeSpan.FromDays(90); // Maximum 3 months
+                if (end - start > maxRange)
+                {
+                    LogUserAction("GetScheduleEvents_InvalidRange", new { Start = start, End = end });
+                    return Json(new { success = false, message = "Khoảng thời gian quá lớn. Tối đa 90 ngày." });
+                }
+
                 var user = await GetCurrentUserAsync();
                 if (user?.NguoiDungId == null)
                 {
-                    _logger.LogWarning("GetScheduleEvents: User not found or NguoiDungId is null");
-                    return Json(new List<object>());
+                    return Json(new { success = false, message = "Không tìm thấy thông tin người dùng." });
                 }
 
                 var trainerId = user.NguoiDungId.Value;
-                _logger.LogInformation("GetScheduleEvents: TrainerId = {TrainerId}", trainerId);
-                
+
+                // Validate trainer permissions
+                if (!IsInRoleSafe("Trainer"))
+                {
+                    return Json(new { success = false, message = "Bạn không có quyền truy cập lịch dạy." });
+                }
+
                 var myClasses = await _lopHocService.GetClassesByTrainerAsync(trainerId);
-                
-                // Filter by classId if provided
+
+                // Filter by classId if provided and validate ownership
                 if (classId.HasValue)
                 {
-                    myClasses = myClasses.Where(c => c.LopHocId == classId.Value);
-                    _logger.LogInformation("Filtered to class ID {ClassId}, found {ClassCount} classes", classId.Value, myClasses.Count());
-                }
-                else
-                {
-                    _logger.LogInformation("GetScheduleEvents: Found {ClassCount} classes for trainer (no filter)", myClasses.Count());
+                    var requestedClass = myClasses.FirstOrDefault(c => c.LopHocId == classId.Value);
+                    if (requestedClass == null)
+                    {
+                        LogUserAction("GetScheduleEvents_UnauthorizedClass", new { ClassId = classId.Value, TrainerId = trainerId });
+                        return Json(new { success = false, message = "Bạn không có quyền xem lịch của lớp học này." });
+                    }
+                    myClasses = new[] { requestedClass };
                 }
 
                 var events = new List<object>();
-                
+
                 foreach (var lopHoc in myClasses)
                 {
-                    _logger.LogInformation("Creating dynamic schedule for class: {ClassName} (ID: {ClassId})", lopHoc.TenLop, lopHoc.LopHocId);
+                    LogUserAction("GetScheduleEvents_ProcessClass", new { ClassName = lopHoc.TenLop, ClassId = lopHoc.LopHocId });
+
                     // Generate schedule dynamically from class info
                     var schedules = GenerateDynamicSchedule(lopHoc, start, end);
-                    _logger.LogInformation("Generated {ScheduleCount} schedule entries for class {ClassName}", schedules.Count(), lopHoc.TenLop);
-                    
+
                     if (schedules.Any())
                     {
                         foreach (var schedule in schedules)
                         {
-                            _logger.LogInformation("Adding event from schedule: {ClassName} on {Date} at {Time}",
-                                lopHoc.TenLop, (object)schedule.Ngay, (object)schedule.GioBatDau);
-                            
                             events.Add(new
                             {
                                 id = schedule.LopHocId,
@@ -273,19 +330,22 @@ namespace GymManagement.Web.Controllers
                     else
                     {
                         // Generate events from class schedule if no LichLop exists
-                        _logger.LogInformation("No schedules found, generating from class info: {ClassName}", lopHoc.TenLop);
                         var generatedEvents = GenerateEventsFromClass(lopHoc, start, end);
                         events.AddRange(generatedEvents);
                     }
                 }
 
-                _logger.LogInformation("GetScheduleEvents: Returning {EventCount} events", events.Count);
-                return Json(events);
+                LogUserAction("GetScheduleEvents_Success", new {
+                    EventCount = events.Count,
+                    TrainerId = trainerId
+                });
+
+                return Json(new { success = true, data = events });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occurred while getting trainer schedule events");
-                return Json(new List<object>());
+                return Json(new { success = false, message = "Có lỗi xảy ra khi tải lịch dạy." });
             }
         }
 
@@ -294,27 +354,36 @@ namespace GymManagement.Web.Controllers
         {
             try
             {
+                LogUserAction("Students_Access");
+
                 var user = await GetCurrentUserAsync();
                 if (user?.NguoiDungId == null)
                 {
-                    _logger.LogWarning("Trainer user not found or NguoiDungId is null");
-                    return RedirectToAction("Login", "Auth");
+                    return HandleUserNotFound("Students");
                 }
 
                 var trainerId = user.NguoiDungId.Value;
+
+                // Validate trainer permissions
+                if (!IsInRoleSafe("Trainer"))
+                {
+                    return HandleUnauthorized("Bạn không có quyền xem danh sách học viên.");
+                }
 
                 // Lấy lớp học của trainer
                 var myClasses = await _lopHocService.GetClassesByTrainerAsync(trainerId);
                 ViewBag.MyClasses = myClasses;
 
-                // Lấy danh sách học viên từ các lớp học (sẽ được load qua AJAX)
+                LogUserAction("Students_Loaded", new {
+                    TrainerId = trainerId,
+                    ClassCount = myClasses.Count()
+                });
+
                 return View();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while loading trainer students for user {UserId}", User.Identity?.Name);
-                TempData["ErrorMessage"] = "Có lỗi xảy ra khi tải danh sách học viên.";
-                return View();
+                return HandleError(ex, "Có lỗi xảy ra khi tải danh sách học viên.");
             }
         }
 
@@ -324,6 +393,8 @@ namespace GymManagement.Web.Controllers
         {
             try
             {
+                LogUserAction("GetAllStudentsByTrainer_Access");
+
                 var user = await GetCurrentUserAsync();
                 if (user?.NguoiDungId == null)
                 {
@@ -331,10 +402,17 @@ namespace GymManagement.Web.Controllers
                 }
 
                 var trainerId = user.NguoiDungId.Value;
+
+                // Validate trainer permissions
+                if (!IsInRoleSafe("Trainer"))
+                {
+                    LogUserAction("GetAllStudentsByTrainer_Unauthorized", new { TrainerId = trainerId });
+                    return Json(new { success = false, message = "Bạn không có quyền xem danh sách học viên." });
+                }
+
                 var myClasses = await _lopHocService.GetClassesByTrainerAsync(trainerId);
-                
                 var studentDict = new Dictionary<int, object>();
-                
+
                 foreach (var lopHoc in myClasses)
                 {
                     var lopHocDetail = await _lopHocService.GetByIdAsync(lopHoc.LopHocId);
@@ -362,9 +440,14 @@ namespace GymManagement.Web.Controllers
                         }
                     }
                 }
-                
-                // Get unique students and sort by name
+
                 var uniqueStudents = studentDict.Values.ToList();
+
+                LogUserAction("GetAllStudentsByTrainer_Success", new {
+                    TrainerId = trainerId,
+                    StudentCount = uniqueStudents.Count,
+                    ClassCount = myClasses.Count()
+                });
 
                 return Json(new { success = true, data = uniqueStudents });
             }
@@ -381,6 +464,14 @@ namespace GymManagement.Web.Controllers
         {
             try
             {
+                LogUserAction("GetStudentsByClass_Access", new { ClassId = classId });
+
+                // Validate input
+                if (classId <= 0)
+                {
+                    return Json(new { success = false, message = "ID lớp học không hợp lệ." });
+                }
+
                 var user = await GetCurrentUserAsync();
                 if (user?.NguoiDungId == null)
                 {
@@ -389,10 +480,18 @@ namespace GymManagement.Web.Controllers
 
                 var trainerId = user.NguoiDungId.Value;
 
+                // Validate trainer permissions
+                if (!IsInRoleSafe("Trainer"))
+                {
+                    LogUserAction("GetStudentsByClass_Unauthorized", new { ClassId = classId, TrainerId = trainerId });
+                    return Json(new { success = false, message = "Bạn không có quyền xem danh sách học viên." });
+                }
+
                 // Kiểm tra xem lớp học có thuộc về trainer này không
                 var myClasses = await _lopHocService.GetClassesByTrainerAsync(trainerId);
                 if (!myClasses.Any(c => c.LopHocId == classId))
                 {
+                    LogUserAction("GetStudentsByClass_ClassNotOwned", new { ClassId = classId, TrainerId = trainerId });
                     return Json(new { success = false, message = "Bạn không có quyền xem học viên của lớp này." });
                 }
 
@@ -419,6 +518,12 @@ namespace GymManagement.Web.Controllers
                     .OrderBy(s => s.name)
                     .ToList();
 
+                LogUserAction("GetStudentsByClass_Success", new {
+                    ClassId = classId,
+                    TrainerId = trainerId,
+                    StudentCount = students.Count
+                });
+
                 return Json(new { success = true, data = students });
             }
             catch (Exception ex)
@@ -433,14 +538,21 @@ namespace GymManagement.Web.Controllers
         {
             try
             {
+                LogUserAction("Salary_Access");
+
                 var user = await GetCurrentUserAsync();
                 if (user?.NguoiDungId == null)
                 {
-                    _logger.LogWarning("Trainer user not found or NguoiDungId is null");
-                    return RedirectToAction("Login", "Auth");
+                    return HandleUserNotFound("Salary");
                 }
 
                 var trainerId = user.NguoiDungId.Value;
+
+                // Validate trainer permissions
+                if (!IsInRoleSafe("Trainer"))
+                {
+                    return HandleUnauthorized("Bạn không có quyền xem thông tin lương.");
+                }
 
                 // Lấy lịch sử lương
                 var salaries = await _bangLuongService.GetByTrainerIdAsync(trainerId);
@@ -454,13 +566,18 @@ namespace GymManagement.Web.Controllers
                 ViewBag.TotalPaidSalary = salaries.Where(s => s.NgayThanhToan != null).Sum(s => s.TongThanhToan);
                 ViewBag.PendingSalary = salaries.Where(s => s.NgayThanhToan == null).Sum(s => s.TongThanhToan);
 
+                LogUserAction("Salary_Loaded", new {
+                    TrainerId = trainerId,
+                    SalaryRecordCount = salaries.Count(),
+                    TotalPaid = ViewBag.TotalPaidSalary,
+                    Pending = ViewBag.PendingSalary
+                });
+
                 return View(salaries.OrderByDescending(s => s.Thang));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while loading trainer salary for user {UserId}", User.Identity?.Name);
-                TempData["ErrorMessage"] = "Có lỗi xảy ra khi tải thông tin lương.";
-                return View(new List<BangLuong>());
+                return HandleError(ex, "Có lỗi xảy ra khi tải thông tin lương.");
             }
         }
 
@@ -470,6 +587,14 @@ namespace GymManagement.Web.Controllers
         {
             try
             {
+                LogUserAction("GetSalaryDetails_Access", new { Month = month });
+
+                // Validate input
+                if (string.IsNullOrWhiteSpace(month) || !System.Text.RegularExpressions.Regex.IsMatch(month, @"^\d{4}-\d{2}$"))
+                {
+                    return Json(new { success = false, message = "Định dạng tháng không hợp lệ." });
+                }
+
                 var user = await GetCurrentUserAsync();
                 if (user?.NguoiDungId == null)
                 {
@@ -477,10 +602,19 @@ namespace GymManagement.Web.Controllers
                 }
 
                 var trainerId = user.NguoiDungId.Value;
+
+                // Validate trainer permissions
+                if (!IsInRoleSafe("Trainer"))
+                {
+                    LogUserAction("GetSalaryDetails_Unauthorized", new { Month = month, TrainerId = trainerId });
+                    return Json(new { success = false, message = "Bạn không có quyền xem thông tin lương." });
+                }
+
                 var salary = await _bangLuongService.GetByTrainerAndMonthAsync(trainerId, month);
 
                 if (salary == null)
                 {
+                    LogUserAction("GetSalaryDetails_NotFound", new { Month = month, TrainerId = trainerId });
                     return Json(new { success = false, message = "Không tìm thấy thông tin lương cho tháng này." });
                 }
 
@@ -502,6 +636,12 @@ namespace GymManagement.Web.Controllers
                         note = salary.GhiChu
                     }
                 };
+
+                LogUserAction("GetSalaryDetails_Success", new {
+                    Month = month,
+                    TrainerId = trainerId,
+                    Total = salary.TongThanhToan
+                });
 
                 return Json(result);
             }

@@ -25,6 +25,7 @@ namespace GymManagement.Web.Services
         Task<ThanhToan> CreatePaymentForFixedClassRegistrationAsync(int nguoiDungId, int lopHocId, string phuongThuc);
         Task<(string registrationType, Dictionary<string, string> registrationInfo)?> GetRegistrationInfoFromPaymentAsync(int thanhToanId);
         Task<ThanhToanGateway?> GetGatewayByOrderIdAsync(string orderId);
+        Task<ThanhToan?> GetPaymentWithRegistrationAsync(int thanhToanId);
 
         // Renewal payment method
         Task<ThanhToan> CreatePaymentForRenewalAsync(int dangKyId, int renewalMonths, string phuongThuc);

@@ -167,6 +167,12 @@ namespace GymManagement.Tests.Fakes
                 $"Xin chào {memberName}, thay đổi {changeType}: {changeDetails}. Có hiệu lực từ {effectiveDate:dd/MM/yyyy}");
         }
 
+        public async Task SendPasswordResetNotificationAsync(string toEmail, string memberName, string newPassword)
+        {
+            await SendEmailAsync(toEmail, memberName, "Mật khẩu đã được đặt lại",
+                $"Xin chào {memberName}, mật khẩu của bạn đã được đặt lại. Mật khẩu mới: {newPassword}. Vui lòng đăng nhập và đổi mật khẩu ngay lập tức.");
+        }
+
         #endregion
 
         #region Test Helper Methods

@@ -554,17 +554,17 @@ namespace GymManagement.Web.Services
                     "VNPAY",
                     note ?? $"WALKIN - Vé tập một buổi ({amount:N0} VNĐ)");
 
-                // 4. Tạo VNPay URL (giả lập - cần tích hợp thật)
+                // 4. Trả về thông tin thanh toán để JavaScript xử lý VNPay API
                 var orderId = $"WALKIN_{payment.ThanhToanId}_{DateTime.Now:yyyyMMddHHmmss}";
-                var paymentUrl = $"/VNPay/Payment?orderId={orderId}&amount={amount}&description=WALKIN_{guest.NguoiDungId}";
 
-                _logger.LogInformation("VNPay payment created for walk-in: {Name}, OrderId: {OrderId}", fullName, orderId);
+                _logger.LogInformation("VNPay payment created for walk-in: {Name}, ThanhToanId: {ThanhToanId}", fullName, payment.ThanhToanId);
 
                 return new WalkInVNPayResult
                 {
                     Success = true,
-                    PaymentUrl = paymentUrl,
+                    PaymentUrl = null, // Sẽ được tạo bởi JavaScript
                     OrderId = orderId,
+                    ThanhToanId = payment.ThanhToanId, // Thêm ThanhToanId để JavaScript sử dụng
                     Message = "Tạo thanh toán VNPay thành công"
                 };
             }
@@ -632,6 +632,7 @@ namespace GymManagement.Web.Services
         public bool Success { get; set; }
         public string? PaymentUrl { get; set; }
         public string? OrderId { get; set; }
+        public int ThanhToanId { get; set; } // Thêm ThanhToanId để JavaScript sử dụng
         public string Message { get; set; } = string.Empty;
     }
 }

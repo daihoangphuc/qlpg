@@ -192,11 +192,10 @@ namespace GymManagement.Tests.Unit.Services
         {
             // Arrange
             var lopHoc = new LopHoc 
-            { 
+            {
                 LopHocId = 1,
                 DangKys = new List<DangKy>(),
                 Bookings = new List<Booking>(),
-                LichLops = new List<LichLop>(),
                 BuoiTaps = new List<BuoiTap>()
             };
             _lopHocRepositoryMock.Setup(repo => repo.GetByIdAsync(1)).ReturnsAsync(lopHoc);

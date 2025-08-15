@@ -46,7 +46,8 @@ namespace GymManagement.Tests.Unit.Services
                 _mockUnitOfWork.Object,
                 _mockDiemDanhRepository.Object,
                 _mockNguoiDungRepository.Object,
-                _mockThongBaoService.Object
+                _mockThongBaoService.Object,
+                _mockFaceRecognitionService.Object
             );
         }
 

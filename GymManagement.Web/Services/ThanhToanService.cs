@@ -215,6 +215,18 @@ namespace GymManagement.Web.Services
                 .FirstOrDefaultAsync(g => g.GatewayOrderId == orderId);
         }
 
+        public async Task<ThanhToan?> GetPaymentWithRegistrationAsync(int thanhToanId)
+        {
+            return await _unitOfWork.Context.ThanhToans
+                .Include(t => t.DangKy)
+                    .ThenInclude(d => d.NguoiDung)
+                .Include(t => t.DangKy)
+                    .ThenInclude(d => d.GoiTap)
+                .Include(t => t.DangKy)
+                    .ThenInclude(d => d.LopHoc)
+                .FirstOrDefaultAsync(t => t.ThanhToanId == thanhToanId);
+        }
+
         public async Task<bool> RefundPaymentAsync(int thanhToanId, string reason)
         {
             var thanhToan = await _thanhToanRepository.GetByIdAsync(thanhToanId);

@@ -7,13 +7,12 @@ using System.Security.Claims;
 namespace GymManagement.Web.Controllers
 {
     [Authorize]
-    public class BangLuongController : Controller
+    public class BangLuongController : BaseController
     {
         private readonly IBangLuongService _bangLuongService;
         private readonly INguoiDungService _nguoiDungService;
         private readonly IAuthService _authService;
         private readonly IPdfExportService _pdfExportService;
-        private readonly ILogger<BangLuongController> _logger;
         private readonly IAuditLogService _auditLog;
 
         public BangLuongController(
@@ -21,25 +20,42 @@ namespace GymManagement.Web.Controllers
             INguoiDungService nguoiDungService,
             IAuthService authService,
             IPdfExportService pdfExportService,
-            ILogger<BangLuongController> logger,
-            IAuditLogService auditLog)
+            IAuditLogService auditLog,
+            IUserSessionService userSessionService,
+            ILogger<BangLuongController> logger)
+            : base(userSessionService, logger)
         {
             _bangLuongService = bangLuongService;
             _nguoiDungService = nguoiDungService;
             _authService = authService;
             _pdfExportService = pdfExportService;
-            _logger = logger;
             _auditLog = auditLog;
         }
 
-        // Helper method to get current user
+        // Helper method to get current user with enhanced security
         private async Task<TaiKhoan?> GetCurrentUserAsync()
         {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var userId = GetCurrentUserIdSafe();
             if (string.IsNullOrEmpty(userId))
+            {
+                LogUserAction("GetCurrentUser_Failed", "No user ID found");
                 return null;
+            }
 
-            return await _authService.GetUserByIdAsync(userId);
+            try
+            {
+                var user = await _authService.GetUserByIdAsync(userId);
+                if (user == null)
+                {
+                    LogUserAction("GetCurrentUser_NotFound", new { UserId = userId });
+                }
+                return user;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting current user for ID: {UserId}", userId);
+                return null;
+            }
         }
 
         [Authorize(Roles = "Admin")]
@@ -63,20 +79,33 @@ namespace GymManagement.Web.Controllers
         {
             try
             {
+                LogUserAction("MySalary_Access");
+
                 var user = await GetCurrentUserAsync();
                 if (user?.NguoiDungId == null)
                 {
-                    return RedirectToAction("Login", "Auth");
+                    return HandleUserNotFound("MySalary");
                 }
 
-                var salaries = await _bangLuongService.GetByTrainerIdAsync(user.NguoiDungId.Value);
+                // Validate trainer permissions
+                if (!IsInRoleSafe("Trainer"))
+                {
+                    return HandleUnauthorized("Bạn không có quyền xem bảng lương.");
+                }
+
+                var trainerId = user.NguoiDungId.Value;
+                var salaries = await _bangLuongService.GetByTrainerIdAsync(trainerId);
+
+                LogUserAction("MySalary_Success", new {
+                    TrainerId = trainerId,
+                    SalaryRecordCount = salaries.Count()
+                });
+
                 return View(salaries);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while getting trainer salary");
-                TempData["ErrorMessage"] = "Có lỗi xảy ra khi tải bảng lương của bạn.";
-                return View(new List<BangLuong>());
+                return HandleError(ex, "Có lỗi xảy ra khi tải bảng lương của bạn.");
             }
         }
 
@@ -480,32 +509,46 @@ namespace GymManagement.Web.Controllers
         {
             try
             {
+                LogUserAction("ExportMySalaryPdf_Access", new { Month = month });
+
                 var user = await GetCurrentUserAsync();
                 if (user?.NguoiDungId == null)
                 {
-                    return RedirectToAction("Login", "Auth");
+                    return HandleUserNotFound("ExportMySalaryPdf");
+                }
+
+                // Validate trainer permissions
+                if (!IsInRoleSafe("Trainer"))
+                {
+                    return HandleUnauthorized("Bạn không có quyền xuất bảng lương.");
                 }
 
                 month ??= DateTime.Now.ToString("yyyy-MM");
+                var trainerId = user.NguoiDungId.Value;
 
-                var salary = await _bangLuongService.GetByTrainerAndMonthAsync(user.NguoiDungId.Value, month);
+                var salary = await _bangLuongService.GetByTrainerAndMonthAsync(trainerId, month);
                 if (salary == null)
                 {
+                    LogUserAction("ExportMySalaryPdf_NotFound", new { Month = month, TrainerId = trainerId });
                     TempData["ErrorMessage"] = "Không tìm thấy bảng lương cho tháng này.";
                     return RedirectToAction(nameof(MySalary));
                 }
 
-                var breakdown = await _bangLuongService.CalculateDetailedCommissionAsync(user.NguoiDungId.Value, month);
+                var breakdown = await _bangLuongService.CalculateDetailedCommissionAsync(trainerId, month);
                 var pdfBytes = await _pdfExportService.GenerateSalaryReportAsync(salary, breakdown);
+
+                LogUserAction("ExportMySalaryPdf_Success", new {
+                    Month = month,
+                    TrainerId = trainerId,
+                    SalaryAmount = salary.TongThanhToan
+                });
 
                 var fileName = $"BangLuong_{month}.pdf";
                 return File(pdfBytes, "application/pdf", fileName);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error exporting trainer's own salary PDF");
-                TempData["ErrorMessage"] = "Có lỗi xảy ra khi xuất bảng lương PDF.";
-                return RedirectToAction(nameof(MySalary));
+                return HandleError(ex, "Có lỗi xảy ra khi xuất bảng lương PDF.");
             }
         }
 

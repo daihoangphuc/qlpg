@@ -128,8 +128,12 @@ namespace GymManagement.Web.Controllers
                     {
                         var activeRegistrations = await _dangKyService.GetActiveRegistrationsByMemberIdAsync(user.NguoiDungId);
 
-                        // Find active package registration
-                        var packageRegistration = activeRegistrations.FirstOrDefault(r => r.LoaiDangKy == "PACKAGE" && r.TrangThai == "ACTIVE");
+                        // Find active package registration (based on GoiTapId instead of LoaiDangKy)
+                        var packageRegistration = activeRegistrations.FirstOrDefault(r =>
+                            r.GoiTapId.HasValue &&
+                            r.TrangThai == "ACTIVE" &&
+                            r.NgayKetThuc >= DateOnly.FromDateTime(DateTime.Today));
+
                         if (packageRegistration != null)
                         {
                             userWithSub.ActivePackageRegistration = packageRegistration;
@@ -137,8 +141,11 @@ namespace GymManagement.Web.Controllers
                             userWithSub.PackageExpiryDate = packageRegistration.NgayKetThuc.ToDateTime(TimeOnly.MinValue);
                         }
 
-                        // Count active class registrations
-                        var classRegistrations = activeRegistrations.Where(r => r.LoaiDangKy == "CLASS" && r.TrangThai == "ACTIVE").ToList();
+                        // Count active class registrations (based on LopHocId)
+                        var classRegistrations = activeRegistrations.Where(r =>
+                            r.LopHocId.HasValue &&
+                            r.TrangThai == "ACTIVE" &&
+                            r.NgayKetThuc >= DateOnly.FromDateTime(DateTime.Today)).ToList();
                         userWithSub.ActiveClassRegistrations = classRegistrations;
                         userWithSub.ActiveClassCount = classRegistrations.Count;
                     }

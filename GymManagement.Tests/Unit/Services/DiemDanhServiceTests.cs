@@ -36,11 +36,14 @@ namespace GymManagement.Tests.Unit.Services
             var context = new GymDbContext(options);
             _unitOfWorkMock.Setup(uow => uow.Context).Returns(context);
             
+            var mockFaceRecognitionService = new Mock<IFaceRecognitionService>();
+
             _diemDanhService = new DiemDanhService(
                 _unitOfWorkMock.Object,
                 _diemDanhRepositoryMock.Object,
                 _nguoiDungRepositoryMock.Object,
-                _thongBaoServiceMock.Object);
+                _thongBaoServiceMock.Object,
+                mockFaceRecognitionService.Object);
         }
 
         [Fact]

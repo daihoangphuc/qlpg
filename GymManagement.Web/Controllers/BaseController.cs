@@ -25,16 +25,16 @@ namespace GymManagement.Web.Controllers
                     var currentUser = await _userSessionService.GetCurrentUserAsync();
                     if (currentUser == null)
                     {
-                        _logger.LogWarning("User session not found for authenticated user: {Username}", 
+                        _logger?.LogWarning("User session not found for authenticated user: {Username}",
                             _userSessionService.GetUserName());
-                        
+
                         // Try to rebuild session
                         await _userSessionService.RefreshUserClaimsAsync();
                         currentUser = await _userSessionService.GetCurrentUserAsync();
-                        
+
                         if (currentUser == null)
                         {
-                            _logger.LogError("Failed to rebuild user session for: {Username}", 
+                            _logger?.LogError("Failed to rebuild user session for: {Username}",
                                 _userSessionService.GetUserName());
                             
                             // Redirect to login if session cannot be rebuilt
@@ -46,7 +46,7 @@ namespace GymManagement.Web.Controllers
                     // Check if user account is still active
                     if (!currentUser.KichHoat)
                     {
-                        _logger.LogWarning("Inactive user attempted to access: {Username}", currentUser.TenDangNhap);
+                        _logger?.LogWarning("Inactive user attempted to access: {Username}", currentUser.TenDangNhap);
                         await _userSessionService.ClearCurrentUserAsync();
                         context.Result = RedirectToAction("Login", "Auth", new { message = "Tài khoản của bạn đã bị vô hiệu hóa." });
                         return;
@@ -60,7 +60,7 @@ namespace GymManagement.Web.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error in BaseController.OnActionExecutionAsync");
+                _logger?.LogError(ex, "Error in BaseController.OnActionExecutionAsync");
                 
                 // Clear potentially corrupted session
                 await _userSessionService.ClearCurrentUserAsync();
@@ -88,7 +88,7 @@ namespace GymManagement.Web.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting current user safely");
+                _logger?.LogError(ex, "Error getting current user safely");
                 return null;
             }
         }
@@ -104,7 +104,7 @@ namespace GymManagement.Web.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting current user ID safely");
+                _logger?.LogError(ex, "Error getting current user ID safely");
                 return null;
             }
         }
@@ -120,7 +120,7 @@ namespace GymManagement.Web.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting current NguoiDungId safely");
+                _logger?.LogError(ex, "Error getting current NguoiDungId safely");
                 return null;
             }
         }
@@ -136,7 +136,7 @@ namespace GymManagement.Web.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error checking user role safely: {Role}", role);
+                _logger?.LogError(ex, "Error checking user role safely: {Role}", role);
                 return false;
             }
         }
@@ -146,8 +146,11 @@ namespace GymManagement.Web.Controllers
         /// </summary>
         protected IActionResult HandleUserNotFound(string? action = null)
         {
-            _logger.LogWarning("User not found - redirecting to login");
-            TempData["ErrorMessage"] = "Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại.";
+            _logger?.LogWarning("User not found - redirecting to login");
+            if (TempData != null)
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại.";
+            }
             
             if (!string.IsNullOrEmpty(action))
             {
@@ -162,11 +165,14 @@ namespace GymManagement.Web.Controllers
         /// </summary>
         protected IActionResult HandleUnauthorized(string message = "Bạn không có quyền truy cập chức năng này.")
         {
-            _logger.LogWarning("Unauthorized access attempt by user: {Username}", _userSessionService.GetUserName());
-            TempData["ErrorMessage"] = message;
+            _logger?.LogWarning("Unauthorized access attempt by user: {Username}", _userSessionService.GetUserName());
+            if (TempData != null)
+            {
+                TempData["ErrorMessage"] = message;
+            }
 
             // Avoid redirect loop - if already on Home controller, stay there
-            var currentController = ControllerContext.RouteData.Values["controller"]?.ToString();
+            var currentController = ControllerContext?.RouteData?.Values?["controller"]?.ToString();
             if (currentController?.Equals("Home", StringComparison.OrdinalIgnoreCase) == true)
             {
                 return View("Error");
@@ -180,11 +186,14 @@ namespace GymManagement.Web.Controllers
         /// </summary>
         protected IActionResult HandleError(Exception ex, string userMessage = "Đã xảy ra lỗi. Vui lòng thử lại sau.")
         {
-            _logger.LogError(ex, "Error handled in controller: {Controller}", GetType().Name);
-            TempData["ErrorMessage"] = userMessage;
+            _logger?.LogError(ex, "Error handled in controller: {Controller}", GetType().Name);
+            if (TempData != null)
+            {
+                TempData["ErrorMessage"] = userMessage;
+            }
 
             // Avoid redirect loop - if already on Home controller, stay there
-            var currentController = ControllerContext.RouteData.Values["controller"]?.ToString();
+            var currentController = ControllerContext?.RouteData?.Values?["controller"]?.ToString();
             if (currentController?.Equals("Home", StringComparison.OrdinalIgnoreCase) == true)
             {
                 return View("Error");
@@ -202,21 +211,143 @@ namespace GymManagement.Web.Controllers
             {
                 var username = _userSessionService.GetUserName();
                 var userId = _userSessionService.GetUserId();
-                
+
                 if (data != null)
                 {
-                    _logger.LogInformation("User action: {Username} ({UserId}) performed {Action} with data: {@Data}", 
+                    _logger?.LogInformation("User action: {Username} ({UserId}) performed {Action} with data: {@Data}",
                         username, userId, action, data);
                 }
                 else
                 {
-                    _logger.LogInformation("User action: {Username} ({UserId}) performed {Action}", 
+                    _logger?.LogInformation("User action: {Username} ({UserId}) performed {Action}",
                         username, userId, action);
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error logging user action: {Action}", action);
+                _logger?.LogError(ex, "Error logging user action: {Action}", action);
+            }
+        }
+
+        /// <summary>
+        /// Validate if current trainer has access to a specific class
+        /// </summary>
+        protected bool ValidateTrainerClassAccess(int classId, int? trainerHlvId)
+        {
+            try
+            {
+                if (!IsInRoleSafe("Trainer"))
+                {
+                    return false;
+                }
+
+                var currentNguoiDungId = GetCurrentNguoiDungIdSafe();
+                if (currentNguoiDungId == null)
+                {
+                    LogUserAction("ValidateTrainerClassAccess_NoUserId", new { ClassId = classId });
+                    return false;
+                }
+
+                var hasAccess = trainerHlvId == currentNguoiDungId;
+
+                if (!hasAccess)
+                {
+                    LogUserAction("ValidateTrainerClassAccess_Denied", new {
+                        ClassId = classId,
+                        TrainerId = currentNguoiDungId,
+                        ClassTrainerId = trainerHlvId
+                    });
+                }
+
+                return hasAccess;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error validating trainer class access for class {ClassId}", classId);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Validate if current trainer has access to a specific student through their classes
+        /// </summary>
+        protected async Task<bool> ValidateTrainerStudentAccessAsync(int studentId, Func<int, Task<bool>> checkStudentInTrainerClasses)
+        {
+            try
+            {
+                if (!IsInRoleSafe("Trainer"))
+                {
+                    return false;
+                }
+
+                var currentNguoiDungId = GetCurrentNguoiDungIdSafe();
+                if (currentNguoiDungId == null)
+                {
+                    LogUserAction("ValidateTrainerStudentAccess_NoUserId", new { StudentId = studentId });
+                    return false;
+                }
+
+                var hasAccess = await checkStudentInTrainerClasses(currentNguoiDungId.Value);
+
+                if (!hasAccess)
+                {
+                    LogUserAction("ValidateTrainerStudentAccess_Denied", new {
+                        StudentId = studentId,
+                        TrainerId = currentNguoiDungId
+                    });
+                }
+
+                return hasAccess;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error validating trainer student access for student {StudentId}", studentId);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Validate if current user can access salary information
+        /// </summary>
+        protected bool ValidateTrainerSalaryAccess(int salaryTrainerId)
+        {
+            try
+            {
+                // Admin can access all salaries
+                if (IsInRoleSafe("Admin"))
+                {
+                    return true;
+                }
+
+                // Trainer can only access their own salary
+                if (IsInRoleSafe("Trainer"))
+                {
+                    var currentNguoiDungId = GetCurrentNguoiDungIdSafe();
+                    if (currentNguoiDungId == null)
+                    {
+                        LogUserAction("ValidateTrainerSalaryAccess_NoUserId", new { SalaryTrainerId = salaryTrainerId });
+                        return false;
+                    }
+
+                    var hasAccess = salaryTrainerId == currentNguoiDungId;
+
+                    if (!hasAccess)
+                    {
+                        LogUserAction("ValidateTrainerSalaryAccess_Denied", new {
+                            SalaryTrainerId = salaryTrainerId,
+                            CurrentTrainerId = currentNguoiDungId
+                        });
+                    }
+
+                    return hasAccess;
+                }
+
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error validating trainer salary access for trainer {TrainerId}", salaryTrainerId);
+                return false;
             }
         }
     }

@@ -312,7 +312,7 @@
                 </div>
 
                 <!-- Export Button -->
-                <div class="flex items-end">
+                <div class="bg-green-600 flex items-end">
                     <button onclick="exportAttendance()" class="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-4 py-2 rounded-lg font-medium transition-all transform hover:scale-105 flex items-center justify-center">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
@@ -404,7 +404,7 @@
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="flex items-center">
                                             <div class="flex-shrink-0 h-12 w-12">
-                                                <div class="h-12 w-12 rounded-full bg-gradient-to-r from-blue-400 to-blue-600 flex items-center justify-center shadow-md">
+                                                <div class="h-12 w-12 rounded-full bg-blue-600 flex items-center justify-center shadow-md">
                                                     <span class="text-lg font-bold text-white">
                                                         @(diemDanh.ThanhVien?.Ho?.FirstOrDefault() ?? 'U')
                                                     </span>
@@ -950,7 +950,7 @@
                             </div>
                         </label>
 
-                        <label class="flex items-center p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
+                        @* <label class="flex items-center p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
                             <input type="radio" name="paymentMethod" value="VNPAY" class="mr-3">
                             <div class="flex items-center">
                                 <span class="text-2xl mr-3">🏦</span>
@@ -959,7 +959,7 @@
                                     <div class="text-sm text-gray-500">Thanh toán online qua VNPay</div>
                                 </div>
                             </div>
-                        </label>
+                        </label> *@
                     </div>
                 </div>
 
@@ -1772,6 +1772,20 @@
                                             <p><strong>Thời gian:</strong> ${result.time}</p>
                                             <p><strong>Độ tin cậy:</strong> ${result.confidence}%</p>
                                             ${result.className ? `<p><strong>Lớp học:</strong> ${result.className}</p>` : ''}
+                                            ${result.packageInfo ? `
+                                                <div class="mt-2 p-2 bg-green-100 rounded border-l-4 border-green-400">
+                                                    <p><strong>📦 Gói tập:</strong> ${result.packageInfo.packageName}</p>
+                                                    ${result.packageInfo.hasPackage ? `
+                                                        <p><strong>📅 Hết hạn:</strong> ${result.packageInfo.expiryDate}</p>
+                                                        <p><strong>⏰ Còn lại:</strong> ${result.packageInfo.remainingDays} ngày</p>
+                                                        <p class="font-medium ${result.packageInfo.isExpired ? 'text-red-600' : result.packageInfo.isExpiring ? 'text-yellow-600' : 'text-green-600'}">
+                                                            <strong>📊 Trạng thái:</strong> ${result.packageInfo.status}
+                                                        </p>
+                                                    ` : `
+                                                        <p class="text-yellow-600"><strong>⚠️ Trạng thái:</strong> ${result.packageInfo.status}</p>
+                                                    `}
+                                                </div>
+                                            ` : ''}
                                             <p class="mt-2 font-medium text-green-800">${result.message}</p>
                                         </div>
                                     </div>
@@ -2300,6 +2314,7 @@
         // VNPay Payment Processing
         async function processVNPayPayment(name, phone, email, note) {
             try {
+                // Step 1: Create walk-in VNPay payment record
                 const response = await fetch('/Reception/CreateWalkInVNPayPayment', {
                     method: 'POST',
                     headers: {
@@ -2317,16 +2332,34 @@
 
                 const result = await response.json();
 
-                if (result.success && result.paymentUrl) {
-                    alert('ℹ️ Đang chuyển hướng đến VNPay...');
+                if (result.success && result.thanhToanId) {
+                    // Step 2: Create VNPay payment URL using VNPay API
+                    const vnpayResponse = await fetch('/VNPayAPI/Home/CreatePayment', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                        },
+                        body: JSON.stringify({
+                            thanhToanId: result.thanhToanId
+                        })
+                    });
 
-                    // Store customer info for after payment return
-                    sessionStorage.setItem('walkInCustomerInfo', JSON.stringify({
-                        name, phone, email, note
-                    }));
+                    const vnpayResult = await vnpayResponse.json();
 
-                    // Redirect to VNPay
-                    window.location.href = result.paymentUrl;
+                    if (vnpayResult.success && vnpayResult.paymentUrl) {
+                        alert('ℹ️ Đang chuyển hướng đến VNPay...');
+
+                        // Store customer info for after payment return
+                        sessionStorage.setItem('walkInCustomerInfo', JSON.stringify({
+                            name, phone, email, note, thanhToanId: result.thanhToanId
+                        }));
+
+                        // Redirect to VNPay
+                        window.location.href = vnpayResult.paymentUrl;
+                    } else {
+                        alert('❌ ' + (vnpayResult.message || 'Không thể tạo URL thanh toán VNPay'));
+                    }
                 } else {
                     alert('❌ ' + (result.message || 'Không thể tạo thanh toán VNPay'));
                 }
@@ -2389,5 +2422,79 @@
 
         // Call setup when DOM is ready
         setupWalkInModalListeners();
+
+        // Handle VNPay return for walk-in customers
+        function handleVNPayReturn() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const paymentStatus = urlParams.get('paymentStatus');
+            const walkIn = urlParams.get('walkIn');
+            const message = urlParams.get('message');
+
+            if (walkIn === 'true' && paymentStatus) {
+                if (paymentStatus === 'success') {
+                    // Get stored customer info
+                    const customerInfo = sessionStorage.getItem('walkInCustomerInfo');
+                    if (customerInfo) {
+                        const info = JSON.parse(customerInfo);
+
+                        // Show success message
+                        alert('✅ ' + decodeURIComponent(message || 'Thanh toán VNPay thành công!'));
+
+                        // Auto check-in the customer
+                        processWalkInCheckInAfterPayment(info);
+
+                        // Clear stored info
+                        sessionStorage.removeItem('walkInCustomerInfo');
+                    } else {
+                        alert('✅ ' + decodeURIComponent(message || 'Thanh toán VNPay thành công!'));
+                    }
+                } else if (paymentStatus === 'error') {
+                    alert('❌ ' + decodeURIComponent(message || 'Thanh toán VNPay thất bại!'));
+                }
+
+                // Clean URL
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        }
+
+        // Process walk-in check-in after successful VNPay payment
+        async function processWalkInCheckInAfterPayment(customerInfo) {
+            try {
+                // Find the payment record and auto check-in
+                const response = await fetch('/Reception/WalkInConfirmPayment', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                    },
+                    body: JSON.stringify({
+                        paymentId: customerInfo.thanhToanId,
+                        guestId: 0 // Will be found by payment record
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // Show payment confirmation
+                    showPaymentConfirmation({
+                        customerName: customerInfo.name,
+                        amount: 50000,
+                        paymentMethod: 'VNPay',
+                        transactionId: customerInfo.thanhToanId
+                    });
+
+                    // Update stats
+                    updateRealtimeStats();
+                } else {
+                    console.error('Auto check-in failed:', result.message);
+                }
+            } catch (error) {
+                console.error('Error in auto check-in after VNPay:', error);
+            }
+        }
+
+        // Check for VNPay return on page load
+        handleVNPayReturn();
     </script>
 }

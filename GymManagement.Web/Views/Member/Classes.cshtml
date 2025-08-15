@@ -638,16 +638,16 @@
                         .then(response => response.json())
                         .then(vnpayData => {
                             if (vnpayData.success) {
-                                showNotification('✅ Đã tạo thanh toán thành công!', 'success');
-                                // Show QR Payment Modal instead of direct redirect
-                                showQRPaymentModal({
-                                    paymentUrl: vnpayData.paymentUrl,
-                                    qrCodeData: vnpayData.qrCodeData,
-                                    qrImageUrl: vnpayData.qrImageUrl,
-                                    orderId: vnpayData.orderId,
-                                    amount: vnpayData.amount,
-                                    bankInfo: vnpayData.bankInfo
-                                });
+                                showNotification('✅ Đã tạo thanh toán thành công! Đang chuyển hướng...', 'success');
+
+                                // Close registration modal first
+                                closeClassModal();
+
+                                // Direct redirect to VNPay instead of showing modal
+                                setTimeout(() => {
+                                    window.location.href = vnpayData.paymentUrl;
+                                }, 1000); // Small delay to show success message
+
                                 button.innerHTML = originalText;
                                 button.disabled = false;
                             } else {
